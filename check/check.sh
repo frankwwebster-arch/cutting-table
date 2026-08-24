@@ -739,8 +739,10 @@ check("and the sum in actual pieces is given as well as in components",
 
 # ⭐️ AND THE RULE THE WHOLE ROOM IS BUILT ON IS UNTOUCHED: a sheet printing
 # twenty-six identical counters wants ONE cut, because the game repeats it.
-items = [{k: v for k, v in i.items() if k not in ("pieces", "guesses", "state", "need", "got")}
-         for i in d["items"]]
+# ⚠️ SENT BACK WHOLE, exactly as the page sends it — worked-out fields and
+# all. Taking them off is the ROOM's job now, in the one place that saves the
+# list, and the check below reads the disk to see that it did.
+items = d["items"]
 for i in items:
     if i["name"] == "Damage counter":
         i["each"] = False
@@ -752,11 +754,39 @@ check("a counter set back to 'one is enough' is done with one piece",
 check("and the deck beside it is untouched by that",
       by(d["items"], "Damage card")["need"] == 24)
 
+# ⭐️⭐️ ONE DESIGN, CUT ONCE, WANTED TWENTY TIMES — AND THE DECK IS FULL.
+# The designer, 24 August 2026, of a deck of thirteen different cards one of which
+# is printed twenty times, thirty-two cards in all: "I have marked the 20x
+# component, but [the deck] reads — relatively justifiably — 13 of 32. How do
+# I fix given the deck is technically complete?" `copies` on the piece already
+# said the game wants that design twenty times; the checklist was not reading
+# it, so a deck that really was complete could never reach its own quantity.
+man_file = os.path.join(tmp, "home", "the-supplement", "manifest.json")
+man = json.load(open(man_file))
+man["pieces"]["c00"]["copies"] = 22
+json.dump(man, open(man_file, "w"))
+d = json.load(urllib.request.urlopen(API + "/wanted"))
+deck = by(d["items"], "Damage card")
+check("a card the game wants twenty-two times fills twenty-two of its deck",
+      (deck["got"], deck["need"], deck["state"]) == (24, 24, "cut"),
+      [deck["got"], deck["need"], deck["state"]])
+check("and the deck still says how many pictures that is, as well as cards",
+      deck["cut_pieces"] == 3, deck["cut_pieces"])
+# ⚠️ THE TEETH, and the rule this must not break: nothing guesses `copies`,
+# so with the mark taken off the deck is three cards into twenty-four again.
+man["pieces"]["c00"].pop("copies")
+json.dump(man, open(man_file, "w"))
+d = json.load(urllib.request.urlopen(API + "/wanted"))
+deck = by(d["items"], "Damage card")
+check("and with the mark taken off it is three of twenty-four again, nothing guessed",
+      (deck["got"], deck["state"]) == (3, "part"), [deck["got"], deck["state"]])
+
 # ⚠️ the worked-out numbers must not be written into the file as though they
 # were somebody's answer
 kept = json.load(open(os.path.join(tmp, "home", "the-supplement", "wanted.json")))
 check("nothing worked out is written back into the list on disk",
-      not any(k in kept["items"][0] for k in ("need", "got", "state", "pieces")),
+      not any(k in kept["items"][0]
+              for k in ("need", "got", "cut_pieces", "state", "pieces", "guesses")),
       sorted(kept["items"][0].keys()))
 
 # ⭐️⭐️ THE CHECK AGAINST THE CONTENTS LIST, AT THE END OF THE JOB. The designer, 24
@@ -809,8 +839,7 @@ check("and a piece that does answer to something is not",
 # Nine of one real game's twelve decks were in exactly that state, so a 32-card
 # deck with one card cut would have shown the box as complete.
 cur = json.load(urllib.request.urlopen(API + "/wanted"))
-items = [{k: v for k, v in i.items() if k not in ("pieces", "guesses", "state", "need", "got")}
-         for i in cur["items"]]
+items = cur["items"]
 for i in items:
     if i["name"] == "Damage card":
         i["each"] = False                       # a deck told one is enough

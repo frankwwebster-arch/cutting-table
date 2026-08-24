@@ -1274,6 +1274,41 @@ const SHAPE = `(function () {
       check("with every piece still one tick away", backs.wide > backs.narrow.length,
             [backs.narrow.length, backs.wide]);
 
+      /* ⚠️⚠️ A DROPDOWN BUILT ONCE GOES STALE, AND IT LOOKS LIKE A SHORTER
+         LIST RATHER THAN AN OLD ONE. The designer, 24 August 2026: "I have marked 6
+         different elements as card backs. When I do 'choose several at once'
+         only one of those backs appears in the backs dropdown. It should
+         contain the other card backs so I can batch add it (or I have to go
+         through every card manually)."
+         The bulk bar's list was rebuilt only when the NARROWING switched on
+         or off, so it was built when one back existed and never again. Mark a
+         second back with the bar open and both must be on it. */
+      const oneBack = await page.val(`(function () {
+        var only = document.getElementById("fBackOnly");
+        if (only && !only.checked) { only.checked = true; only.dispatchEvent(new Event("change")); }
+        var on = document.getElementById("pChooseOn");
+        on.checked = true; on.dispatchEvent(new Event("change"));
+        var s = document.getElementById("pChooseBack");
+        var was = Array.prototype.map.call(s.options, function (o) { return o.value; }).filter(Boolean);
+        var k = document.getElementById("fKind");
+        k.value = "card back"; k.dispatchEvent(new Event("input"));
+        return was; })()`);
+      await sleep(1600);
+      const twoBacks = await page.val(`(function () {
+        var s = document.getElementById("pChooseBack");
+        return Array.prototype.map.call(s.options, function (o) { return o.value; }).filter(Boolean); })()`);
+      check("the bulk bar offers the back that was marked before it opened",
+            oneBack.length === 1 && oneBack[0] === "zz_twin_b", oneBack);
+      check("and a back marked while it is open joins it, instead of the list going stale",
+            twoBacks.length === 2 && twoBacks.indexOf("zz_twin_a") >= 0, twoBacks);
+      // put the bench back as it was: this piece is read again further down
+      await page.val(`(function () {
+        var k = document.getElementById("fKind");
+        k.value = ""; k.dispatchEvent(new Event("input"));
+        var on = document.getElementById("pChooseOn");
+        on.checked = false; on.dispatchEvent(new Event("change")); return true; })()`);
+      await sleep(1400);
+
       /* ⭐️⭐️ THE BOX BEING WORKED THROUGH COMES FIRST. The designer, 24 August 2026:
          "if I'm working with one supplement's elements, there doesn't seem to
          be a need to include all the possible choices for the core and the

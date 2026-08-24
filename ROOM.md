@@ -448,8 +448,11 @@ reprinted, and it is still there to choose.
 ⭐️ **How many the game needs** is for a design printed once and used many
 times — the one card that appears twenty times in a deck of thirteen. You
 still cut it **once**; this is what tells whatever reads the pieces to repeat
-it. It is not the same as the checklist's quantity: the checklist counts what
-you have cut, this says what the game does with it.
+it. ⭐️ **The checklist counts it too**, so that deck of thirteen designs
+reads as the full thirty-two cards rather than *13 of 32*, and says
+underneath what the number is made of: *3 pieces, repeated to fill it*.
+Nothing sets this by itself — the room cannot know a card is printed twenty
+times — so a deck stays short until you say so.
 
 ⭐️ **Start this piece again** empties every box on the piece being viewed —
 name, component, kind, use, id, turn, note — in one press, for a piece filled

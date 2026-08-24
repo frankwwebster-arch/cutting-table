@@ -15,6 +15,35 @@ as when you finish. The full version of all of that is in CLAUDE.md under
 
 ## NOW
 
+### `[x]` ⭐️⭐️ A deck that is full says so, even when it is thirteen pictures — **fixed**
+
+The designer, 24 August 2026: *"I need to finalise a deck. It contains 13 different
+cards, one of which has 20 copies — thus 32 cards in total. I have marked the
+20x component, but [the deck] reads — relatively justifiably — 13 of 32. How
+do I fix given the deck is technically complete?"*
+
+Both halves were already there and were not speaking: **all different** says
+the line's thirty-two cards are not one design printed thirty-two times, and
+**How many the game needs** on the piece says the game wants that one design
+twenty times. The checklist counted pictures where the quantity means cards.
+A cut piece now fills as many of the wanted quantity as the game wants of it,
+so the deck reads **32 of 32 ✓** with *3 pieces, repeated to fill it*
+underneath — because the number has to say what it is made of.
+
+⚠️ Nothing guesses it, and taking the mark off puts the deck straight back to
+part-cut; a check tries exactly that. See CLAUDE.md 56.
+
+### `[x]` ⚠️ The bulk bar's list of card backs went stale — **fixed**
+
+The designer, 24 August 2026: *"I have marked 6 different elements as card backs. When
+I do 'choose several at once' only one of those backs appears in the backs
+dropdown. It should contain the other card backs so I can batch add it (or I
+have to go through every card manually)."* The list was rebuilt only when the
+narrowing switched on or off, so it was built when the first back was marked
+and never again. It is rebuilt from what it is made of now, and so is the
+component list beside it, which had the same fault waiting for a component
+added while the bar was open. See CLAUDE.md 57.
+
 ### `[x]` ⭐️ A user guide, written properly — **built**
 
 `GUIDE.md`, with eight pictures. Organised by the **job** and not by the
@@ -291,7 +320,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 322 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 327 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -402,6 +431,10 @@ anything that speeds up cutting.
   other said twenty-one, and it was missing the last five faults. That is the
   fault this codebase warns about most, arriving in the documents themselves.
 - `[x]` **1 new check** — 321 to 322.
+- `[x]` **5 new checks** — 322 to 327: a deck filled by a design the game wants
+  twenty-two times, the mark taken off again, and the bulk bar's list of card
+  backs taking in a back marked while it is open. ⭐️ Teeth tried: both faults
+  put back turn exactly those checks red and nothing else.
 
 ### 24 August 2026 — the cut checked against the contents list
 

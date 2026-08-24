@@ -182,7 +182,9 @@ Things that make it quicker:
   every card in the deck at it. ⭐️ Set that back piece's **Kind** to *card
   back* and the list stops offering you all two hundred pieces.
 - **How many the game needs** — for one design used over and over, like the
-  one card that appears twenty times in a deck. You still cut it **once**.
+  one card that appears twenty times in a deck. You still cut it **once**, and
+  the checklist counts it: a deck of thirty-two made of thirteen designs then
+  reads as full rather than *13 of 32*.
 - **Turn it** — quarter turns, applied everywhere the piece is shown. The
   picture on disk is never rewritten, so you can change your mind for ever.
 

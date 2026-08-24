@@ -833,6 +833,54 @@ rather than by reading the code.
     subject includes the check itself needs to say so, or it reports its own
     definition as the problem.**
 
+56. ⭐️⭐️ **A DECK OF THIRTEEN DESIGNS CAN BE A DECK OF THIRTY-TWO CARDS.**
+    The designer, 24 August 2026: *"I need to finalise a deck. It contains 13
+    different cards, one of which has 20 copies — thus 32 cards in total. I
+    have marked the 20x component, but [the deck] reads — relatively
+    justifiably — 13 of 32. How do I fix given the deck is technically
+    complete?"*
+    Both halves of the answer were already in the room and neither was
+    speaking to the other. `each` says this line's thirty-two cards are not
+    one design printed thirty-two times (fault 36); `copies` on a piece says
+    the game wants **this** design twenty times (fault 47) — and the checklist
+    counted **pictures** where the quantity means **cards**, so a deck that
+    really was finished could never reach its own number and the box could
+    never read as done. A cut piece now **fills as many of the wanted quantity
+    as the game wants of it**.
+    ⚠️ Fault 47's warning stands and is not weakened: these are still two
+    questions. Nothing is cut twice, **nothing guesses `copies`**, and taking
+    the mark off puts the deck straight back to 3 of 24 — a check tries
+    exactly that. All this stops is the room asking for pieces that would be
+    identical to ones it already has.
+    ⭐️ And the count says what it is made of — *3 pieces, repeated to fill
+    it* — because **32 of 32** over thirteen pictures reads as a miscount to
+    the person who cut them.
+    ⚠️ The worked-out counts (`state`, `need`, `got`, `cut_pieces`…) are
+    stripped where the list is **saved** now, rather than by the page: that
+    list of names was written out in the page and again in its check, so a new
+    count would have been forgotten by one of them and written to disk as
+    though somebody had answered it. **Fault 24, sixth time.**
+
+57. ⚠️⚠️ **A DROPDOWN BUILT ONCE IS A DROPDOWN THAT GOES STALE — AND IT READS
+    AS A SHORT LIST, NOT AS AN OLD ONE.** The designer, 24 August 2026: *"I have
+    marked 6 different elements as card backs. When I do 'choose several at
+    once' only one of those backs appears in the backs dropdown. It should
+    contain the other card backs so I can batch add it (or I have to go
+    through every card manually)."*
+    The bulk bar's two lists were each rebuilt only when **the answer to a
+    different question** changed: the backs list when the narrowing switched
+    on or off, the components list when the box being shown changed. So the
+    backs list was built at the moment the first back was marked and never
+    again, and the components list would have missed a component added while
+    the bar was open — **fault 44's subject**, the thing you have just made
+    being the one thing that is hidden. Nothing errored; both simply went on
+    offering yesterday, and the person is left doing by hand the very work the
+    bar exists to save.
+    ⭐️ The rule: **a list is rebuilt from what it is MADE OF, not from what
+    prompted it.** `fillSelect()` builds the options and puts them up if they
+    differ from what is up — and restores the choice already made, or
+    replacing the markup would quietly blank it (fault 48's family).
+
 ---
 
 ## Architecture
@@ -948,7 +996,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 322 checks, about a minute
+check/check.sh          # 327 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

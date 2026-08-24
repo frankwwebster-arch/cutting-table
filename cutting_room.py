@@ -126,6 +126,15 @@ CORNER = math.cos(52 * math.pi / 180)     # var CORNER in the template
 KINDS = ["counter", "template", "ruler", "card", "card back", "deck", "terrain",
          "ship_template", "chart", "sheet", "tile", "board", "token", "other"]
 
+# ⚠️ WHAT THE ROOM WORKS OUT IS NOT PART OF THE LIST. `wanted_status()` hangs
+# what has been cut against each component onto the component every time it is
+# asked, and the page sends the list back exactly as it was given it — so these
+# would land in `wanted.json` as a stale answer on disk that looks exactly like
+# a real one. The ROOM takes them off again, in the one place that saves the
+# list, rather than every caller remembering to: a set of names known in two
+# places is fault 24, which has bitten this codebase five times.
+WORKED_OUT = ("pieces", "guesses", "state", "need", "got", "cut_pieces")
+
 
 # ------------------------------------------------------------------ helpers
 
@@ -957,6 +966,36 @@ class Project:
             w = v.get("wanted")
             if w:
                 linked.setdefault(w, []).append(stem)
+        # ⭐️ ONE DESIGN, CUT ONCE, WANTED TWENTY TIMES — AND THE DECK IS FULL.
+        # The designer, 24 August 2026, of a deck of thirteen different cards in
+        # which one of them is printed twenty times, thirty-two cards in all:
+        # "I have marked the 20x component, but [the deck] reads — relatively
+        # justifiably — 13 of 32. How do I fix given the deck is technically
+        # complete?"
+        #
+        # `copies` on a piece already says the game wants that design twenty
+        # times (fault 47) and the checklist simply was not reading it, so a
+        # deck that really is complete could never reach its own quantity and
+        # the box could never read as finished. A piece FILLS as many of the
+        # wanted quantity as the game wants of it, so thirteen pieces fill
+        # thirty-two cards and the deck says so.
+        #
+        # ⚠️ Fault 47 warns that these are two different questions — the
+        # checklist counts what you have CUT, `copies` tells the game what to
+        # do with it — and they still are: the room does not cut anything
+        # twice and nothing sets `copies` by itself, any more than anything
+        # sets `each`. This only stops the room asking for pieces that would
+        # be identical to ones it already has.
+        def fills(stems):
+            n = 0
+            for stem in stems:
+                try:
+                    c = int((man.get(stem) or {}).get("copies") or 1)
+                except (TypeError, ValueError):
+                    c = 1
+                n += max(1, c)
+            return n
+
         out = []
         done = 0
         for it in items:
@@ -987,11 +1026,12 @@ class Project:
             # speak for a whole component when there are enough of it to go
             # round.
             need = self.wanted_needs(it)
-            if len(have) >= need:
+            got = fills(have)
+            if got >= need:
                 state = "cut"
             elif have:
                 state = "part"
-            elif len(guess) >= need:
+            elif fills(guess) >= need:
                 state = "probably"
             elif guess:
                 state = "part"
@@ -999,8 +1039,12 @@ class Project:
                 state = "missing"
             if state in ("cut", "probably"):
                 done += 1
+            # ⭐️ `got` counts CARDS and `cut` counts PIECES, and where a design
+            # is wanted more than once they differ — so both are sent, or a
+            # deck reading "32 of 32" off thirteen pictures looks like a
+            # miscount to the person who cut them.
             out.append(dict(it, pieces=have, guesses=guess, state=state,
-                            need=need, got=len(have)))
+                            need=need, got=got, cut_pieces=len(have)))
         groups = book.get("groups") or []
         per_group = {}
         for it in out:
@@ -3602,6 +3646,9 @@ class Room(BaseHTTPRequestHandler):
                     for k in ("items", "groups", "note", "kinds"):
                         if k in d:
                             w[k] = d[k]
+                    w["items"] = [{a: b for a, b in (it or {}).items()
+                                   if a not in WORKED_OUT}
+                                  for it in (w.get("items") or [])]
                     pr.save_wanted(w)
                 return self.send_json(pr.wanted_status())
             if len(rest) == 2 and rest[1] == "import" and method == "POST":

@@ -1365,6 +1365,30 @@
     return Object.keys(chosen).filter(function (k) { return chosen[k]; });
   }
 
+  /* ⚠️⚠️ A DROPDOWN BUILT ONCE IS A DROPDOWN THAT GOES STALE, AND IT LOOKS
+     LIKE A SHORTER LIST RATHER THAN AN OLD ONE. The designer, 24 August 2026: "I
+     have marked 6 different elements as card backs. When I do 'choose several
+     at once' only one of those backs appears in the backs dropdown."
+     Both these lists were rebuilt only when the ANSWER TO A DIFFERENT
+     QUESTION changed — the backs list when the narrowing switched on or off,
+     the components list when the box being shown changed — so the backs list
+     was built when one back existed and never again, and the components list
+     would have missed a component added while the bar was open (fault 44's
+     subject: a thing you have just made must never be the thing that is
+     hidden). Neither showed an error; both simply went on offering yesterday.
+     ⭐️ So the test is what the list is MADE OF, not what prompted it: build
+     the options and put them up if they differ from what is up. Restoring the
+     value matters — replacing the markup would otherwise quietly blank a
+     choice already made, which is fault 48's family. */
+  var selectBuilt = {};
+  function fillSelect(sel, html) {
+    if (selectBuilt[sel.id] === html) return;
+    selectBuilt[sel.id] = html;
+    var was = sel.value;
+    sel.innerHTML = html;
+    sel.value = was;
+  }
+
   function showChosen() {
     var n = chosenStems().length;
     document.getElementById("pChooseBar").hidden = !choosing;
@@ -1375,23 +1399,17 @@
     var sel = document.getElementById("pChooseWanted");
     var band = pieceSheet.indexOf("book:") === 0 ? boxSet(pieceSheet.slice(5))
              : pieceSheet ? boxSet(bookOf(pieceSheet)) : "";
-    if (sel.dataset.band !== band || !sel.options.length) {
-      var wasW = sel.value;
-      sel.dataset.band = band;
-      sel.innerHTML = wantedOptions({ chosen: wasW, set: band,
+    if (piecesData) {           // the components ride along with the pieces
+      fillSelect(sel, wantedOptions({ chosen: sel.value, set: band,
         head: '<option value="">— leave the component alone —</option>' +
-              '<option value="__off">— take the component off them —</option>' });
-      sel.value = wasW;
+              '<option value="__off">— take the component off them —</option>' }));
     }
     /* ⭐️ the same narrowing as the single piece\'s box — a deck of thirty-two
        is exactly where hunting through two hundred pieces hurts most */
     var backs = document.getElementById("pChooseBack");
-    if (piecesData && backs.dataset.only !== String(backsOnly && !!backCount())) {
-      var wasB = backs.value;
-      backs.dataset.only = String(backsOnly && !!backCount());
-      backs.innerHTML = '<option value="">— leave the backs alone —</option>' +
-        pieceOptions(wasB, backsOnly).replace('<option value="">— none —</option>', "");
-      backs.value = wasB;
+    if (piecesData) {
+      fillSelect(backs, '<option value="">— leave the backs alone —</option>' +
+        pieceOptions(backs.value, backsOnly).replace('<option value="">— none —</option>', ""));
     }
     document.getElementById("pApply").disabled = !n;
   }
@@ -1899,7 +1917,7 @@
           ? backCount() + " so far in this game."
           : "none marked yet, so the whole list is shown.") +
         ' To mark one, open that piece and set its <b>Kind</b> to <b>card back</b>.</p>' +
-      '<label class="f" data-tip="How many of this piece the GAME needs, when one design is used over and over — twenty copies of one card from one printed design. You still only cut it once; this is what tells whatever reads the pieces to repeat it. Leave it blank for one.">How many the game needs</label><input id="fCopies" type="number" min="1" max="9999" value="' + esc(d.copies || "") + '" placeholder="1" style="max-width:8em">' +
+      '<label class="f" data-tip="How many of this piece the GAME needs, when one design is used over and over — twenty copies of one card from one printed design. You still only cut it once; this is what tells whatever reads the pieces to repeat it, and the checklist counts it, so a deck of thirty-two made of thirteen designs reads as full. Leave it blank for one.">How many the game needs</label><input id="fCopies" type="number" min="1" max="9999" value="' + esc(d.copies || "") + '" placeholder="1" style="max-width:8em">' +
       '<label class="f" data-tip="Anything worth remembering about this piece — which rules page it is on, that its twin is on another sheet, that the scan is poor.">Note</label><textarea id="fNote">' + esc(d.note || "") + "</textarea>" +
       '<div class="row" style="margin-top:14px">' +
       '<button id="fShape" type="button" data-tip="Puts this piece\'s outline on the shelf of shapes, so the same shape can be laid down again with one click — on another sheet, or in another game. Nothing about this piece changes.">Keep the shape</button>' +
@@ -1928,6 +1946,9 @@
         p.data = r.piece || {};
         wantedData = null;
         renderPieceList();
+        // ⚠️ marking a piece as a card back must reach the bulk bar's list of
+        // backs NOW — that list is the whole reason for marking one
+        showChosen();
         document.querySelectorAll(".prow").forEach(function (x) { x.classList.toggle("on", x.dataset.stem === stem); });
         refreshCounts();
         flash("Saved.");
@@ -2431,8 +2452,19 @@
           ((it.pieces || []).length ? bigForStem(it.pieces[0]) : "") + ">" +
           (it.state === "probably" ? "probably cut"
            : it.state === "part" ? esc(it.got + " of " + it.need)
-           : it.state === "cut" ? ((it.need || 1) > 1 ? esc(it.got + " of " + it.need + " ✓") : "cut ✓")
-           : (it.need || 1) > 1 ? esc("0 of " + it.need) : "not yet") + "</span></td>" +
+           : it.state === "cut" ? ((it.need || 1) > 1
+               ? esc(Math.min(it.got, it.need) + " of " + it.need + " ✓") : "cut ✓")
+           : (it.need || 1) > 1 ? esc("0 of " + it.need) : "not yet") + "</span>" +
+          /* ⭐️ A DECK CAN BE FULL WITHOUT BEING THIRTY-TWO PICTURES. The
+             designer, 24 August 2026: a deck of thirteen different cards, one of
+             them printed twenty times. Marking that card as wanted twenty
+             times (on the piece, "How many the game needs") fills the deck —
+             so say what the number is made of, or "32 of 32" off thirteen
+             pictures reads as a miscount to the person who cut them. */
+          (it.cut_pieces && it.got > it.cut_pieces
+            ? '<div class="tiny muted">' + it.cut_pieces + " piece" +
+              (it.cut_pieces === 1 ? "" : "s") + ", repeated to fill it</div>" : "") +
+          "</td>" +
         '<td class="pieces-links">' + links + "</td>" +
         '<td class="wacts">' +
           '<button class="quiet" data-split="1" title="One line of a printed contents list often stands for several different components — three movement templates, not one thing three times. Break it into them, so each cut piece gets its own name and the game can tell them apart.">Split</button>' +
@@ -2539,16 +2571,14 @@
     wHeads.forEach(function (h) { Fold.apply("wanted", h[0], body, h[1]); });
   }
   function saveWantedAll() {
-    var items = wantedData.items.map(function (it) {
-      // ⚠️ THE WORKED-OUT FIELDS MUST NOT BE WRITTEN BACK. The room computes
-      // pieces, guesses, state and now the two counts every time it is asked;
-      // saving them into wanted.json would leave a stale answer on disk that
-      // looks exactly like a real one.
-      var c = {}; Object.keys(it).forEach(function (k) {
-        if (["pieces", "guesses", "state", "need", "got"].indexOf(k) < 0) c[k] = it[k];
-      }); return c;
-    });
-    return put(API + "/wanted", { items: items }).then(function (d) { wantedData = d; flash("Saved."); loadWantedSummary(d); });
+    /* ⚠️ THE WORKED-OUT FIELDS MUST NOT BE WRITTEN BACK — what has been cut
+       against each component is worked out fresh every time the list is
+       asked for, and saved into wanted.json it would be a stale answer on
+       disk that looks exactly like a real one. The list of them was written
+       out here as well as in the room, which is fault 24 waiting to happen:
+       the room now takes them off in the one place that saves the list, so
+       this sends what it was given and nothing has to agree with anything. */
+    return put(API + "/wanted", { items: wantedData.items }).then(function (d) { wantedData = d; flash("Saved."); loadWantedSummary(d); });
   }
   function loadWantedSummary(d) {
     var s = d.summary; document.getElementById("wPct").textContent = s.pct + "%"; document.getElementById("wDone").textContent = s.done; document.getElementById("wTotal").textContent = s.total; document.getElementById("wBar").style.width = s.pct + "%";
