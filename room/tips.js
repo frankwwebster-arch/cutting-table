@@ -1,12 +1,12 @@
 /* Every control says what it does.
  *
- * ⭐️ FRANK, 23 August 2026: "adding helpful instructional text to my platforms
+ * ⭐️ THE DESIGNER, 23 August 2026: "adding helpful instructional text to my platforms
  * like Cutting Room. I don't, for example, have any idea what 'straight to the
  * table' means on the project selection screen, so a hover tool or just in
  * line text popup or whatever explaining what all the features and buttons do
  * would be very helpful. And that's not just for me, obviously!"
  *
- * He is right, and it is the same complaint as every other one he has made:
+ * They are right, and it is the same complaint as every other one they have made:
  * the room knows something the person using it does not, and does not say it.
  *
  * How it works: put `data-tip="a plain sentence"` on ANY element and it gets

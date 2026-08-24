@@ -37,12 +37,12 @@ What is left of it:
 
 - `[ ]` **An Artifact of it**, for reading on a phone or handing to somebody.
   ⚠️ Generated FROM `GUIDE.md`, never written twice.
-- `[ ]` **Arrows on the pictures.** Frank's original point was *"one screenshot
+- `[ ]` **Arrows on the pictures.** The designer's original point was *"one screenshot
   with an arrow on it"*; they are honest screenshots with no arrows yet.
 
 ### `[x]` ⭐️⭐️ Check the cut against the contents list, at the end — **built**
 
-Frank, 24 August 2026: *"I want (once I've done my cutting work) to be able to
+The designer, 24 August 2026: *"I want (once I've done my cutting work) to be able to
 run a verification check against the original component index - a secondary
 check to ensure we have every piece cut. Is that possible?"* It is, and it is
 on **Take it away**, above the button, and in the exported folder twice — see
@@ -62,7 +62,7 @@ What is left of it, none of it urgent:
 
 ### `[ ]` ⭐️ The other end of the check — the game ingesting the pieces
 
-Frank, 24 August 2026: *"there's validation which can be fed back by the game
+The designer, 24 August 2026: *"there's validation which can be fed back by the game
 engine into which I drop all the components. Surely any game I build will
 have to have its own library of pieces, and will need to know in
 advance what those pieces will be, having digested the rulebook. So not only
@@ -84,8 +84,8 @@ what the great majority of its users want.
 - `[x]` The **end-of-job report** above — **built**, and it is written as
   JSON beside the printable page for exactly this reason: the engine gets the
   room's own account of what is missing without re-deriving it.
-- ⭐️⭐️ **And the game already holds the answers.** Frank, 24 August 2026:
-  *"if you talk to the naval-warfare project, I think you'll see that it's
+- ⭐️⭐️ **And the game already holds the answers.** The designer, 24 August 2026:
+  *"if you talk to the game project, I think you'll see that it's
   been able - in advance of me formally handing anything over - to determine
   the value/wording/rules attached to cards still in cutting-table."* Quite
   so: `data/cards/*.json` there holds 225 cards across twelve decks, each with
@@ -94,7 +94,7 @@ what the great majority of its users want.
   it already exists: `PUT /api/p/<id>/wanted` takes a whole contents list, so
   **the game can write the room's checklist** rather than anybody typing it
   twice — with `each` and `qty` right, which is what makes the counts mean
-  anything. ⚠️ That script is the GAME's: it knows what a spell deck is.
+  anything. ⚠️ That script is the GAME's: it knows what a card deck is.
 - ⭐️ **The way back in.** `cut_from` in `inventory.csv`/`inventory.json`
   already carries the piece's stem, which is the one name the room and the
   game can both say. That is what makes *"this one is wrong, go and fix it"*
@@ -102,13 +102,13 @@ what the great majority of its users want.
   open the room straight at a piece — `?tab=pieces&piece=<stem>` — so the
   engine can link to it.
 - ⭐️ **Pieces that answer to nothing on the list** — the inverse in the
-  report, and precisely his *"wrongly attributed"*.
+  report, and precisely their *"wrongly attributed"*.
 
 Nothing here should know what a rulebook is.
 
 ### `[~]` Opening and quitting without a terminal
 
-Frank, 22 August 2026: *"a simpler way to open and quit. I don't like terminal
+The designer, 22 August 2026: *"a simpler way to open and quit. I don't like terminal
 at the best of times."*
 
 - `[x]` ⭐️ **Quit from the room itself.** *Close the Cutting Room* sits at the
@@ -123,7 +123,7 @@ at the best of times."*
   whatever path this copy was cloned to and naming the python it was run with
   (`/usr/bin/python3` where that will do, because a command-line-tools path
   moves when Xcode is updated). An existing launcher is kept as `.was` rather
-  than overwritten. Frank's own hard-coded one is no longer special.
+  than overwritten. The designer's own hard-coded one is no longer special.
 - `[ ]` **No terminal window at all.** A minimal `.app` bundle — a folder with
   an `Info.plist` and a shell script in `MacOS/` — launches with no visible
   terminal and can carry an icon. This is all that is left of the complaint:
@@ -135,7 +135,7 @@ must not need anything installed.
 ### `[x]` Shapes kept — draw a shape once, use it in any game
 
 **Built, 23 August 2026**, asked for by name, and grown twice the same day as
-Frank thought about it — a shape can be scaled, and a shape can tell a sheet
+the designer thought about it — a shape can be scaled, and a shape can tell a sheet
 its scale. See *Done*, below. What is left of it, none of it urgent:
 
 - `[ ]` **Renaming a kept shape.** Today a name is given when the shape is
@@ -154,7 +154,7 @@ its scale. See *Done*, below. What is left of it, none of it urgent:
 
 ### `[x]` ⭐️ Every control says what it does
 
-**Built, 23 August 2026.** Frank: *"a very useful tool (and in fact perhaps a
+**Built, 23 August 2026.** The designer: *"a very useful tool (and in fact perhaps a
 habit to get into) is adding helpful instructional text to my platforms like
 Cutting Room. I don't, for example, have any idea what 'straight to the table'
 means on the project selection screen… And that's not just for me,
@@ -170,7 +170,7 @@ fix, and the next one is the one to stop. What is left:
 
 ### ⭐️ A light ground, and displays generally
 
-Frank, 22 August 2026: *"I'd like to consider some different displays (eg white
+The designer, 22 August 2026: *"I'd like to consider some different displays (eg white
 background rather than the black)."* **Next up.**
 
 ⚠️ **Read the reason for the dark ground before changing it.** The editor's own
@@ -179,8 +179,8 @@ printed sheet is the only thing on the page whose colour must be judged, so
 everything round it is a quiet dark ground in both host themes."* A scanned
 counter is being looked at against that ground while it is outlined, and a
 white surround changes how its colour and its edges read. That is an argument
-for care, **not** an argument for refusing — his eye is the instrument, and if
-a light ground suits him better it wins. Worth separating:
+for care, **not** an argument for refusing — their eye is the instrument, and if
+a light ground suits them better it wins. Worth separating:
 
 - **The room's own pages** (home, project, checklist, match) — mostly text and
   thumbnails. A light ground here is uncontroversial and is the easy half.
@@ -193,14 +193,14 @@ a light ground suits him better it wins. Worth separating:
 There is no theme mechanism at all today: `room/room.css` and the template's
 `:root` block each hard-code one palette.
 
-### ⭐️ Frank is using it, and feedback comes back in new chats
+### ⭐️ The designer is using it, and feedback comes back in new chats
 
-Two games are loaded and he is cutting. **What he says next outranks
-everything on this list.** Still worth his eye:
+Two games are loaded and they are cutting. **What they say next outranks
+everything on this list.** Still worth their eye:
 
 1. **The outlining itself**, which is where the hours go. *Add the suggested
    outlines* on a counter sheet either saves the whole evening or wastes it,
-   and nobody has watched him use it on a fresh set.
+   and nobody has watched them use it on a fresh set.
 2. **Whether the checklist is worth keeping.** 209 components was compiled for
    one game by reading three printed contents lists. Whether that is a
    pleasure or a chore for the next game is not yet known.
@@ -216,7 +216,7 @@ design** — the game repeats it for ever.
   checks out well… generally excellent."*
 - `[ ]` Sheets 2, 4 and 6.
 
-⭐️ **The fiddly part is naming, and it is not a tool problem.** Frank: *"naming
+⭐️ **The fiddly part is naming, and it is not a tool problem.** The designer: *"naming
 is always going to be the fiddly bit here as it will tend to rely on 3rd party
 lists etc, or rules manuals which may be tricky to comprehend."* The room can
 cut a sheet in a press; **what a piece is called comes from outside** — a
@@ -236,7 +236,7 @@ The inverse of Match, for a game with **no contents list at all** — which is
 most games, and certainly any game whose list nobody has bothered to type out.
 Rather than reading a component list in and ticking pieces off against it,
 **group the cut pieces by look-alike and printed size, show each group, and let
-the person name the group once.** Twenty identical wound counters become one
+the person name the group once.** Twenty identical damage counters become one
 line of the checklist in one typing.
 
 Everything it needs is already built and already on the screen somewhere else:
@@ -291,7 +291,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 321 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 322 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -352,7 +352,7 @@ tablet is a genuine design question, not a port.
 
 ## Ideas worth thinking about, not yet decisions
 
-⭐️ The first three below stopped being speculation on 22 August 2026: Frank cut
+⭐️ The first three below stopped being speculation on 22 August 2026: The designer cut
 a real sheet 1 cleanly and named it by hand, and reported that **naming is
 the fiddly part, because it comes from outside the room** — third-party lists
 and rules manuals. Anything that takes a step out of naming is worth more than
@@ -379,9 +379,33 @@ anything that speeds up cutting.
 
 ## Done
 
+### 24 August 2026 — nothing here names a game, a publisher or a person
+
+- `[x]` ⚠️⚠️ **The last of one game's own names out of the tool**, after an
+  earlier pass had taken out the publisher and the products but left the
+  components: player markers, movement templates, terrain tiles, damage
+  counters and a range ruler now stand where a particular box's pieces did.
+  The measurement was always the evidence; the name never was.
+- `[x]` ⚠️ **And the owner's name, and the pronouns with it.** they/them
+  throughout — nobody's are written down here, and a document with no name in
+  it should not still say *he*. The licence holder is *the Cutting Room
+  authors*; ⚠️ the repository's own web address still carries the account name
+  it is hosted under, and only the account holder can change that.
+- `[x]` ⭐️⭐️ **A check that fails if any of them come back** — 27 words,
+  searched with the line breaks taken out, because that is exactly how the
+  last one hid through two passes that were looking straight at it. ⚠️ Its
+  first run reported the repository riddled with all 27: it had found its own
+  word list. See CLAUDE.md 55.
+- `[x]` **`AGENTS.md` is a signpost now, not a second copy.** It was the same
+  working document written for another assistant and had drifted **213 lines**
+  from `CLAUDE.md` in three days — one said fifteen pieces of work where the
+  other said twenty-one, and it was missing the last five faults. That is the
+  fault this codebase warns about most, arriving in the documents themselves.
+- `[x]` **1 new check** — 321 to 322.
+
 ### 24 August 2026 — the cut checked against the contents list
 
-- `[x]` ⭐️⭐️ **The check Frank asked for by name**, on *Take it away* above
+- `[x]` ⭐️⭐️ **The check the designer asked for by name**, on *Take it away* above
   the button and in the exported folder twice — `check-against-the-list.html`
   to read and print, `.json` for whatever ingests the pieces. Per set: nothing
   cut, not enough cut yet, counted only by a guess. Then the pieces that
@@ -407,7 +431,7 @@ anything that speeds up cutting.
 ### 24 August 2026 — a flag you can answer, and two lists that were haystacks
 
 - `[x]` ⭐️⚠️ **Every flag on a piece can now be answered, including by saying
-  it does not matter.** Frank: *"some of the pieces I've cut are flagged as
+  it does not matter.** The designer: *"some of the pieces I've cut are flagged as
   RUNS OFF THE SHEET… I don't see a way to remove that flag (because it doesn't
   matter)."* **That is fine** on the piece stops the room flagging it for that
   reason, and **Flag it again** puts it back. The real damage was to the list:
@@ -435,7 +459,7 @@ anything that speeds up cutting.
 - `[x]` ⭐️⭐️ **The three files that cannot be rebuilt keep the copy they
   replace**, up to sixty each, automatically, in `<project>/history/`. After a
   bug of the room's own ate two components, what saved them was git — which
-  Frank does not use and should not have to: *"I'm afraid this means nothing
+  the designer does not use and should not have to: *"I'm afraid this means nothing
   to me - it needs to be automated if it needs to happen."*
 - `[x]` ⭐️ **And it can be reached without a terminal.** Settings lists every
   copy with what was in it, and puts one back; the copy it replaces is kept
@@ -447,7 +471,7 @@ anything that speeds up cutting.
 
 ### 24 August 2026 — the checklist was removing the wrong component
 
-- `[x]` ⚠️⚠️ **A data-losing bug, found by Frank asking me to verify it.**
+- `[x]` ⚠️⚠️ **A data-losing bug, found by the designer asking me to verify it.**
   *"removing a piece in the checklist doesn't work - verify that."* It removed
   **the wrong component**: a save replaces the list, the rows on screen were
   left holding dead objects, and `splice(-1, 1)` took the last component off
@@ -466,9 +490,9 @@ anything that speeds up cutting.
 
 ### 24 August 2026 — a fold was swallowing new components
 
-- `[x]` ⚠️⚠️ **Fixed.** Frank: *"BUG - adding a new component does not work…
+- `[x]` ⚠️⚠️ **Fixed.** The designer: *"BUG - adding a new component does not work…
   typed in the name, clicked add, and nothing happened."* It had worked: the
-  component was on disk and its row was in the table, inside a set he had
+  component was on disk and its row was in the table, inside a set they had
   folded away. Every way of adding a row now **opens the set it lands in** —
   adding one, pasting a list, and splitting a component into its parts.
 - `[x]` **And it says where the row went**, then brings it into view and marks
@@ -478,7 +502,7 @@ anything that speeds up cutting.
 
 ### 24 August 2026 — naming a deck at once, and starting a piece again
 
-- `[x]` ⭐️ **Bulk apply.** Frank: *"if I can select all 32 cards in a deck, I
+- `[x]` ⭐️ **Bulk apply.** The designer: *"if I can select all 32 cards in a deck, I
   should be able to apply the correct card deck label to them all in one
   go."* Tick boxes on the piece rows, *all shown* / *none*, one component,
   one press. ⚠️ Fills blanks only — a name somebody typed is never overwritten.
@@ -493,7 +517,7 @@ anything that speeds up cutting.
 
 ### 24 August 2026 — seeing a look-alike, and one box at a time
 
-- `[x]` ⭐️ **Pieces works in boxes, not sheet numbers.** Frank, an hour after
+- `[x]` ⭐️ **Pieces works in boxes, not sheet numbers.** The designer, an hour after
   the same fix landed on Match: *"the Pieces view is now pretty useless, and
   very frustrating to use. I don't want to go sheet by sheet, I'm much more
   likely to want to see core or supplement pieces - the random
@@ -503,13 +527,13 @@ anything that speeds up cutting.
   arrived twice in a day because the first fix was made where it was reported
   rather than where it belonged. See CLAUDE.md 42.
 
-- `[x]` ⭐️ **A look-alike can actually be looked at.** Frank: *"it's incredibly
+- `[x]` ⭐️ **A look-alike can actually be looked at.** The designer: *"it's incredibly
   difficult to see them in the tiny viewport it provides - can you make them
   appear larger/preview on hover (I don't want to click away to another
   page)."* The tiles are twice the size, and hovering one shows the piece's
   **full picture** at 360px under the pointer with its id and printed size.
   The same on the row beside a suggested kind. See CLAUDE.md 40.
-- `[x]` ⭐️ **Match can be held to one box.** Frank: *"otherwise I get served
+- `[x]` ⭐️ **Match can be held to one box.** The designer: *"otherwise I get served
   with 200+ objects from across the whole game when I'm just trying to
   rationalise one supplement."* The board could be narrowed to one sheet or not
   at all, and a supplement is thirty sheets. See CLAUDE.md 41.
@@ -519,7 +543,7 @@ anything that speeds up cutting.
 
 ### 23 August 2026 — the folding was shredding the Pieces list
 
-- `[x]` ⚠️⚠️ **Fixed.** Frank: *"on #pieces the collapse/expand mechanic is
+- `[x]` ⚠️⚠️ **Fixed.** The designer: *"on #pieces the collapse/expand mechanic is
   going awry, just not working correctly, seems to be segmenting the core box
   over and over."* A set was being taken to be "the rows that happen to sit
   together", and on Pieces they do not: a piece **file the index knows nothing
@@ -538,8 +562,8 @@ anything that speeds up cutting.
 
 ### 23 August 2026 — a room running old code says so
 
-- `[x]` ⚠️ **Frank hit "no such call" pressing a button built that afternoon.**
-  Nothing was wrong with the button: his room had been open for hours, and a
+- `[x]` ⚠️ **the designer hit "no such call" pressing a button built that afternoon.**
+  Nothing was wrong with the button: their room had been open for hours, and a
   room serves its **pages** off the disk every time while its **Python** is
   whatever was loaded when it started. New button, old route.
 - `[x]` ⭐️ **The room compares its own source against the clock it started at**
@@ -552,7 +576,7 @@ anything that speeds up cutting.
 
 ### 23 August 2026 — every list folds
 
-- `[x]` ⭐️⭐️ **Sheets, Pieces, Match and the Checklist all fold.** Frank, having
+- `[x]` ⭐️⭐️ **Sheets, Pieces, Match and the Checklist all fold.** The designer, having
   had it in Match: *"I want the same ability to collapse and expand
   core/expansions/extras etc throughout the platform (eg in Checklist, sheets,
   match, pieces etc) - it's super helpful."* Every heading has an arrow and a
@@ -566,7 +590,7 @@ anything that speeds up cutting.
 
 ### 23 August 2026 — Match folds a set away
 
-- `[x]` ⭐️ **Each set of components folds.** Frank: *"in Match, it would be very
+- `[x]` ⭐️ **Each set of components folds.** The designer: *"in Match, it would be very
   helpful to be able to collapse sections eg for [the] Core Box, [one
   supplement, another]… Just needs an arrow to expand collapse. Or just some
   other way to stop me having to scroll all the way past one supplement to be
@@ -580,15 +604,15 @@ anything that speeds up cutting.
 
 ### 23 August 2026 — a deck is counted, a counter is not
 
-- `[x]` ⭐️ **The checklist counts a deck against its quantity.** Frank: *"build
+- `[x]` ⭐️ **The checklist counts a deck against its quantity.** The designer: *"build
   checklist counting deck against quantity - it's then my responsibility to
   ensure I have the correct number of cards to fill each deck. the
-  naval-warfare game itself will do the validation of the content of those
+  game itself will do the validation of the content of those
   cards."* A line marked **all different** reads *3 of 24* and is not done
   until every card is cut; the summary also gives the sum in actual pieces,
   because a deck of twenty-four counts once as a component and is twenty-four
   evenings of cutting.
-- `[x]` ⚠️ **The rule the room is built on is untouched.** *26 Wound counters*
+- `[x]` ⚠️ **The rule the room is built on is untouched.** *26 Damage counters*
   still wants ONE piece cut — the sheet prints one design twenty-six times and
   the game repeats it. Nothing in a printed contents list tells a quantity from
   a deck, so each line says which and the room never guesses. See CLAUDE.md 36.
@@ -606,7 +630,7 @@ anything that speeds up cutting.
 ### 23 August 2026 — the sheet list opens on the work
 
 - `[x]` ⭐️ **Sheets opens on *To outline*, and remembers what you choose.**
-  Frank: *"the default view should be 'To outline', not 'All'. Although best if
+  The designer: *"the default view should be 'To outline', not 'All'. Although best if
   platform remembers the last view a user selected and goes back to that.
   Otherwise I waste time wading through lots of cut and filed sheets before I
   find my next sheet to cut."* Remembered per game, since two games are at
@@ -625,17 +649,17 @@ anything that speeds up cutting.
 ### 23 August 2026 — one line of a contents list, several components
 
 - `[x]` ⭐️⭐️ **Split a checklist line into the components it really stands
-  for.** Frank, on a game's supplements: *"the contents of the
+  for.** The designer, on a game's supplements: *"the contents of the
   supplements only gives generic descriptions of ship cards belonging to the
-  factions the supplements bring to the game"* — one line naming a faction's
-  ship templates where the box holds three ships, each with a name of its own.
+  factions the supplements bring to the game"* — one line naming a player's
+  movement templates where the box holds three ships, each with a name of its own.
   *"What's the best way to deal with that to ensure the game engine knows what
   it's looking at?"*
   **Split** on the row takes the real names, one a line, and the one line
   becomes three components wanted once each. Every piece linked in Match then
   gets its **own** name, which is what anything reading the manifest needs.
-- `[x]` ⚠️ **It is offered, never done.** *26 wound counters* is one design
-  printed twenty-six times and one row is right for it; *3 ship templates* is
+- `[x]` ⚠️ **It is offered, never done.** *26 damage counters* is one design
+  printed twenty-six times and one row is right for it; *3 movement templates* is
   three pieces of card. Nothing but a person can tell those apart from the
   printed line, so Split sits on every row and is never used by itself. See
   CLAUDE.md 34.
@@ -650,7 +674,7 @@ anything that speeds up cutting.
 
 ### 23 August 2026 — the room explains itself
 
-- `[x]` ⭐️⭐️ **Every button, link and box says what it does.** Frank, after two
+- `[x]` ⭐️⭐️ **Every button, link and box says what it does.** The designer, after two
   days of using it: *"I don't, for example, have any idea what 'straight to the
   table' means on the project selection screen, so a hover tool or just in line
   text popup or whatever explaining what all the features and buttons do would
@@ -678,7 +702,7 @@ anything that speeds up cutting.
 
 ### 23 August 2026 — a shape drawn once, used in any game
 
-- `[x]` ⭐️⭐️ **Shapes kept.** Frank, on a game printed on one die: *"I will
+- `[x]` ⭐️⭐️ **Shapes kept.** The designer, on a game printed on one die: *"I will
   need to cut a number of pieces that are different, but also EXACTLY the same
   shape — I only want to create that shape mask ONCE, so the ability to save a
   highly specific shape for a project (and perhaps use that between projects —
@@ -691,7 +715,7 @@ anything that speeds up cutting.
   is what lets a shape cross to a sheet scanned at another resolution and to
   another game entirely. The nodes and the curve are what is kept, so a shape
   comes back exactly as it was drawn rather than as a flattened tracing.
-- `[x]` ⭐️ **Favourited per game, searchable between games.** Frank, the same
+- `[x]` ⭐️ **Favourited per game, searchable between games.** The designer, the same
   day: *"I'd like to be able to favourite specific shapes on a per project
   basis but have that library searchable between projects (eg in one game I
   can review shapes I favourited in another)."* The shelf is one file
@@ -717,13 +741,13 @@ anything that speeds up cutting.
 - `[x]` 🖼 **The × had wrapped onto a line of its own** under every row, once
   the star made a third control in a two-column grid. Found by looking at a
   screenshot. See CLAUDE.md 29.
-- `[x]` ⭐️ **The size is an offer, not a rule.** Frank: *"the size of a shape
+- `[x]` ⭐️ **The size is an offer, not a rule.** The designer: *"the size of a shape
   is agnostic, surely, as I can just scale a shape whilst retaining its
   shape?"* It is. A carried shape shows the size it will land at in two boxes
   that move together, so it cannot be squashed; type a size, or **drag the
   shape out on the sheet** like a rectangle. A dragged size is kept for the
   next one, so a run of them takes one measurement.
-- `[x]` ⭐️⭐️ **A kept shape is a ruler, and that is the real prize.** Frank:
+- `[x]` ⭐️⭐️ **A kept shape is a ruler, and that is the real prize.** The designer:
   *"Say I cut a corridor shape from [a game's] core box, that should become the
   ultimate source of truth for the exact dimensions of all [that game's] corridor
   pieces, regardless of where they come from. So when I come to cut corridor
@@ -737,7 +761,7 @@ anything that speeds up cutting.
   the piece; see CLAUDE.md 30 for why the other way round is worse than
   useless. It says what it will do to the sheet and asks first, and the Scale
   panel puts it back.
-- `[x]` ⭐️ **A shape from a piece already cut.** Frank: *"I should be able to
+- `[x]` ⭐️ **A shape from a piece already cut.** The designer: *"I should be able to
   save a shape cut from a piece already cut - or is that too difficult?"* Not
   difficult at all: the outline it was cut from is still in `outlines.json`,
   and the piece's record says which sheet and which box — so the outline is
@@ -752,7 +776,7 @@ anything that speeds up cutting.
 
 ### 22 August 2026 — the room offers a kind instead of asking for one
 
-- `[x]` ⭐️ **Guess the kind.** Frank: *"naming is always going to be the fiddly
+- `[x]` ⭐️ **Guess the kind.** The designer: *"naming is always going to be the fiddly
   bit here as it will tend to rely on 3rd party lists etc, or rules manuals
   which may be tricky to comprehend."* Every piece is already measured to the
   thousandth of an inch, so the room now offers a kind with the measurement it
@@ -761,10 +785,10 @@ anything that speeds up cutting.
   **proposes and never decides**: nothing is filled in until somebody presses,
   a kind already set is never overwritten, and *Not now* puts it away.
 - `[x]` ⭐️⭐️ **The rules were tried against a real game, and it changed two of
-  them.** Run over 79 real pieces Frank had already cut and named:
-  *ruler* was calling two ice fields rulers (long and thin, but ragged blobs —
+  them.** Run over 79 real pieces the designer had already cut and named:
+  *ruler* was calling two terrain tiles rulers (long and thin, but ragged blobs —
   a ruler must be **solid**); *tile* spoke once in 79 pieces and called a turn
-  template a tile, so **that rule is gone**; and the WIZARD cards were being
+  template a tile, so **that rule is gone**; and the PLAYER MARKER cards were being
   passed over because a 1993 publisher did not buy standard card stock, so
   a card is now also recognised by its **proportions**, offered as the less
   certain of the two and grouped apart from the exact-size cards. It speaks
@@ -798,12 +822,12 @@ anything that speeds up cutting.
   piece at true size; the **checklist** to print and take to the table; and
   **cut files for a laser or craft cutter**, true size in millimetres with the
   printable sheet beside each one.
-  ⚠️ **Nothing in it is shaped for any particular program.** Frank: *"the
+  ⚠️ **Nothing in it is shaped for any particular program.** The designer: *"the
   cutting tool should remain relatively generic - not every user is going to be
   building their own version of [a game] to play on a computer! Output format is
   important."*
 - `[x]` ⚠️⚠️ **A real copyright disclaimer, and it travels with the pieces.**
-  Frank: *"some kind of warning that this is personal use, copyright in all
+  The designer: *"some kind of warning that this is personal use, copyright in all
   things you cut is not your own — a real disclaimer. Don't share cut pieces
   etc etc."* The export is exactly where it matters: up to that point the
   pieces sit in one person's folder, and after it they are a tidy, named,
@@ -833,9 +857,9 @@ anything that speeds up cutting.
 
 ### 22 August 2026 — opening and quitting, and a fault that was hiding
 
-- `[x]` ⭐️ **The room closes from the room.** See NOW, above. Frank does not
+- `[x]` ⭐️ **The room closes from the room.** See NOW, above. The designer does not
   have to find the Terminal window any more.
-- `[x]` **A launcher that is not Frank's alone** — `--install-launcher`.
+- `[x]` **A launcher that is not the designer's alone** — `--install-launcher`.
 - `[x]` ⚠️⚠️ **A POST no longer poisons the request after it.** *Cut this
   sheet* posts `{}` and the cut handler never read it, so those two bytes sat
   in the socket and the **next** request down that kept-alive connection was
@@ -855,22 +879,22 @@ anything that speeds up cutting.
   -e` was aborting the script before the line that copies them out, so the one
   instruction in the file that says *LOOK AT THEM* never had anything to show.
 
-### 22 August 2026 — a day of Frank using it
+### 22 August 2026 — a day of the designer using it
 
-Everything here came out of him cutting with it, in this order.
+Everything here came out of them cutting with it, in this order.
 
 - `[x]` ⭐️ ⚠️ **Nothing in the room deletes a cut piece any more.** *"Binning a
   piece shouldn't be destructive — it should be merely to hide a piece from the
-  main manifest. eg there are two identical ice fields. The game only needs to
+  main manifest. eg there are two identical terrain tiles. The game only needs to
   store one, even though it could be placed twice in an actual game."* A piece
   is now **set aside**: moved into `pieces/spare/`, where the hand-over does
   not look, keeping its name and everything else, staying in the list dimmed
   and marked, and going back in one press. The mark follows the piece across a
   re-cut, so a re-cut cannot resurrect the spares.
 - `[x]` ⭐️ **A third answer for look-alikes: "these are variants — keep them
-  all".** *"There are two different Wizard Marker cards… the platform is
-  suggesting Keep this one, bin the other 2."* And twelve ship templates, one
-  per fleet, identical but for the flag in the corner. The room had only two
+  all".** *"There are two different player marker cards… the platform is
+  suggesting Keep this one, bin the other 2."* And twelve movement templates, one
+  per player, identical but for the flag in the corner. The room had only two
   ideas about two similar pieces — duplicates to bin, or unrelated — and
   neither was true. The bar turns green, stops proposing, drops the *alike*
   flag, and each piece keeps its own id. The mark rides through a re-cut.
@@ -902,14 +926,14 @@ Everything here came out of him cutting with it, in this order.
   `swatch · number · name · 8n · 0.30 × 0.30 in · ×` in 272 pixels, and the
   name was the only part of it that could shrink, so it was the only part that
   did: every piece read `C…`. Two lines now — the name on its own, the small
-  print beneath — and **a name takes as many lines as it needs**; Frank chose
-  that over capping it at two, on the grounds that a name he cannot read is no
-  use to him. A piece with no name says *unnamed* rather than showing a blank
+  print beneath — and **a name takes as many lines as it needs**; The designer chose
+  that over capping it at two, on the grounds that a name they cannot read is no
+  use to them. A piece with no name says *unnamed* rather than showing a blank
   line. About sixteen pixels a row.
 
 ### 22 August 2026 — made fast enough to use
 
-Frank, on opening it: *"it now runs VERY slowly when manipulating a sheet when
+The designer, on opening it: *"it now runs VERY slowly when manipulating a sheet when
 cutting, all jerky. COMPLETELY unusable."*
 
 - `[x]` ⚠️⚠️ **The page stopped stretching itself to sixteen thousand pixels.**

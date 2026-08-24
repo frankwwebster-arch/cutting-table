@@ -1,9 +1,9 @@
 /* Dropping things on the room.
  *
- * ⭐️ FRANK, 21 August 2026: "I honestly think a drag and drop upload function
+ * ⭐️ THE DESIGNER, 21 August 2026: "I honestly think a drag and drop upload function
  * is likely to be more useful" — more useful, that is, than pasting links at
- * it. He is right, and the reason is worth writing down: the files are already
- * on his disk. Drive and Dropbox both put a folder there, or hand you a ZIP;
+ * it. They are right, and the reason is worth writing down: the files are already
+ * on their disk. Drive and Dropbox both put a folder there, or hand you a ZIP;
  * the shortest path from that to a cut piece is to pick the folder up and drop
  * it on the page. A link is a detour round the machine you are sitting at.
  *
@@ -154,7 +154,7 @@
       if (!depth) show(false);
     });
     window.addEventListener("drop", function (e) {
-      // ⚠️ FRANK, 22 August 2026: dragging a component's name onto a piece in
+      // ⚠️ THE DESIGNER, 22 August 2026: dragging a component's name onto a piece in
       // Match "always seems to serve an error code (even though it also
       // appears to work!)". It did both. dragenter and dragover already asked
       // whether the drag carried FILES; this one did not, so a text/plain drag

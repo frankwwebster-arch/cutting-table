@@ -144,7 +144,7 @@ $PY check/names_across_a_recut.py
 say "does the room guess a piece's kind from its size — and hold its tongue otherwise?"
 $PY check/guessing_the_kind.py
 
-# ⭐️⭐️ EVERY CONTROL SAYS WHAT IT DOES. Frank, 23 August 2026: "I don't, for
+# ⭐️⭐️ EVERY CONTROL SAYS WHAT IT DOES. The designer, 23 August 2026: "I don't, for
 # example, have any idea what 'straight to the table' means on the project
 # selection screen, so a hover tool or just in line text popup or whatever
 # explaining what all the features and buttons do would be very helpful. And
@@ -196,7 +196,7 @@ for want, where in ((r"data-tip[^>]*>Open<", "Open, on a project card"),
                     (r'id="fDel"[^>]*data-tip', "Set this piece aside")):
     check("%s explains itself" % where, re.search(want, js) is not None)
 
-# ⭐️ the one Frank named, and it must say where it goes
+# ⭐️ the one the designer named, and it must say where it goes
 m = re.search(r'data-tip="([^"]*)"[^>]*>Straight to the table', open("room/home.html").read())
 m = m or re.search(r"Straight to the table", open("room/home.html").read())
 tip = re.search(r"Skip the project page[^']*", open("room/home.html").read())
@@ -211,6 +211,65 @@ PY9
 # missing is worse than one with none, because every one of them shows as a
 # broken image. ⚠️ The pictures are of the DEMONSTRATION sheet, drawn by the
 # tool out of nothing: no game's artwork may ever appear in this repository.
+# ⭐️⭐️ NOTHING HERE NAMES A GAME OR A PERSON, AND THIS IS WHAT KEEPS IT THAT
+# WAY. The rule at the top of CLAUDE.md is that the room knows nothing about
+# any one game; the names crept in anyway, in the explanations of WHY a rule is
+# the way it is, because that is where the evidence for it came from. Taking
+# them out afterwards took three passes and still missed one that had wrapped
+# across a line break. So the checking is done here, once, on every file the
+# repository actually holds — and it is the same shape as every other rule in
+# this file: the point is not the ones already fixed, it is the next one.
+#
+# ⚠️ It searches the text with the LINE BREAKS TAKEN OUT, because that is how
+# the last one hid: a two-word name with the line ending between the words is
+# not that name at all as far as an ordinary search is concerned, and it sat
+# there through two passes that were both looking straight at it.
+say "nothing in here names a game, a publisher or a person"
+$PY - <<'PY13' || code=1
+import re
+import subprocess
+import sys
+
+bad = []
+# A publisher, its games, and the factions in them; and the owner's name. Add
+# to this rather than arguing with it: a word here costs nothing, and a name
+# in a public repository cannot be taken back once it is cloned.
+FORBIDDEN = [
+    "games workshop", "citadel", "white dwarf", "warhammer", "heroquest",
+    "man o war", "man o' war", "manowar", "blood bowl", "necromunda",
+    "gorkamorka", "battlefleet", "slaanesh", "khorne", "nurgle", "tzeentch",
+    "skaven", "bretonnian", "waaagh", "plague fleet", "sea of blood",
+    "sea of claws", "wizard marker", "chaos magic", "chaos experience",
+    "frank", "webster",
+]
+files = [f for f in subprocess.run(["git", "ls-files"], capture_output=True,
+                                   text=True).stdout.split()
+         if not f.endswith(".png")]
+for word in FORBIDDEN:
+    where = []
+    for f in files:
+        try:
+            t = open(f).read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        # ⚠️ THE LIST ITSELF IS NOT A BREACH OF THE LIST. Written without this,
+        # the check found all twenty-six of its own words in its own source and
+        # reported the repository as riddled with them. Cut the literal out of
+        # whichever file carries it, and go on searching the rest of that file
+        # — so a name really written in here is still caught.
+        t = re.sub(r"FORBIDDEN = \[.*?\n\]", "", t, flags=re.S)
+        flat = re.sub(r"[\s#*>|/_-]+", " ", t).lower()
+        if word in flat:
+            where.append(f)
+    if where:
+        bad.append(word)
+        print("  WRONG %r is back, in %s" % (word, ", ".join(where)))
+if not bad:
+    print("  ok   no game, publisher or person is named anywhere in the %d "
+          "files this repository holds" % len(files))
+sys.exit(1 if bad else 0)
+PY13
+
 say "the guide, and its pictures"
 $PY - <<'PY10' || code=1
 import os
@@ -360,7 +419,7 @@ else
 fi
 
 # ⭐️ SHAPES KEPT, AND KEPT BESIDE THE PROJECTS RATHER THAN INSIDE ONE.
-# Frank, 23 August 2026: "I will need to cut a number of pieces that are
+# The designer, 23 August 2026: "I will need to cut a number of pieces that are
 # different, but also EXACTLY the same shape — I only want to create that
 # shape mask ONCE… and perhaps use that between projects (eg one dungeon game
 # and another)." So the shelf is a file in the room's home, in inches, and nothing
@@ -429,7 +488,7 @@ code, still = ask({"what": "list"})
 check("and none of those reached the shelf", len(still.get("shapes") or []) == 1,
       len(still.get("shapes") or []))
 
-# ⭐️ FAVOURITED PER PROJECT, SEARCHABLE BETWEEN THEM. Frank, 23 August 2026:
+# ⭐️ FAVOURITED PER PROJECT, SEARCHABLE BETWEEN THEM. The designer, 23 August 2026:
 # "I'd like to be able to favourite specific shapes on a per project basis but
 # have that library searchable between projects (eg in one game I can review
 # shapes I favourited in another)." So the mark belongs to the project, not
@@ -507,9 +566,9 @@ if [ $code -ne 0 ] && [ -d "$TMP/shots" ]; then
   echo "the screenshots are in $keep — LOOK AT THEM."
 fi
 
-# ⭐️⭐️ A QUANTITY IS NOT A SET OF DESIGNS. Frank, 23 August 2026, on a game's
+# ⭐️⭐️ A QUANTITY IS NOT A SET OF DESIGNS. The designer, 23 August 2026, on a game's
 # supplements: "the contents of the supplements only gives generic
-# descriptions of ship cards" — one printed line naming a faction's ship
+# descriptions of ship cards" — one printed line naming a player's ship
 # templates where the box holds three differently named ships. Three real
 # components — and until it is broken up, Match can only give all three pieces
 # the same name, which is exactly what the game reading the manifest cannot
@@ -538,51 +597,51 @@ def call(path, body, method="POST"):
         return e.code, json.load(e)
 
 
-code, w = call("/wanted/import", {"text": "3 Serpent ship templates\n26 Wound counters",
+code, w = call("/wanted/import", {"text": "3 Long movement templates\n26 Damage counters",
                                   "group": "core"})
-line = [i for i in w["items"] if "Serpent" in i["name"]][0]
+line = [i for i in w["items"] if "Long movement" in i["name"]][0]
 check("a printed contents list comes in as one line for the three of them",
       line["qty"] == "3", line["qty"])
 
 # a piece cut and linked to that one line, the way Match leaves it
 man = os.path.join(tmp, "home", "the-supplement", "manifest.json")
 json.dump({"pieces": {
-    "ship_00": {"name": "Serpent ship templates", "wanted": line["id"]},
-    "ship_01": {"name": "the one I named myself", "wanted": line["id"]}}},
+    "tmpl_00": {"name": "Long movement templates", "wanted": line["id"]},
+    "tmpl_01": {"name": "the one I named myself", "wanted": line["id"]}}},
     open(man, "w"), indent=1)
 
 code, d = call("/wanted/split", {"id": line["id"],
-                                 "names": ["Serpent Rammer", "Serpent Slicer",
-                                           "Serpent Warship"]})
+                                 "names": ["Long template A", "Long template B",
+                                           "Long template C"]})
 made = d.get("made") or []
 check("it can be broken into the components it really stands for", len(made) == 3,
       [m["name"] for m in made])
 check("each one is a component in its own right, wanted once",
       all(m["qty"] == "1" for m in made), [m["qty"] for m in made])
 check("and each says which printed line it came out of",
-      all(m.get("from") == "Serpent ship templates" for m in made),
+      all(m.get("from") == "Long movement templates" for m in made),
       made[0].get("from") if made else "")
 check("the line it came from is gone, so nothing is counted twice",
-      not [i for i in d["items"] if i["name"] == "Serpent ship templates"])
+      not [i for i in d["items"] if i["name"] == "Long movement templates"])
 check("and the rest of the list is left alone",
-      [i["name"] for i in d["items"] if i["name"] == "Wound counters"] == ["Wound counters"])
+      [i["name"] for i in d["items"] if i["name"] == "Damage counters"] == ["Damage counters"])
 
 # ⚠️ the pieces that were tied to the old line must not be left pointing at
 # nothing — they follow, and the room says how many did
 kept = json.load(open(man))["pieces"]
 check("a piece already linked to it follows, rather than being left adrift",
-      kept["ship_00"]["wanted"] == made[0]["id"], kept["ship_00"])
+      kept["tmpl_00"]["wanted"] == made[0]["id"], kept["tmpl_00"])
 check("and the room says how many moved", d.get("moved") == 2, d.get("moved"))
 check("its name follows too, since the room is the one that put it there",
-      kept["ship_00"]["name"] == "Serpent Rammer", kept["ship_00"]["name"])
+      kept["tmpl_00"]["name"] == "Long template A", kept["tmpl_00"]["name"])
 # ⭐️ THE CAREFUL ONE. A name somebody typed is theirs, and nothing may
 # overwrite it — not even a tidy-up that is right about everything else.
 check("but a name somebody typed themselves is left exactly as it was",
-      kept["ship_01"]["name"] == "the one I named myself", kept["ship_01"]["name"])
+      kept["tmpl_01"]["name"] == "the one I named myself", kept["tmpl_01"]["name"])
 
 # and now each piece can be told apart by the thing that reads the manifest
 check("the pieces no longer share one name",
-      kept["ship_00"]["name"] != kept["ship_01"]["name"])
+      kept["tmpl_00"]["name"] != kept["tmpl_01"]["name"])
 
 code, no = call("/wanted/split", {"id": made[0]["id"], "names": ["only one"]})
 check("splitting into one component is refused, with a reason",
@@ -593,9 +652,9 @@ check("splitting something that is not on the list is refused, with a reason",
 
 # ⭐️ and the pay-off: a piece named by hand is FOUND by the component that was
 # split out for it, so one press ties them together
-json.dump({"pieces": {"ship_02": {"name": "Serpent Warship"}}}, open(man, "w"), indent=1)
+json.dump({"pieces": {"tmpl_02": {"name": "Long template C"}}}, open(man, "w"), indent=1)
 got = json.load(urllib.request.urlopen(API + "/wanted"))
-hit = [i for i in got["items"] if i["name"] == "Serpent Warship"]
+hit = [i for i in got["items"] if i["name"] == "Long template C"]
 check("a piece already named by hand is recognised by its new component",
       hit and hit[0]["state"] == "probably", hit[0]["state"] if hit else "no such item")
 code, conf = call("/wanted/confirm", {})
@@ -604,7 +663,7 @@ check("and one press ties them together", conf.get("confirmed") == 1, conf.get("
 sys.exit(1 if bad else 0)
 PY10
 
-# ⭐️⭐️ A DECK IS COUNTED; A COUNTER IS NOT. Frank, 23 August 2026: "build
+# ⭐️⭐️ A DECK IS COUNTED; A COUNTER IS NOT. The designer, 23 August 2026: "build
 # checklist counting deck against quantity — it's then my responsibility to
 # ensure I have the correct number of cards to fill each deck." Both arrive as
 # one line with a number on it and only a person can tell them apart, so the
@@ -648,12 +707,12 @@ def by(items, name):
 json.dump({"game": "nothing real", "note": "", "kinds": [], "groups": [], "items": []},
           open(os.path.join(tmp, "home", "the-supplement", "wanted.json"), "w"))
 json.dump({"pieces": {"c00": {"name": "Damage card 01"}, "c01": {"name": "Damage card 02"},
-                      "c02": {"name": "Damage card 03"}, "w00": {"name": "Wound counter"}}},
+                      "c02": {"name": "Damage card 03"}, "w00": {"name": "Damage counter"}}},
           open(os.path.join(tmp, "home", "the-supplement", "manifest.json"), "w"))
 
-code, d = call("/wanted/import", {"text": "24 Damage card\n26 Wound counter",
+code, d = call("/wanted/import", {"text": "24 Damage card\n26 Damage counter",
                                   "group": "core", "each": True})
-deck, counter = by(d["items"], "Damage card"), by(d["items"], "Wound counter")
+deck, counter = by(d["items"], "Damage card"), by(d["items"], "Damage counter")
 check("a pasted list can be told its lines are decks",
       deck["need"] == 24 and counter["need"] == 26, [deck["need"], counter["need"]])
 
@@ -666,7 +725,7 @@ check("and the checklist does not call the game done", d["summary"]["pct"] == 0,
       d["summary"]["pct"])
 
 code, d = call("/wanted/confirm")
-deck, counter = by(d["items"], "Damage card"), by(d["items"], "Wound counter")
+deck, counter = by(d["items"], "Damage card"), by(d["items"], "Damage counter")
 check("one press ties up every card of a deck whose name matches, not just one",
       d["confirmed"] == 4, d["confirmed"])
 check("a deck with some of its cards cut says how many, and is not done",
@@ -683,10 +742,10 @@ check("and the sum in actual pieces is given as well as in components",
 items = [{k: v for k, v in i.items() if k not in ("pieces", "guesses", "state", "need", "got")}
          for i in d["items"]]
 for i in items:
-    if i["name"] == "Wound counter":
+    if i["name"] == "Damage counter":
         i["each"] = False
 code, d = call("/wanted", {"items": items}, method="PUT")
-counter = by(d["items"], "Wound counter")
+counter = by(d["items"], "Damage counter")
 check("a counter set back to 'one is enough' is done with one piece",
       (counter["got"], counter["need"], counter["state"]) == (1, 1, "cut"),
       [counter["got"], counter["need"], counter["state"]])
@@ -700,7 +759,7 @@ check("nothing worked out is written back into the list on disk",
       not any(k in kept["items"][0] for k in ("need", "got", "state", "pieces")),
       sorted(kept["items"][0].keys()))
 
-# ⭐️⭐️ THE CHECK AGAINST THE CONTENTS LIST, AT THE END OF THE JOB. Frank, 24
+# ⭐️⭐️ THE CHECK AGAINST THE CONTENTS LIST, AT THE END OF THE JOB. The designer, 24
 # August 2026: "I want (once I've done my cutting work) to be able to run a
 # verification check against the original component index - a secondary check
 # to ensure we have every piece cut."
@@ -734,7 +793,7 @@ check("and it is NOT reported as missing, which would be a different job",
 # or a piece cut from the wrong place. w00 is tied to the counter; c00-c02 are
 # tied to the deck; the loose one is the finding.
 json.dump({"pieces": {"c00": {"name": "Damage card 01"}, "c01": {"name": "Damage card 02"},
-                      "c02": {"name": "Damage card 03"}, "w00": {"name": "Wound counter"},
+                      "c02": {"name": "Damage card 03"}, "w00": {"name": "Damage counter"},
                       "zz": {"name": "something nothing asked for"}}},
           open(os.path.join(tmp, "home", "the-supplement", "manifest.json"), "w"))
 Image.new("RGBA", (300, 420), (160, 120, 120, 255)).save(os.path.join(pdir, "zz.png"))
@@ -756,19 +815,19 @@ for i in items:
     if i["name"] == "Damage card":
         i["each"] = False                       # a deck told one is enough
         i["kind"] = "deck"
-    if i["name"] == "Wound counter":
+    if i["name"] == "Damage counter":
         i["kind"] = "counter"                   # 26 of one design, quite right
 code, d = call("/wanted", {"items": items}, method="PUT")
 rv = json.load(urllib.request.urlopen(API + "/review"))
 names = [x["name"] for x in rv["loose_decks"]]
 check("a deck the list counts as one card is reported, before the totals are trusted",
       names == ["Damage card"], names)
-# ⚠️⚠️ THE NOISE TEST, and the one that matters: "26 Wound counters" has the
+# ⚠️⚠️ THE NOISE TEST, and the one that matters: "26 Damage counters" has the
 # SAME shape — a quantity of 26 wanting one piece — and is exactly right,
 # because one design is printed twenty-six times. Flag the number rather than
 # the kind and every counter in the game becomes a finding.
 check("but a counter printed twenty-six times is NOT, because one is enough",
-      "Wound counter" not in names, names)
+      "Damage counter" not in names, names)
 
 # ⚠️ WITH NO CONTENTS LIST, EVERY PIECE IS AN ORPHAN — which is not a finding,
 # it is the absence of a list. The checklist has always been optional and this
@@ -789,7 +848,7 @@ check("and does not pretend to be printed at true size, having no pictures on it
 sys.exit(1 if bad else 0)
 PY11
 
-# ⭐️⭐️ THE THREE FILES THAT CANNOT BE REBUILT KEEP THEIR OWN HISTORY. Frank,
+# ⭐️⭐️ THE THREE FILES THAT CANNOT BE REBUILT KEEP THEIR OWN HISTORY. The designer,
 # 24 August 2026, after a bug of the room's own threw two components away and
 # git was what got them back: "I'm afraid this means nothing to me - it needs
 # to be automated if it needs to happen." A safety net somebody has to
@@ -890,7 +949,7 @@ sys.exit(1 if bad else 0)
 PY12
 
 # ------------------------------------------------------ taking it away
-# ⭐️ The way out has to be plain, and it has to carry the warning. Frank, 22
+# ⭐️ The way out has to be plain, and it has to carry the warning. The designer, 22
 # August 2026: "the cutting tool should remain relatively generic"; and "some
 # kind of warning that this is personal use, copyright in all things you cut is
 # not your own — a real disclaimer."
@@ -987,7 +1046,7 @@ PY5
 # disk. That is fault 1 by another door: the work is on disk or it is not
 # work. So a table holding an unsaved edit is asked about, not overruled.
 # ------------------------------------------- the room offering a kind
-# ⭐️ Frank, 22 August 2026: "naming is always going to be the fiddly bit here
+# ⭐️ the designer, 22 August 2026: "naming is always going to be the fiddly bit here
 # as it will tend to rely on 3rd party lists etc." The measurement rules
 # themselves are checked above without a browser; what is checked here is that
 # the guess actually REACHES the page, and that accepting one writes to disk

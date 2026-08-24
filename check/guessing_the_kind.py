@@ -1,6 +1,6 @@
 """⭐️ GUESSING WHAT A PIECE IS, FROM ITS PRINTED SIZE AND ITS SHAPE.
 
-Frank, 22 August 2026, having cut a sheet and named it by hand: "naming is
+The designer, 22 August 2026, having cut a sheet and named it by hand: "naming is
 always going to be the fiddly bit here as it will tend to rely on 3rd party
 lists etc, or rules manuals which may be tricky to comprehend." Cutting a
 sheet is one press; saying what each of two hundred pieces IS is the evening.
@@ -60,7 +60,7 @@ def main():
     check("a ruler, and a long thin range stick",
           [kind_of(8.0, 0.6), kind_of(11.0, 1.5)] == ["ruler"] * 2)
     # ⚠️ THIS ONE CAME OFF A REAL GAME. The rule as first written called two
-    # ICE FIELDS rulers: 1.89 x 6.79in, long and thin and entirely innocent —
+    # TERRAIN TILES rulers: 1.89 x 6.79in, long and thin and entirely innocent —
     # but ragged blobs of terrain filling three quarters of their box, not
     # printed strips. A ruler is SOLID; that is the whole difference.
     check("but a long ragged blob of terrain is not a ruler",
@@ -80,7 +80,7 @@ def main():
 
     print("\na small chit is a counter whatever its corners are doing")
     # ⭐️ THERE WERE TWO RULES HERE ONCE — "counter" for a small square and
-    # "token" for a small disc. Frank, shown the result: "not sure I know the
+    # "token" for a small disc. The designer, shown the result: "not sure I know the
     # difference between a token and a counter tbh!" There is not a firm one,
     # and a rule that asks somebody to make a distinction they cannot make has
     # failed at the only job this file has, which is taking a decision OUT of

@@ -446,9 +446,9 @@
      count, the size and the × all refuse, and every piece read `C…`.
      Two rows instead of one — the name on its own line, the small print
      beneath it — and a name takes as many lines as it needs. Nothing in
-     this list is ever hidden now; that was Frank's call, over capping it
-     at two lines, on the grounds that a name he cannot read is no use to
-     him. Costs about sixteen pixels a row. */
+     this list is ever hidden now; that was the designer's call, over capping it
+     at two lines, on the grounds that a name they cannot read is no use to
+     them. Costs about sixteen pixels a row. */
   .piece {
     display: grid;
     grid-template-columns: 14px auto minmax(0, 1fr) auto;
@@ -1038,7 +1038,7 @@
   var ghosts = null;          // where a repeat would put its copies
   var shelf = [];             // shapes kept to be laid down again
   var laying = null;          // the one the pointer is carrying, if any
-  /* ⭐️ THE SHAPE IS WHAT IS KEPT; THE SIZE IS ONLY AN OFFER. Frank, 23
+  /* ⭐️ THE SHAPE IS WHAT IS KEPT; THE SIZE IS ONLY AN OFFER. The designer, 23
      August 2026: "the size of a shape is agnostic, surely, as I can just
      scale a shape whilst retaining its shape?" Quite so — the same door
      outline serves a game that prints it an inch and a half wide and one
@@ -1176,7 +1176,7 @@
   }
 
   /* Anything stored back when colours could repeat gets sorted out on the
-     way in, rather than leaving Frank to spot it. */
+     way in, rather than leaving the designer to spot it. */
   function recolour() {
     var seen = {}, mended = 0;
     pieces.forEach(function (p, i) {
@@ -2759,11 +2759,11 @@
     }
   }, { passive: false });
 
-  /* ⌨️⚠️⚠️ TYPING IS NOT A SHORTCUT. Frank, 21 August 2026: "given the large
+  /* ⌨️⚠️⚠️ TYPING IS NOT A SHORTCUT. The designer, 21 August 2026: "given the large
      number of keyboard shortcuts, it can be difficult sometimes to type a file
      name or description without triggering a bunch of shortcuts."
 
-     He is right and it was plainly broken: this handler is on the WINDOW, and
+     They are right and it was plainly broken: this handler is on the WINDOW, and
      the rail has a name box and a note box on it. Typing "Treasure chest" put
      the tool into Rectangle (r), Ellipse (e), Adjust (a) and Outline (t) on
      the way past, and a Backspace in the box deleted a NODE.
@@ -3361,7 +3361,7 @@
   }
 
   /* The field opens filled in with what the sheet would say the line is at
-     the scale it is on now. Frank types what it really is, and the
+     the scale it is on now. The designer types what it really is, and the
      difference between the two is the whole correction. */
   function askScale() {
     if (!ruler) { elScaleAsk.hidden = true; return; }
@@ -3687,7 +3687,7 @@
 
   /* ---------------------------------------------------------- shapes kept
 
-     ⭐️ Frank, 23 August 2026, on a game printed on one die: "I will need to cut a
+     ⭐️ The designer, 23 August 2026, on a game printed on one die: "I will need to cut a
      number of pieces that are different, but also EXACTLY the same shape —
      I only want to create that shape mask ONCE." Whole games are printed on
      one die: every door the same rectangle, every room tile the same square,
@@ -3860,7 +3860,7 @@
     var v = parseFloat(elLayH.value);
     if (laying && v > 0) { setLaySize(v * laying.w / laying.h); draw(); }
   });
-  /* ⭐️⭐️ THE SHAPE AS THE SOURCE OF TRUTH FOR A WHOLE GAME. Frank, 23
+  /* ⭐️⭐️ THE SHAPE AS THE SOURCE OF TRUTH FOR A WHOLE GAME. The designer, 23
      August 2026: "Say I cut a corridor shape from [a game's] core box, that
      should become the ultimate source of truth for the exact dimensions of all
      [that game's] corridor pieces, regardless of where they come from. So when
@@ -3868,7 +3868,7 @@
      articles, I can somehow ensure that they will all match the
      source of truth's size exactly?"
 
-     He is right that this is the real prize, and it is NOT the same as
+     They are right that this is the real prize, and it is NOT the same as
      scaling a shape. A scan from a magazine is at whatever scale the scanner
      and the page gave it; laying a 4-inch corridor on it in the sheet's
      assumed 300dpi would put a 4-inch outline over artwork that is printed
@@ -3941,7 +3941,7 @@
   });
 
   /* ⭐️ WHAT THIS GAME USES, WITHOUT LOSING WHAT EVERY OTHER GAME HAS.
-     Frank, 23 August 2026: "I'd like to be able to favourite specific shapes
+     The designer, 23 August 2026: "I'd like to be able to favourite specific shapes
      on a per project basis but have that library searchable between projects
      (eg in one game I can review shapes I favourited in another)."
 

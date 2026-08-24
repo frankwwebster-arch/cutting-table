@@ -182,7 +182,7 @@ Things that make it quicker:
   every card in the deck at it. ⭐️ Set that back piece's **Kind** to *card
   back* and the list stops offering you all two hundred pieces.
 - **How many the game needs** — for one design used over and over, like the
-  Power card that appears twenty times in a deck. You still cut it **once**.
+  one card that appears twenty times in a deck. You still cut it **once**.
 - **Turn it** — quarter turns, applied everywhere the piece is shown. The
   picture on disk is never rewritten, so you can change your mind for ever.
 
@@ -199,10 +199,10 @@ Press **Paste the contents list** and type in the box's own contents list, one
 component to a line:
 
 ```
-26 Wound counters
+26 Damage counters
 Turning template x2
-Elf Range Ruler
-9 | Sea Monster Templates | template
+Long range ruler
+9 | Large templates | template
 ```
 
 Against each component the room then says **cut**, **probably cut** (a name
@@ -210,8 +210,8 @@ matches, but nothing is joined up — press *Confirm the likely links*) or **not
 yet**, and gives you a percentage.
 
 ⭐️⭐️ **One line, one piece — unless every one is different.** A sheet prints
-twenty-six identical wound counters and the game repeats one for ever, so *26
-Wound counters* wants **one** piece cut. But *24 Damage cards* is twenty-four
+twenty-six identical damage counters and the game repeats one for ever, so *26
+Damage counters* wants **one** piece cut. But *24 Damage cards* is twenty-four
 different pieces of card. Nothing in a printed contents list tells those apart,
 so each line has an **all different** tick and only you can set it. Until you
 do, a deck of thirty-two counts as done the moment you cut one card of it.

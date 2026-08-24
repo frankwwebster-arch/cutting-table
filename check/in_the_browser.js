@@ -290,7 +290,7 @@ const SHAPE = `(function () {
     }
 
     // ------------------------------------ a shape kept, and laid down again
-    // ⭐️ Frank, 23 August 2026, on a game printed on one die: "I will need to cut a
+    // ⭐️ the designer, 23 August 2026, on a game printed on one die: "I will need to cut a
     // number of pieces that are different, but also EXACTLY the same shape —
     // I only want to create that shape mask ONCE." The shape is kept off one
     // sheet and laid down on ANOTHER one, twice, because that crossing is the
@@ -327,7 +327,7 @@ const SHAPE = `(function () {
       check("and the room has it, not just the browser", shapes.length === 2,
             shapes.map((s) => s.name));
 
-      // ⭐️ FAVOURITED PER GAME, SEARCHABLE ACROSS THEM. Frank, 23 August
+      // ⭐️ FAVOURITED PER GAME, SEARCHABLE ACROSS THEM. The designer, 23 August
       // 2026: "in [one game] I can review shapes I favourited in [another]
       // project."
       // The other game's door is on the same shelf and must NOT be in the
@@ -414,7 +414,7 @@ const SHAPE = `(function () {
             Math.abs(on.pieces[0].pts[0][0] - on.pieces[1].pts[0][0]) > 30,
             on.pieces.map((pc) => pc.pts[0]));
 
-      // ⭐️ THE SIZE IS AN OFFER, NOT A RULE. Frank, 23 August 2026: "the size
+      // ⭐️ THE SIZE IS AN OFFER, NOT A RULE. The designer, 23 August 2026: "the size
       // of a shape is agnostic, surely, as I can just scale a shape whilst
       // retaining its shape?" So it can be laid at another size, and the
       // shape must not be distorted by the change.
@@ -444,7 +444,7 @@ const SHAPE = `(function () {
                 landed: [+w.toFixed(2), +h.toFixed(2)] });
       }
 
-      // ⭐️⭐️ THE SHAPE AS THE SOURCE OF TRUTH FOR A GAME. Frank, 23 August
+      // ⭐️⭐️ THE SHAPE AS THE SOURCE OF TRUTH FOR A GAME. The designer, 23 August
       // 2026: a corridor cut from a game's core box "should become the
       // ultimate source of truth for the exact dimensions of all [that game's]
       // corridor pieces, regardless of where they come from". A kept shape is
@@ -478,7 +478,7 @@ const SHAPE = `(function () {
             !(await page.val(`!!document.querySelector("#shelf .kept.on")`)));
     }
 
-    // ⭐️ A SHAPE OFF A PIECE ALREADY CUT. Frank, 23 August 2026: "I should be
+    // ⭐️ A SHAPE OFF A PIECE ALREADY CUT. The designer, 23 August 2026: "I should be
     // able to save a shape cut from a piece already cut - or is that too
     // difficult?" It is not: the outline it was cut from is still on file, so
     // the line that was drawn is lifted rather than traced back out of the
@@ -506,7 +506,7 @@ const SHAPE = `(function () {
             (off.stars || []).indexOf(PROJECT) >= 0, off.stars);
     }
 
-    // ⭐️ AND IN THE BROWSER: the explanation has to actually appear. Frank
+    // ⭐️ AND IN THE BROWSER: the explanation has to actually appear. The designer
     // asked for "a hover tool or just in line text popup or whatever"; both
     // are here, and both are checked, because a tip nobody can see is the
     // same as no tip at all — which is exactly what happened first time out,
@@ -538,14 +538,14 @@ const SHAPE = `(function () {
 
     // ------------------------------------- the room's own pages, after a cut
     if (BED) {
-      // ⚠️ FRANK, 22 August 2026: dragging a component's name onto a piece
+      // ⚠️ THE DESIGNER, 22 August 2026: dragging a component's name onto a piece
       // "always seems to serve an error code (even though it also appears to
       // work!)". The whole window is a file-drop target so that a dropped PDF
       // cannot navigate the page away; dragenter and dragover asked whether
       // the drag carried FILES and the drop handler did not, so a drag from
       // one thing on the page to another was taken for an import, found no
       // files, and complained — after Match had already done the job.
-      /* ⭐️ THE SHEET LIST OPENS ON THE WORK, AND REMEMBERS. Frank, 23 August
+      /* ⭐️ THE SHEET LIST OPENS ON THE WORK, AND REMEMBERS. The designer, 23 August
          2026: "the default view should be 'To outline', not 'All'… Otherwise
          I waste time wading through lots of cut and filed sheets before I
          find my next sheet to cut. Also if a sheet is marked as finished even
@@ -653,7 +653,7 @@ const SHAPE = `(function () {
       check("a name dropped on a piece raises no complaint of its own",
             asked.length === 0, asked);
 
-      /* ⭐️ EVERY LIST IN THE ROOM FOLDS. Frank, 23 August 2026: first "in
+      /* ⭐️ EVERY LIST IN THE ROOM FOLDS. The designer, 23 August 2026: first "in
          Match, it would be very helpful to be able to collapse sections eg
          for [the] Core Box, [a supplement, another supplement]… Or just some
          other way to stop me having to scroll all the way past one supplement
@@ -734,7 +734,7 @@ const SHAPE = `(function () {
         await sleep(350);
       }
 
-      /* ⚠️⚠️ A SET IS NOT "THE ROWS THAT HAPPEN TO SIT TOGETHER". Frank, 23
+      /* ⚠️⚠️ A SET IS NOT "THE ROWS THAT HAPPEN TO SIT TOGETHER". The designer, 23
          August 2026: "on #pieces the collapse/expand mechanic is going awry,
          just not working correctly, seems to be segmenting the core box over
          and over."
@@ -784,12 +784,12 @@ const SHAPE = `(function () {
               heads.length === new Set(heads).size, heads);
       }
 
-      /* ⚠️⚠️ ANYTHING THAT ADDS A ROW MUST OPEN THE SET IT LANDS IN. Frank,
+      /* ⚠️⚠️ ANYTHING THAT ADDS A ROW MUST OPEN THE SET IT LANDS IN. The designer,
          24 August 2026: "BUG - adding a new component does not work, so far
-         as I can tell - I just tried to create a new Chaos Experience Reward
+         as I can tell - I just tried to create a new Reward
          counter, typed in the name, clicked add, and nothing happened." It
          had worked: the component was on the disk and in the table. It landed
-         in a set he had folded, so the row he was watching for was hidden the
+         in a set they had folded, so the row they were watching for was hidden the
          moment it appeared. */
       await page.go(`${ROOM}/p/${PROJECT}/?tab=wanted`);
       const shutFirst = await page.val(`(function () {
@@ -797,7 +797,7 @@ const SHAPE = `(function () {
         h.click();
         return h.dataset.foldHead; })()`);
       await sleep(400);
-      answer = "Chaos Experience Reward counter";
+      answer = "Reward counter";
       asked.length = 0;
       await page.val(`(function () { var g = document.getElementById("wGroup");
         g.value = ${JSON.stringify("")}; return true; })()`);
@@ -809,7 +809,7 @@ const SHAPE = `(function () {
           function (r) { return r.offsetParent !== null; });
         var mine = rows.filter(function (r) {
           var i = r.querySelector('input[data-k="name"]');
-          return i && i.value === "Chaos Experience Reward counter"; });
+          return i && i.value === "Reward counter"; });
         return { seen: mine.length, shownRows: rows.length,
                  hidden: document.querySelectorAll("table.wanted tbody tr[hidden]").length }; })()`);
       check("a component added into a folded set is not hidden by the fold",
@@ -820,7 +820,7 @@ const SHAPE = `(function () {
         var rows = document.querySelectorAll("table.wanted tbody tr:not(.ghead)");
         for (var i = 0; i < rows.length; i++) {
           var inp = rows[i].querySelector('input[data-k="name"]');
-          if (inp && inp.value === "Chaos Experience Reward counter") {
+          if (inp && inp.value === "Reward counter") {
             rows[i].querySelector("[data-del]").click(); return true; }
         }
         return false; })()`);
@@ -863,7 +863,7 @@ const SHAPE = `(function () {
         return { row: t(".prow .pic img") }; })()`);
       check("the piece's row in the naming list is turned with it",
             /rotate\(90deg\)|matrix\(0,\s*1,\s*-1,\s*0/.test(turns.row || ""), turns);
-      /* ⭐️ THE ROOM OFFERS A KIND RATHER THAN ASKING FOR ONE. Frank, 22
+      /* ⭐️ THE ROOM OFFERS A KIND RATHER THAN ASKING FOR ONE. The designer, 22
          August 2026: "naming is always going to be the fiddly bit here as it
          will tend to rely on 3rd party lists etc, or rules manuals which may
          be tricky to comprehend." The measurement rules are checked on their
@@ -926,12 +926,12 @@ const SHAPE = `(function () {
       });
       fs.unlinkSync(spare);
 
-      /* ⭐️ A LOOK-ALIKE IS NO USE AT FORTY-SIX PIXELS. Frank, 23 August 2026:
+      /* ⭐️ A LOOK-ALIKE IS NO USE AT FORTY-SIX PIXELS. The designer, 23 August 2026:
          "if platform is suggesting '[n] pieces look like this one' it's
          incredibly difficult to see them in the tiny viewport it provides -
          can you make them appear larger/preview on hover (I don't want to
          click away to another page) just to make it easier to see if there is
-         any differentiation?" He is being asked whether two pieces are the
+         any differentiation?" They are being asked whether two pieces are the
          same design and given a stamp to answer it from.
 
          Two copies of one piece make a look-alike pair, dropped into the
@@ -996,7 +996,7 @@ const SHAPE = `(function () {
       check("and it goes when the pointer does",
             !(await page.val(`(function () { var b = document.querySelector(".bigpeek");
               return !!b && b.classList.contains("on"); })()`)));
-      /* ⭐️ THE BOARD CAN BE HELD TO ONE BOX. Frank, 24 August 2026: "in
+      /* ⭐️ THE BOARD CAN BE HELD TO ONE BOX. The designer, 24 August 2026: "in
          Match, I should have the option to limit the display when
          de-selecting the tickbox 'only pieces with no component yet' to
          pieces cut from either core or one of the supplements… otherwise
@@ -1025,7 +1025,7 @@ const SHAPE = `(function () {
         await sleep(500);
         return page.val(`document.querySelectorAll(".mcell").length`);
       }
-      /* ⭐️ AND THE PIECES LIST WORKS IN BOXES TOO. Frank, 24 August 2026:
+      /* ⭐️ AND THE PIECES LIST WORKS IN BOXES TOO. The designer, 24 August 2026:
          "the Pieces view is now pretty useless, and very frustrating to use.
          I don't want to go sheet by sheet, I'm much more likely to want to
          see core or supplement pieces - the random sheet
@@ -1062,7 +1062,7 @@ const SHAPE = `(function () {
       await boardWith("");
 
 
-      /* ⭐️ THIRTY-TWO CARDS, ONE COMPONENT, ONE PRESS. Frank, 24 August 2026:
+      /* ⭐️ THIRTY-TWO CARDS, ONE COMPONENT, ONE PRESS. The designer, 24 August 2026:
          "I'd like a bulk apply function - if I can select all 32 cards in a
          deck, I should be able to apply the correct card deck label to them
          all in one go."
@@ -1114,7 +1114,7 @@ const SHAPE = `(function () {
       // ⚠️ THE CAREFUL ONE, and the same rule as everywhere else in the room
       check("and a name somebody typed themselves is left exactly as it was",
             (twinB.data || {}).name === "I typed this myself", (twinB.data || {}).name);
-      /* ⭐️ A CARD'S BACK IS ANOTHER PIECE. Frank, 24 August 2026: "when I'm in
+      /* ⭐️ A CARD'S BACK IS ANOTHER PIECE. The designer, 24 August 2026: "when I'm in
          the process of cutting a deck of cards, how do I set the correct back
          to them? Note that it's not always the same back within the same
          set." Cut the back once, point the whole deck at it in one press. */
@@ -1122,7 +1122,7 @@ const SHAPE = `(function () {
             !!(twinA.data || {}).back && (twinA.data || {}).back === (twinB.data || {}).back,
             [(twinA.data || {}).back, (twinB.data || {}).back]);
 
-      /* ⭐️ EVERYTHING A PIECE HAS BEEN CALLED, TAKEN OFF IT. Frank, 24 August
+      /* ⭐️ EVERYTHING A PIECE HAS BEEN CALLED, TAKEN OFF IT. The designer, 24 August
          2026: "give me a single button when viewing any single piece to
          remove all the metadata (name, component, kind etc) - just strip back
          to all those fields being unfilled." */
@@ -1142,7 +1142,7 @@ const SHAPE = `(function () {
       check("and the piece itself is still there to fill in again",
             !!bare.stem, bare.stem);
 
-      /* ⭐️ THE GREEN TICK SHOWS WHAT IT IS VOUCHING FOR. Frank, 24 August
+      /* ⭐️ THE GREEN TICK SHOWS WHAT IT IS VOUCHING FOR. The designer, 24 August
          2026: "if a piece has been marked as cut with a green tick… can you
          make it appear on hover over the green CUT pill?" */
       await page.go(`${ROOM}/p/${PROJECT}/?tab=wanted`);
@@ -1165,7 +1165,7 @@ const SHAPE = `(function () {
         await sleep(300);
       }
 
-      /* ⭐️⚠️ EVERY WORRY THE ROOM RAISES MUST HAVE AN ANSWER. Frank, 24 August
+      /* ⭐️⚠️ EVERY WORRY THE ROOM RAISES MUST HAVE AN ANSWER. The designer, 24 August
          2026: "some of the pieces I've cut are flagged as RUNS OFF THE SHEET.
          That's a reasonable thing to flag, but I don't see a way to remove
          that flag (because it doesn't matter), and I don't mind about the
@@ -1241,7 +1241,7 @@ const SHAPE = `(function () {
       fs.unlinkSync(speck);
 
       /* ⭐️ A CARD BACK SAYS SO, AND THEN IT IS THE ONLY THING IN THE LIST.
-         Frank, 24 August 2026: "helpful if a card back element can be flagged
+         The designer, 24 August 2026: "helpful if a card back element can be flagged
          as such, and then ONLY card backs appear in the ITS BACK dropdown, or
          that really is an exhaustive process." On a real game that list is two
          hundred pieces long and perhaps six of them are backs. */
@@ -1274,7 +1274,7 @@ const SHAPE = `(function () {
       check("with every piece still one tick away", backs.wide > backs.narrow.length,
             [backs.narrow.length, backs.wide]);
 
-      /* ⭐️⭐️ THE BOX BEING WORKED THROUGH COMES FIRST. Frank, 24 August 2026:
+      /* ⭐️⭐️ THE BOX BEING WORKED THROUGH COMES FIRST. The designer, 24 August 2026:
          "if I'm working with one supplement's elements, there doesn't seem to
          be a need to include all the possible choices for the core and the
          other boxes when I'm manually using the THIS IS THE COMPONENT dropdown?"
@@ -1391,7 +1391,7 @@ const SHAPE = `(function () {
       await page.shot("turned.png");
     }
 
-    /* ⭐️⚠️ A ROOM RUNNING OLDER CODE THAN ITS PAGES MUST SAY SO. Frank, 23
+    /* ⭐️⚠️ A ROOM RUNNING OLDER CODE THAN ITS PAGES MUST SAY SO. The designer, 23
        August 2026, pressing a button built that afternoon: "when I press
        'Split it' I get a 'no such call' error." The room had been open for
        hours; its pages are read off the disk every time, its Python is

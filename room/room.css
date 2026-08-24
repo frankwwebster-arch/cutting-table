@@ -186,7 +186,7 @@ table.wanted tr.ghead .fold { text-transform: inherit; letter-spacing: inherit; 
 #mList { overflow-y: auto; max-height: 72vh; padding-bottom: 30px; }
 #mList.over { background: #1a2330; box-shadow: inset 0 0 0 2px var(--brass-d); }
 /* ⭐️ EVERY LIST IN THE ROOM FOLDS, AND THEY ALL LOOK THE SAME DOING IT.
-   Frank, 23 August 2026: "I want the same ability to collapse and expand
+   The designer, 23 August 2026: "I want the same ability to collapse and expand
    core/expansions/extras etc throughout the platform (eg in Checklist,
    sheets, match, pieces etc)". One class, one arrow, one count — a heading
    is a button, so it has to shed the look every other button here has. */
@@ -285,7 +285,7 @@ table.wanted tr.ghead .fold { text-transform: inherit; letter-spacing: inherit; 
 .dupbar .pics { display: flex; gap: 6px; flex-wrap: wrap; max-width: 60%; }
 /* ⭐️ 46px was not enough to answer the question the bar is asking — whether
    two pieces really are the same design. Twice the size, and a preview under
-   the pointer for the real look. Frank, 23 August 2026. */
+   the pointer for the real look. The designer, 23 August 2026. */
 .dupbar .pics img {
   width: 92px; height: 92px; object-fit: contain; background: #0A0F14;
   border-radius: 3px; padding: 2px; cursor: zoom-in;
@@ -295,7 +295,7 @@ table.wanted tr.ghead .fold { text-transform: inherit; letter-spacing: inherit; 
 /* ⭐️ a run of look-alikes kept ON PURPOSE — several designs of one component
    — is not a warning, so it does not wear the warning's colours */
 /* ⭐️ a piece SET ASIDE is still listed, in its own place, so nothing is ever
-   out of sight — it is only dimmed and labelled. Frank's call: "binning a
+   out of sight — it is only dimmed and labelled. The designer's call: "binning a
    piece shouldn't be destructive". */
 .prow.aside .pic, .prow.aside .who { opacity: 0.45; }
 .prow.aside { background: repeating-linear-gradient(135deg,
@@ -378,7 +378,7 @@ ol.how li span { font-size: 12.5px; color: var(--dim); line-height: 1.45; }
 .linkdetail summary { cursor: pointer; }
 
 /* ---- closing the room, and the sign left on the door
-   ⭐️ Frank does not want to touch a terminal to stop the room, so the room
+   ⭐️ the designer does not want to touch a terminal to stop the room, so the room
    stops itself. The link is deliberately last in the bar and quieter than
    the rest: it is not something to hit by accident, but nothing is lost if
    you do — everything cut and named is on the disk. */
@@ -416,7 +416,7 @@ header.bar nav a.closelink:hover { color: var(--bad); opacity: 1; }
 #tab-export code { background: var(--panel-2); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
 
 /* ---- guessing the kind from the size
-   ⭐️ Naming is the expensive part, not cutting — Frank, 22 August 2026 — so
+   ⭐️ Naming is the expensive part, not cutting — the designer, 22 August 2026 — so
    the room offers a kind rather than asking for one. It is an OFFER and wears
    the offer's colours, not the warning's: nothing has gone wrong here, and
    ignoring the whole bar must be a perfectly ordinary thing to do. */
@@ -440,7 +440,7 @@ header.bar nav a.closelink:hover { color: var(--bad); opacity: 1; }
 .kguess .spacer { flex: 1; }
 
 /* ---------------------------------------------------------------- tips
-   ⭐️ Frank, 23 August 2026: "I don't, for example, have any idea what
+   ⭐️ the designer, 23 August 2026: "I don't, for example, have any idea what
    'straight to the table' means on the project selection screen." Every
    control carries a plain sentence in `data-tip` (or in a plain `title`);
    see room/tips.js, which brings its own look with it because the cutting
@@ -462,7 +462,7 @@ header.bar nav a.closelink:hover { color: var(--bad); opacity: 1; }
 .staleroom b { color: #fff; }
 
 /* ⭐️ The piece under the pointer, at a size worth looking at, without
-   leaving the page — see `Peek` in project.html. Frank, 23 August 2026:
+   leaving the page — see `Peek` in project.html. The designer, 23 August 2026:
    "incredibly difficult to see them in the tiny viewport it provides". */
 .bigpeek {
   position: fixed;

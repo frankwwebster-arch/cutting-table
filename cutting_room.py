@@ -81,14 +81,14 @@ import cut as cutter                                         # noqa: E402
 Image.MAX_IMAGE_PIXELS = None
 
 # ⭐️⚠️ WHEN THIS COPY OF THE ROOM STARTED RUNNING, and what the code on the
-# disk says now. Frank, 23 August 2026, on pressing a button built that same
+# disk says now. The designer, 23 August 2026, on pressing a button built that same
 # afternoon: "when I press 'Split it' I get a 'no such call' error."
 #
 # The room had been open for hours. Its PAGES are read off the disk on every
 # request, so the new button was there; its PYTHON is whatever was loaded when
 # the process started, so the route behind the button was not. A new button
 # that answers "no such call" looks like a bug in the button, and the one
-# thing that would have told him — that the room itself is out of date — was
+# thing that would have told them — that the room itself is out of date — was
 # the one thing nothing said.
 #
 # So the room compares its own source against the clock it started at and says
@@ -117,7 +117,7 @@ SMOOTH = 0.5                              # var smooth in the template
 CORNER = math.cos(52 * math.pi / 180)     # var CORNER in the template
 
 # ⭐️ "card back" earns its place among the kinds rather than being a tick of
-# its own. Frank, 24 August 2026: "helpful if a card back element can be
+# its own. The designer, 24 August 2026: "helpful if a card back element can be
 # flagged as such, and then ONLY card backs appear in the ITS BACK dropdown, or
 # that really is an exhaustive process." A back IS a piece — cut once, pointed
 # at by every card in the deck (fault 46) — so what it needs is a way of saying
@@ -387,7 +387,7 @@ def suggest_outlines(rgb, mask_path=None):
 
 # ------------------------------------------------- guessing what a piece is
 
-# ⭐️ NAMING IS THE EXPENSIVE PART, NOT CUTTING. Frank, 22 August 2026, having
+# ⭐️ NAMING IS THE EXPENSIVE PART, NOT CUTTING. The designer, 22 August 2026, having
 # cut a sheet: "naming is always going to be the fiddly bit here as it will
 # tend to rely on 3rd party lists etc, or rules manuals which may be tricky to
 # comprehend." The room can never know what a piece is CALLED — that comes from
@@ -445,10 +445,10 @@ def guess_kind(w_in, h_in, cover=None):
 
     # A ruler or a range stick. Nothing else in a game box is this shape.
     # ⚠️ IT MUST BE A SOLID STRIP. Tried against a real game, this rule called
-    # two ICE FIELDS rulers — 1.89 x 6.79in and satisfyingly long and thin, but
+    # two TERRAIN TILES rulers — 1.89 x 6.79in and satisfyingly long and thin, but
     # ragged blobs of terrain filling three quarters of their box rather than
     # printed strips. `boxy` is the whole difference and it costs nothing: the
-    # Elf Range Ruler on the same sheet fills 0.99 of its box.
+    # Long range ruler on the same sheet fills 0.99 of its box.
     if boxy and long_ >= 3.0 and squareness <= 0.28:
         return {"kind": "ruler", "sure": True, "why": size(long_, short) +
                 " — long and thin, the shape of a ruler or a range stick."}
@@ -465,7 +465,7 @@ def guess_kind(w_in, h_in, cover=None):
                 "why": size(short, long_) + " — the size of " + best + "."}
 
     # ⭐️ A CARD THAT WAS NEVER A STANDARD SIZE. A game's publisher does not
-    # buy card stock off a shelf: one box's wizard cards are 2.54 x 3.80in,
+    # buy card stock off a shelf: one box's player marker cards are 2.54 x 3.80in,
     # which is not any size above and was being passed over in silence. But a
     # card is a thing held in the hand, so its PROPORTIONS are the same even
     # when its measurements are nobody's standard. Judged on shape rather than
@@ -477,8 +477,8 @@ def guess_kind(w_in, h_in, cover=None):
 
     # ⭐️ A SMALL CHIT OF PUNCHBOARD — SQUARE, ROUND OR HEXAGONAL, ALL ONE KIND.
     # There were two rules here, offering "counter" for a small square and
-    # "token" for a small disc. Frank, shown the result: "not sure I know the
-    # difference between a token and a counter tbh!" — and he is right that
+    # "token" for a small disc. The designer, shown the result: "not sure I know the
+    # difference between a token and a counter tbh!" — and they are right that
     # there is not a firm one. It varies by publisher and often by nothing at
     # all: one box has a 0.74in disc and a 0.66in square on the same sheet,
     # and they do the same job in the same way.
@@ -569,7 +569,7 @@ class Project:
 
         ⭐️ WITH `marks`, EVERY PIECE ALREADY OUTLINED IS KNOCKED OUT OF IT:
         darkened, ringed in the colour it was drawn in and numbered, so what
-        is still bright on the sheet is what nobody has cut yet. Frank asked
+        is still bright on the sheet is what nobody has cut yet. The designer asked
         for it back on 21 August 2026 — the old proof page had it and the room
         had lost it, and it is the one thing a sheet thumbnail is FOR.
         """
@@ -630,12 +630,12 @@ class Project:
 
     # ⭐️⭐️ THE THREE FILES THAT CANNOT BE REBUILT KEEP THEIR OWN HISTORY.
     #
-    # Frank, 24 August 2026, on being told to commit his checklist to git more
+    # The designer, 24 August 2026, on being told to commit their checklist to git more
     # often: "I'm afraid this means nothing to me - it needs to be automated if
     # it needs to happen." Quite right. A safety net somebody has to remember
     # to use is not a safety net, it is a second thing to forget — and the room
-    # had just eaten two of his components through a bug of mine. What saved
-    # them was git, which he does not use and should not have to.
+    # had just eaten two of their components through a bug of mine. What saved
+    # them was git, which they do not use and should not have to.
     #
     # So: before any of the three irreplaceable stores is written, the copy
     # that is about to be replaced is kept. Everything else in a project can be
@@ -742,9 +742,9 @@ class Project:
             return []
         return sorted(f[:-4] for f in os.listdir(d) if f.endswith(".png"))
 
-    # ⭐️ FRANK, 22 August 2026: "Binning a piece shouldn't be destructive — it
+    # ⭐️ THE DESIGNER, 22 August 2026: "Binning a piece shouldn't be destructive — it
     # should be merely to hide a piece from the main manifest. eg there are two
-    # identical ice fields. The game only needs to store one, even though it
+    # identical terrain tiles. The game only needs to store one, even though it
     # could be placed twice in an actual game."
     #
     # So a set-aside piece is MOVED, not deleted, into a `spare` folder inside
@@ -926,14 +926,14 @@ class Project:
         """How many pieces this component wants cut before it is accounted for.
 
         ⭐️ ONE IS ENOUGH, UNLESS EVERY ONE IS DIFFERENT. A sheet prints
-        twenty-six wound counters and the game repeats one for ever, so `26
-        Wound counters` wants ONE piece cut and always has — that is the rule
+        twenty-six damage counters and the game repeats one for ever, so `26
+        Damage counters` wants ONE piece cut and always has — that is the rule
         the whole room is built on. A deck of twenty-four damage cards is
         twenty-four DIFFERENT pieces of card, and one of them is not the deck.
 
         Nothing in a printed contents list tells the two apart, so the person
         says which by turning `each` on, and the room never guesses it.
-        Frank, 23 August 2026: "build checklist counting deck against quantity
+        The designer, 23 August 2026: "build checklist counting deck against quantity
         — it's then my responsibility to ensure I have the correct number of
         cards to fill each deck."
         """
@@ -1020,7 +1020,7 @@ class Project:
                             "pieces_wanted": want_pieces, "pieces_cut": got_pieces,
                             "groups": per_group}}
 
-    # ⭐️⭐️ THE LAST LOOK BEFORE THE PIECES LEAVE THE ROOM. Frank, 24 August
+    # ⭐️⭐️ THE LAST LOOK BEFORE THE PIECES LEAVE THE ROOM. The designer, 24 August
     # 2026: "I want (once I've done my cutting work) to be able to run a
     # verification check against the original component index - a secondary
     # check to ensure we have every piece cut. Is that possible?"
@@ -1075,7 +1075,7 @@ class Project:
         # have shown as accounted for, and the box as complete when it is not.
         # That is fault 36's whole subject, and nothing in the room said so.
         #
-        # ⚠️ THE TEST IS THE KIND, NOT THE NUMBER. "26 Wound counters" has the
+        # ⚠️ THE TEST IS THE KIND, NOT THE NUMBER. "26 Damage counters" has the
         # same shape — a quantity of 26 wanting one piece — and is exactly
         # RIGHT, because one design is printed twenty-six times. Flag the
         # number alone and every counter in the game becomes a finding, which
@@ -1083,7 +1083,7 @@ class Project:
         #
         # ⚠️⚠️ AND ONLY A DECK. Written to include `card` as well and read
         # against the real list, it went from nine findings to twenty — and the
-        # eleven it added were all wrong: that game's two wizard cards are two
+        # eleven it added were all wrong: that game's two player marker cards are two
         # DESIGNS of one component (fault 18), and its nine identically worded
         # armament card lines are one card printed twice. Both count once,
         # quite correctly. A DECK is many different cards by its nature; a line
@@ -1229,7 +1229,7 @@ class Registry:
 
 # ------------------------------------------------------- the shelf of shapes
 
-# ⭐️ Frank, 23 August 2026, on a game whose pieces repeat: "I will need to cut a
+# ⭐️ The designer, 23 August 2026, on a game whose pieces repeat: "I will need to cut a
 # number of pieces that are different, but also EXACTLY the same shape — I
 # only want to create that shape mask ONCE." Whole games are printed on one
 # die. So a shape can be kept and laid down again, and because it is kept in
@@ -1309,7 +1309,7 @@ def shape_of_cut_piece(project, stem, name=""):
     """The shape of a piece that has ALREADY been cut, or a plain sentence
     saying why not.
 
-    ⭐️ Frank, 23 August 2026: "I should be able to save a shape cut from a
+    ⭐️ The designer, 23 August 2026: "I should be able to save a shape cut from a
     piece already cut - or is that too difficult?" It is not difficult at
     all, because nothing has to be read back out of the picture: the outline
     that made the piece is still in outlines.json, and the piece's own record
@@ -1433,7 +1433,7 @@ def fetch_url(url, progress=None):
     """Pull a file down from a link. Returns (filename, bytes).
 
     ⭐️ GOOGLE DRIVE LINKS ARE UNDERSTOOD, which is the whole point of this:
-    Frank's scans live in Drive and the alternative is downloading each one by
+    The designer's scans live in Drive and the alternative is downloading each one by
     hand before dropping it on the page. A share link
     (`.../file/d/<id>/view`) is turned into the direct download Drive serves at
     `drive.usercontent.google.com`, with `confirm=t` so the "this file is large,
@@ -1733,7 +1733,7 @@ def start_job(label, fn):
 
 # ------------------------------------------------------------- the way out
 
-# ⭐️⭐️ FRANK, 22 August 2026: "the cutting tool should remain relatively
+# ⭐️⭐️ THE DESIGNER, 22 August 2026: "the cutting tool should remain relatively
 # generic — not every user is going to be building their own version of [a
 # game] to play on a computer! Output format is important."
 #
@@ -1753,12 +1753,12 @@ def start_job(label, fn):
 
 # ⚠️⚠️ WHAT IS CUT HERE IS SOMEBODY ELSE'S WORK, AND THE ROOM MUST SAY SO.
 #
-# Frank, 22 August 2026: "one thing that does seem important to me, from a
+# The designer, 22 August 2026: "one thing that does seem important to me, from a
 # legal perspective. Some kind of warning that this is personal use, copyright
 # in all things you cut is not your own — a real disclaimer. Don't share cut
 # pieces etc etc."
 #
-# He is right, and the EXPORT is exactly where it matters: up to that point the
+# They are right, and the EXPORT is exactly where it matters: up to that point the
 # pieces sit in a folder on one person's machine, and from that point on they
 # are a tidy, named, portable set that is trivially easy to put somewhere
 # public without thinking about it. So the warning travels WITH the folder —
@@ -1865,7 +1865,7 @@ right way up.
 
 %(counts)s
 
-Made by the Cutting Room — github.com/frankwwebster-arch/cutting-table
+Made by the Cutting Room
 Everything in this folder is written fresh each time you export, so do not
 keep anything of your own in it.
 """
@@ -2016,7 +2016,7 @@ def checklist_page(pr, game):
     return print_page("%s — still to cut" % game, sub, "\n".join(out))
 
 
-# ⭐️⭐️ THE CHECK AGAINST THE CONTENTS LIST, AS A PAGE TO READ ONCE. Frank
+# ⭐️⭐️ THE CHECK AGAINST THE CONTENTS LIST, AS A PAGE TO READ ONCE. The designer
 # asked for it by name: a secondary check, run when the cutting is done, to be
 # sure every piece is there. It is printable on purpose — it is a list to work
 # through with the box open in front of you — and it goes into the exported
@@ -2283,7 +2283,7 @@ def export_project(pr, progress=None):
         if not name:
             unnamed += 1
         # ⭐️ Named by WHAT IT IS. Two pieces may honestly share a name — the
-        # two identical ice fields — so the second gets a number rather than
+        # two identical terrain tiles — so the second gets a number rather than
         # quietly overwriting the first.
         base = slug(name or stem)
         key = ("spare/" if spare else "") + base
@@ -2395,7 +2395,7 @@ def export_project(pr, progress=None):
         fh.write(COPYRIGHT_NOTICE)
     write_json(os.path.join(root, "inventory.json"),
                {"game": game, "dpi": dpi,
-                "made": "the Cutting Room — github.com/frankwwebster-arch/cutting-table",
+                "made": "the Cutting Room",
                 "pieces": rows}, indent=1)
     cols = ["file", "name", "kind", "component", "copies", "back", "sheet",
             "width_in", "height_in", "width_mm", "height_mm",
@@ -2443,7 +2443,7 @@ def export_project(pr, progress=None):
 
 # ------------------------------------------------- closing the room safely
 
-# ⚠️ Frank does not want to touch a terminal, so the room has to be closable
+# ⚠️ The designer does not want to touch a terminal, so the room has to be closable
 # from the room. But fault 1 is the whole reason this thing exists: the work
 # lives on disk, and a save that never lands is work destroyed. So the room
 # refuses to close quietly over the top of anything still in flight, and says
@@ -3395,7 +3395,7 @@ class Room(BaseHTTPRequestHandler):
                 moved = pr.set_aside(stems, aside)
             return self.send_json({"ok": True, "moved": moved, "aside": aside})
 
-        # ⭐️ THIRTY-TWO CARDS, ONE COMPONENT, ONE PRESS. Frank, 24 August
+        # ⭐️ THIRTY-TWO CARDS, ONE COMPONENT, ONE PRESS. The designer, 24 August
         # 2026: "I'd like a bulk apply function - if I can select all 32 cards
         # in a deck, I should be able to apply the correct card deck label to
         # them all in one go." Dragging a deck's name onto thirty-two pieces
@@ -3472,7 +3472,7 @@ class Room(BaseHTTPRequestHandler):
             if len(rest) == 1 and method == "GET":
                 return self.send_json(pr.manifest())
 
-            # ⭐️ EVERYTHING THIS PIECE HAS BEEN CALLED, TAKEN OFF IT. Frank,
+            # ⭐️ EVERYTHING THIS PIECE HAS BEEN CALLED, TAKEN OFF IT. The designer,
             # 24 August 2026: "give me a single button when viewing any single
             # piece to remove all the metadata (name, component, kind etc) —
             # just strip back to all those fields being unfilled." A piece
@@ -3509,14 +3509,14 @@ class Room(BaseHTTPRequestHandler):
                     man = pr.manifest()
                     cur = man["pieces"].get(rest[1], {})
                     # ⭐️ `alike` marks a piece as one of several DESIGNS of the
-                    # same component — the two Wizard Marker cards, the twelve
-                    # ship templates with a different fleet's flag in the
+                    # same component — the two player marker cards, the twelve
+                    # movement templates with a different player's badge in the
                     # corner. Every piece in such a group carries the same
                     # token. It lives on the piece rather than in a list of its
                     # own so that it follows the piece across a re-cut, like
                     # the name does.
                     # ⭐️ `back` — the piece that is the BACK of this one.
-                    # Frank, 24 August 2026: "when I'm in the process of
+                    # The designer, 24 August 2026: "when I'm in the process of
                     # cutting a deck of cards, how do I set the correct back to
                     # them? Note that it's not always the same back within the
                     # same set." A back is not a property of a card, it is
@@ -3524,7 +3524,7 @@ class Room(BaseHTTPRequestHandler):
                     # points at it, so a set with three different backs is
                     # three pieces and no special case.
                     # ⭐️ `fine` — the room's own worries about this piece
-                    # that the person has looked at and waved through. Frank,
+                    # that the person has looked at and waved through. The designer,
                     # 24 August 2026: "some of the pieces I've cut are flagged
                     # as RUNS OFF THE SHEET. That's a reasonable thing to flag,
                     # but I don't see a way to remove that flag (because it
@@ -3543,8 +3543,8 @@ class Room(BaseHTTPRequestHandler):
                             else:
                                 cur.pop(k, None)
                     # ⭐️ `copies` — how many of this piece the game needs.
-                    # Frank, 24 August 2026: "in the Chaos Magic deck, one of
-                    # the cards (the Power card) needs to appear x20, whereas
+                    # The designer, 24 August 2026: "in the one of the card decks, one of
+                    # the cards (one of them) needs to appear x20, whereas
                     # the other 12 are unique." The room's rule is unchanged —
                     # ONE of each design is cut, because a picture repeats for
                     # nothing — but the game reading the manifest has to be
@@ -3746,8 +3746,8 @@ class Room(BaseHTTPRequestHandler):
 
 
 def import_wanted_text(pr, text, group, each=False):
-    """Lines like `26 Wound counters`, `Turning template x2`, `Elf Range Ruler`,
-    or `9 | Sea Monster Templates | template` become wanted items."""
+    """Lines like `26 Damage counters`, `Turning template x2`, `Long range ruler`,
+    or `9 | Large templates | template` become wanted items."""
     added = []
     with pr.lock:
         w = pr.wanted()
@@ -3802,15 +3802,15 @@ def split_wanted_item(pr, iid, names):
     stands for. Returns (the new items, how many pieces followed) or a plain
     sentence saying why not.
 
-    ⭐️ Frank, 23 August 2026, on a game's supplements: the contents list
+    ⭐️ The designer, 23 August 2026, on a game's supplements: the contents list
     "only gives generic descriptions of [the] cards belonging to the factions
-    the supplements bring to the game" — one line naming a faction's ship
+    the supplements bring to the game" — one line naming a player's ship
     templates where the box actually holds three differently named ships.
 
     ⚠️ This is the difference between a QUANTITY and a SET OF DESIGNS, and the
-    room could not tell them apart. Twenty-six wound counters are one design
+    room could not tell them apart. Twenty-six damage counters are one design
     printed twenty-six times — you cut ONE, and the row is right to be one
-    row. Three ship templates are three different pieces of card that a
+    row. Three movement templates are three different pieces of card that a
     printed contents list happened to sum up in one line. Only a person knows
     which is which, so the room does not guess: it offers the split and takes
     the names.

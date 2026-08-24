@@ -146,7 +146,7 @@
           <button id="wStartOne" data-tip="Start the checklist with a single line, rather than pasting a whole list.">Add one component</button>
         </div>
         <p class="note" style="margin-top:12px">A line each. A number at either end becomes the quantity:<br>
-        <code>26 Wound counters</code> · <code>Turning template x2</code> · <code>Elf Range Ruler</code> · <code>9 | Sea Monster Templates | template</code></p>
+        <code>26 Damage counters</code> · <code>Turning template x2</code> · <code>Long range ruler</code> · <code>9 | Large templates | template</code></p>
       </div>
     </div>
     <div id="wBody2">
@@ -175,13 +175,13 @@
       </div>
     </div>
     <div id="wImport" hidden style="margin:0 0 12px">
-      <textarea id="wText" placeholder="Paste the box&#39;s own contents list — one component a line:&#10;26 Wound counters&#10;Turning template x2&#10;9 | Sea Monster Templates | template"></textarea>
+      <textarea id="wText" placeholder="Paste the box&#39;s own contents list — one component a line:&#10;26 Damage counters&#10;Turning template x2&#10;9 | Large templates | template"></textarea>
       <div class="row" style="margin-top:6px"><label class="tiny muted">into group <select id="wImportGroup"></select></label><button class="primary" id="wImportGo" title="Add every line above to the checklist.">Add them</button><button class="quiet" id="wImportCancel" title="Leave the list as it was; nothing above is added.">Cancel</button></div>
     </div>
     <table class="wanted"><thead><tr><th>Component</th><th>Set</th><th>Kind</th><th>Qty</th><th>Where</th><th>Status</th><th>Pieces</th><th></th></tr></thead><tbody id="wBody"></tbody></table>
     </div>
     <p class="note" style="margin-top:10px" id="wFoot">Status is worked out from the pieces: a piece <b>linked</b> to a component (on Match, or on the Pieces page) counts as cut; otherwise a piece whose name matches the component's pattern counts as <i>probably</i> cut. Edit a name or quantity in place; it is saved when you leave the box.<br>
-    ⭐️ <b>One is enough</b> under the quantity means what the room has always assumed: a sheet printing twenty-six identical wound counters wants <b>one</b> cut, because the game repeats it. Press it to say <b>all different</b> — a deck of twenty-four damage cards is twenty-four different pieces of card, and the line then reads <i>3 of 24</i> until every one is cut. Nothing in a printed contents list can tell those two apart, so it is yours to say.</p>
+    ⭐️ <b>One is enough</b> under the quantity means what the room has always assumed: a sheet printing twenty-six identical damage counters wants <b>one</b> cut, because the game repeats it. Press it to say <b>all different</b> — a deck of twenty-four damage cards is twenty-four different pieces of card, and the line then reads <i>3 of 24</i> until every one is cut. Nothing in a printed contents list can tell those two apart, so it is yours to say.</p>
   </section>
 
   <!-- ============================================================= ABOUT -->
@@ -193,7 +193,7 @@
     with a list beside it as a spreadsheet and as data. Nothing in it is shaped
     for any particular program.</p>
 
-    <!-- ⭐️⭐️ THE LAST LOOK BEFORE THE PIECES LEAVE THE ROOM. Frank, 24
+    <!-- ⭐️⭐️ THE LAST LOOK BEFORE THE PIECES LEAVE THE ROOM. The designer, 24
          August 2026: "I want (once I've done my cutting work) to be able to
          run a verification check against the original component index - a
          secondary check to ensure we have every piece cut."
@@ -336,7 +336,7 @@
                    check: w.total ? (w.done + " of " + w.total) : "no list yet",
                    take: cut ? (cut + " ready") : "nothing cut yet" };
     // ⚠️ THE CHECKLIST IS NEVER THE NEXT THING TO DO UNTIL THERE IS ONE.
-    // Frank, 21 August 2026: setting a project up "shouldn't require an
+    // The designer, 21 August 2026: setting a project up "shouldn't require an
     // immediate upload of a full contents listing". It is a way of keeping
     // score, offered when the score is worth keeping — not a gate at the door.
     // ⭐️ The sixth step is a real step, so it can be the next one. When every
@@ -371,7 +371,7 @@
     document.getElementById("nextup").innerHTML = "<b>Next:</b> " + say;
   }
   /* ---------------------------------------------------- take it away */
-  /* ⭐️ THE WAY OUT HAS TO BE PLAIN. Frank, 22 August 2026: "the cutting tool
+  /* ⭐️ THE WAY OUT HAS TO BE PLAIN. The designer, 22 August 2026: "the cutting tool
      should remain relatively generic - not every user is going to be building
      their own version of [a game] to play on a computer! Output format is
      important." So what this writes is a folder of ordinary pictures and an
@@ -539,7 +539,7 @@
 
   /* ---------------------------------------------------------- folding
 
-     ⭐️ FRANK, 23 August 2026: "I want the same ability to collapse and expand
+     ⭐️ THE DESIGNER, 23 August 2026: "I want the same ability to collapse and expand
      core/expansions/extras etc throughout the platform (eg in Checklist,
      sheets, match, pieces etc) - it's super helpful."
 
@@ -558,11 +558,11 @@
      stand, whatever they are — a card in a grid, a row in a table, a line in
      a column — so no list has to be rebuilt around a wrapper. */
   /* ⚠️⚠️ A SET IS NOT "THE ROWS THAT HAPPEN TO SIT TOGETHER".
-     Frank, 23 August 2026: "on #pieces the collapse/expand mechanic is going
+     The designer, 23 August 2026: "on #pieces the collapse/expand mechanic is going
      awry, just not working correctly, seems to be segmenting the core box
      over and over."
 
-     He was right and it was bad. Every list here used to start a new heading
+     They were right and it was bad. Every list here used to start a new heading
      whenever the group of the row it was on differed from the row before —
      which is only the same thing as grouping if every set's rows are already
      together. On the Pieces page they are not: pieces are sorted by their
@@ -621,12 +621,12 @@
     return {
       apply: apply,
       /* ⚠️⚠️ ANYTHING THAT ADDS A ROW MUST OPEN THE SET IT LANDS IN.
-         Frank, 24 August 2026: "BUG - adding a new component does not work,
-         so far as I can tell - I just tried to create a new Chaos Experience
-         Reward counter, typed in the name, clicked add, and nothing
+         The designer, 24 August 2026: "BUG - adding a new component does not work,
+         so far as I can tell - I just tried to create a new Reward
+         counter, typed in the name, clicked add, and nothing
          happened." It had worked perfectly: the component was on the disk and
-         in the table. It landed in a set he had folded away, so the one thing
-         he was watching for — a new row — was hidden the instant it appeared.
+         in the table. It landed in a set they had folded away, so the one thing
+         they were watching for — a new row — was hidden the instant it appeared.
          A fold is a way of not looking at things you are done with, never a
          way of losing something you just asked for. */
       open: function (list, gid) {
@@ -655,7 +655,7 @@
 
   /* ----------------------------------------------------------- sheets */
 
-  /* ⭐️ FRANK, 23 August 2026: "the default view should be 'To outline', not
+  /* ⭐️ THE DESIGNER, 23 August 2026: "the default view should be 'To outline', not
      'All'. Although best if platform remembers the last view a user selected
      and goes back to that. Otherwise I waste time wading through lots of cut
      and filed sheets before I find my next sheet to cut."
@@ -694,7 +694,7 @@
     var list = project.sheets.filter(function (s) {
       if (q && ((s.label || "") + " " + (s.name || "") + " " + (s.source || "") + " " + s.id).toLowerCase().indexOf(q) < 0) return false;
       /* ⚠️ A SHEET YOU HAVE FINISHED WITH IS NOT A SHEET STILL TO OUTLINE,
-         even though nothing was ever outlined on it. Frank, 23 August 2026:
+         even though nothing was ever outlined on it. The designer, 23 August 2026:
          "if a sheet is marked as finished even though nothing needed to be
          cut from it (because it was all duplication), it shouldn't appear in
          the 'To outline' view." The tick is the only thing that can know
@@ -880,7 +880,7 @@
     });
   }
 
-  /* ⭐️ Frank's ask, 21 August 2026: "any chance I can also link directly to
+  /* ⭐️ The designer's ask, 21 August 2026: "any chance I can also link directly to
      g-drive to upload the docs?" A Drive share link is turned into its direct
      download by the room; a link that is not shared comes back as a sign-in
      PAGE, and the room says so rather than filing the page as a sheet. */
@@ -956,9 +956,9 @@
                      " (" + sheets[sid] + ")</option>";
             }).join("") + "</optgroup>";
         }).join("");
-      // ⭐️ Arriving from a sheet card shows THAT SHEET and nothing else. Frank,
+      // ⭐️ Arriving from a sheet card shows THAT SHEET and nothing else. The designer,
       // 21 Aug 2026: pressing Pieces on a sheet and being handed the whole
-      // list to hunt through is the wrong answer to the question he asked.
+      // list to hunt through is the wrong answer to the question they asked.
       if (wantSheet) { pieceSheet = wantSheet; wantSheet = null; }
       sel.value = pieceSheet;
       if (sel.value !== pieceSheet) { pieceSheet = ""; sel.value = ""; }
@@ -999,12 +999,12 @@
     return true;
   }
   /* ⭐️⚠️ A FLAG THAT CANNOT BE ANSWERED IS NOT A QUESTION, IT IS A STAIN.
-     Frank, 24 August 2026: "some of the pieces I\'ve cut are flagged as RUNS
+     The designer, 24 August 2026: "some of the pieces I\'ve cut are flagged as RUNS
      OFF THE SHEET. That\'s a reasonable thing to flag, but I don\'t see a way
      to remove that flag (because it doesn\'t matter), and I don\'t mind about
      the overrun."
 
-     He is right, and the damage is worse than the nuisance: *Worth a look* is
+     They are right, and the damage is worse than the nuisance: *Worth a look* is
      a list of things to deal with, and a flag nothing can clear means the list
      never empties — so after a week it is never opened, and the NEXT flag on
      it, the one that really is a bad outline, is never seen either. Every
@@ -1068,9 +1068,9 @@
     piecesData._clusters = clusters;
     piecesData._done = true;
   }
-  /* ⚠️ FRANK, 22 August 2026: "I often have to rotate a piece, which is fine
+  /* ⚠️ THE DESIGNER, 22 August 2026: "I often have to rotate a piece, which is fine
      and it saves — but the thumbnail should update also, EVERYWHERE.
-     Otherwise I end up trying to repeat that process." He did: the big
+     Otherwise I end up trying to repeat that process." They did: the big
      picture in the naming view turned and the little one in the list beside
      it did not, so the turn looked as though it had been refused.
 
@@ -1080,13 +1080,13 @@
      a piece has to apply the turn itself, and now every place asks here. */
   function turnOf(d) { return parseInt((d || {}).rotate || 0, 10) || 0; }
   /* ⭐️ A LOOK-ALIKE IS NO USE AT FORTY-SIX PIXELS.
-     Frank, 23 August 2026: "if platform is suggesting '[n] pieces look like
+     The designer, 23 August 2026: "if platform is suggesting '[n] pieces look like
      this one' it's incredibly difficult to see them in the tiny viewport it
      provides - can you make them appear larger/preview on hover (I don't want
      to click away to another page) just to make it easier to see if there is
      any differentiation?"
 
-     He is being asked a question — are these the same piece printed twice, or
+     They are being asked a question — are these the same piece printed twice, or
      two designs of one component? — and given a stamp-sized picture to answer
      it from. The whole point is the difference between them, and the
      difference is a flag in one corner.
@@ -1159,14 +1159,14 @@
   })();
 
   /* ⭐️ THE PIECES ONE PIECE COULD POINT AT — used for choosing a card's
-     back. Frank, 24 August 2026: "when I'm in the process of cutting a deck
+     back. The designer, 24 August 2026: "when I'm in the process of cutting a deck
      of cards, how do I set the correct back to them? Note that it's not
      always the same back within the same set."
      A back is not a property of a card: it is ANOTHER PIECE. Cut it once and
      every card in the deck points at it, so a set with three different backs
      is three pieces and needs no special case anywhere. */
   /* ⭐️ A CARD BACK SAYS SO, AND THEN IT IS THE ONLY THING IN THE LIST.
-     Frank, 24 August 2026: "helpful if a card back element can be flagged as
+     The designer, 24 August 2026: "helpful if a card back element can be flagged as
      such, and then ONLY card backs appear in the ITS BACK dropdown, or that
      really is an exhaustive process." It is: on a real game the list is two
      hundred and twenty-one pieces long and perhaps six of them are backs.
@@ -1215,11 +1215,11 @@
   }
 
   /* ⭐️⭐️ THE BOX BEING WORKED THROUGH COMES FIRST, IN EVERY LIST OF
-     COMPONENTS. Frank, 24 August 2026: "I really do think those menus could be
+     COMPONENTS. The designer, 24 August 2026: "I really do think those menus could be
      better rationalised tbh, if I\'m working with one supplement\'s elements,
      there doesn\'t seem to be a need to include all the possible choices for
      the core and the other boxes when I\'m manually using the THIS IS THE
-     COMPONENT dropdown?" That game\'s list is a few hundred components long and he is
+     COMPONENT dropdown?" That game\'s list is a few hundred components long and they are
      naming one supplement\'s worth of card at a time. That is fault 42 again —
      a game is worked through a BOX at a time — arriving at the last place in
      the room that still treated the whole game as one flat list.
@@ -1354,7 +1354,7 @@
   }
   var pieceFilter = "", pieceOrder = "book";
 
-  /* ⭐️ THIRTY-TWO CARDS, ONE COMPONENT, ONE PRESS. Frank, 24 August 2026:
+  /* ⭐️ THIRTY-TWO CARDS, ONE COMPONENT, ONE PRESS. The designer, 24 August 2026:
      "I'd like a bulk apply function - if I can select all 32 cards in a deck,
      I should be able to apply the correct card deck label to them all in one
      go." The tick boxes are out of the way until they are asked for, because
@@ -1498,9 +1498,9 @@
   });
 
   /* Keep one of a set of look-alikes and bin the rest. */
-  /* ⭐️ FRANK, 22 August 2026: "Binning a piece shouldn't be destructive — it
+  /* ⭐️ THE DESIGNER, 22 August 2026: "Binning a piece shouldn't be destructive — it
      should be merely to hide a piece from the main manifest. eg there are two
-     identical ice fields. The game only needs to store one, even though it
+     identical terrain tiles. The game only needs to store one, even though it
      could be placed twice in an actual game."
 
      So nothing here deletes any more. A piece set aside is moved into the
@@ -1570,7 +1570,7 @@
     });
   }
 
-  /* ⭐️ GUESSING THE KIND FROM THE SIZE — Frank, 22 August 2026: "naming is
+  /* ⭐️ GUESSING THE KIND FROM THE SIZE — the designer, 22 August 2026: "naming is
      always going to be the fiddly bit here as it will tend to rely on 3rd
      party lists etc, or rules manuals which may be tricky to comprehend."
      Cutting a sheet is one press; saying what each piece IS is the evening.
@@ -1652,7 +1652,7 @@
     var mine = shownPieces();
     if (mine.length) showPiece(mine[0].stem);
   });
-  /* ⭐️ WHICH BOX A SHEET CAME OUT OF. Frank, 24 August 2026: "I don't want
+  /* ⭐️ WHICH BOX A SHEET CAME OUT OF. The designer, 24 August 2026: "I don't want
      to go sheet by sheet, I'm much more likely to want to see core or
      supplement pieces - the random sheet numbers are not useful."
 
@@ -1710,7 +1710,7 @@
       // the row that must always be readable.
       if (d.spare) chips = '<span class="flag aside">set aside</span>' + chips;
       // ⭐️ a piece set aside stays in the list, in its own place, dimmed and
-      // labelled — Frank's call, so that nothing is ever out of sight
+      // labelled — the designer's call, so that nothing is ever out of sight
       if (d.spare) r.className += " aside";
       r.innerHTML = '<div class="pic"><img loading="lazy" src="' + BASE + "/piece-thumb/" + encodeURIComponent(p.stem) + '.png"' + turned(d) + '></div>' +
         '<div class="who"><span class="nm">' + esc(d.name || "(unnamed)") + '</span><span class="sub">' + esc(p.stem) + (p.w_in ? " · " + p.w_in + '" × ' + p.h_in + '"' : "") + "</span>" +
@@ -1748,7 +1748,7 @@
     var d = p.data || {};
     var rot = parseInt(d.rotate || 0, 10) || 0;
     /* ⚠️ The grid is a RULER — one square, one inch — so the honest thing is
-       96 CSS px to the inch. But a fleet sheet is nine inches tall and would
+       96 CSS px to the inch. But a large sheet is nine inches tall and would
        run off the bottom of the screen with its own feet cut off, which is
        the fault this whole view exists to avoid. So it shrinks to fit when it
        must, the grid shrinks with it (a square is still an inch), and the
@@ -1767,11 +1767,11 @@
     // the bar counts what is still in play and falls silent once one is left
     var cl = all.filter(function (q) { return !(q.data && q.data.spare); });
     if (cl.length > 1) {
-      /* ⭐️ FRANK, 22 August 2026: "there are two different Wizard Marker cards.
+      /* ⭐️ THE DESIGNER, 22 August 2026: "there are two different player marker cards.
          They both have the same function, but just different designs (so that
          each player would have their own)… the platform is suggesting Keep
-         this one, bin the other 2." And again for the ship templates: twelve
-         of them, one per fleet, differing only in the flag in the corner.
+         this one, bin the other 2." And again for the movement templates: twelve
+         of them, one per player, differing only in the flag in the corner.
 
          The room had exactly two ideas about two similar pieces — duplicates
          to be binned, or unrelated — and neither is true here. So there is a
@@ -1888,10 +1888,10 @@
       '<label class="f" data-tip="What sort of thing it is — a counter, a card, a tile. Only decides which heading it sits under, so do not agonise over it. The room offers one from the piece\'s measurements where the size settles it.">Kind</label><select id="fKind">' + kindOpts + "</select>" +
       '<div id="fKindGuess"></div>' +
       (Object.keys(types).length ? '<label class="f">Type (the rule it plays by, for terrain)</label><select id="fType">' + typeOpts + "</select>" : '<input id="fType" type="hidden" value="' + esc(d.type || "") + '">') +
-      '<label class="f" data-tip="The word the game itself uses for this piece in its rules — sunk, blaze, wound. Left blank by most people; it is here for a game engine that looks pieces up by their rule word.">Use (what the game calls it: sunk, blaze…)</label><input id="fUse" value="' + esc(d.use || "") + '">' +
+      '<label class="f" data-tip="The word the game itself uses for this piece in its rules — damaged, spent, wound. Left blank by most people; it is here for a game engine that looks pieces up by their rule word.">Use (what the game calls it: damaged, spent…)</label><input id="fUse" value="' + esc(d.use || "") + '">' +
       '<label class="f" data-tip="A short name of your own for this piece, if something else has to refer to it by name. Optional, and safe to ignore.">Id (for terrain)</label><input id="fId" value="' + esc(d.id || "") + '">' +
       '<label class="f" data-tip="Turn the piece so it stands the right way up. The picture on disk is never rewritten — the turn is remembered and applied everywhere, so it can be changed as often as you like without losing quality.">Turn it</label><div class="turn"><button type="button" id="rotL">↺ 90</button><input id="fRot" value="' + rot + '" size="4"><button type="button" id="rotR">↻ 90</button><span class="tiny">degrees clockwise, applied when the piece is finished</span></div>' +
-      '<label class="f" data-tip="A note to yourself that this piece is not ready — the artwork needs redoing, the rules are unclear. It stays in the folder; this only records why you are not using it yet.">Hold back (why it is not in play yet)</label><input id="fHold" value="' + esc(d.hold || "") + '" placeholder="e.g. chaos, template, counter — or blank">' +
+      '<label class="f" data-tip="A note to yourself that this piece is not ready — the artwork needs redoing, the rules are unclear. It stays in the folder; this only records why you are not using it yet.">Hold back (why it is not in play yet)</label><input id="fHold" value="' + esc(d.hold || "") + '" placeholder="e.g. artwork, template, counter — or blank">' +
       '<label class="f" data-tip="The piece that is the BACK of this one. Cut the back once, then point every card in the deck at it — a set with three different backs is just three pieces. It travels in the inventory as the file it is.">Its back</label><select id="fBack">' + pieceOptions(d.back || "", backsOnly) + "</select>" +
       '<p class="tiny muted"><label><input type="checkbox" id="fBackOnly" class="nosave" title="Show only the pieces you have marked as a card back, instead of every piece in the game. Nothing is changed either way — it only shortens the list."' +
         (backsOnly ? " checked" : "") + '> only pieces marked as a card back</label> — ' +
@@ -1899,7 +1899,7 @@
           ? backCount() + " so far in this game."
           : "none marked yet, so the whole list is shown.") +
         ' To mark one, open that piece and set its <b>Kind</b> to <b>card back</b>.</p>' +
-      '<label class="f" data-tip="How many of this piece the GAME needs, when one design is used over and over — twenty Power cards from one printed design. You still only cut it once; this is what tells whatever reads the pieces to repeat it. Leave it blank for one.">How many the game needs</label><input id="fCopies" type="number" min="1" max="9999" value="' + esc(d.copies || "") + '" placeholder="1" style="max-width:8em">' +
+      '<label class="f" data-tip="How many of this piece the GAME needs, when one design is used over and over — twenty copies of one card from one printed design. You still only cut it once; this is what tells whatever reads the pieces to repeat it. Leave it blank for one.">How many the game needs</label><input id="fCopies" type="number" min="1" max="9999" value="' + esc(d.copies || "") + '" placeholder="1" style="max-width:8em">' +
       '<label class="f" data-tip="Anything worth remembering about this piece — which rules page it is on, that its twin is on another sheet, that the scan is poor.">Note</label><textarea id="fNote">' + esc(d.note || "") + "</textarea>" +
       '<div class="row" style="margin-top:14px">' +
       '<button id="fShape" type="button" data-tip="Puts this piece\'s outline on the shelf of shapes, so the same shape can be laid down again with one click — on another sheet, or in another game. Nothing about this piece changes.">Keep the shape</button>' +
@@ -1910,7 +1910,7 @@
       (d.spare
         ? '<button id="fDel" data-tip="Bring it back into the game: it goes back among the ordinary pieces and is handed over with them.">Put this piece back in play</button>' +
           '<span class="tiny muted">Set aside — kept on disk, left out of the hand-over</span>'
-        : '<button id="fDel" data-tip="For a piece you do not need — the second identical ice field. NOTHING IS DELETED: it is moved to a spare folder, keeps its name, stays in this list dimmed, and comes back in one press.">Set this piece aside</button>' +
+        : '<button id="fDel" data-tip="For a piece you do not need — the second identical terrain tile. NOTHING IS DELETED: it is moved to a spare folder, keeps its name, stays in this list dimmed, and comes back in one press.">Set this piece aside</button>' +
           '<span class="tiny muted">saved as you type</span>') + '</div>';
     // a dropdown is not typed in, so it should not wait for the typing pause
     var save = debounce(function () {
@@ -1933,14 +1933,14 @@
         flash("Saved.");
       });
     }, 400);
-    /* ⭐️ FRANK, 22 August 2026: "I'm not sure I understand the need for a NAME
+    /* ⭐️ THE DESIGNER, 22 August 2026: "I'm not sure I understand the need for a NAME
        if I've already set the THIS IS THE COMPONENT drop down or done the drag
        and drop matching? NAME seems redundant?"
 
        It is not redundant — the checklist is optional (a game may have no
        component list at all), and the NAME is what goes into the game's own
        manifest and is read back by the game; the component link only records
-       WHICH entry on the checklist this piece answers. But he was right that
+       WHICH entry on the checklist this piece answers. But they were right that
        the two disagreed: dragging a component onto a piece in Match filled
        the name in, and choosing the same component from this dropdown did
        not — so a piece linked here stayed "(unnamed)" everywhere and step 4
@@ -2027,12 +2027,12 @@
     form.querySelector("#fDel").addEventListener("click", function () {
       setAside([stem], !d.spare);
     });
-    /* ⭐️ FRANK, 23 August 2026: "I should be able to save a shape cut from a
+    /* ⭐️ THE DESIGNER, 23 August 2026: "I should be able to save a shape cut from a
        piece already cut - or is that too difficult?" It is not: the outline
        this piece was cut from is still in the project's outlines.json, so the
        room lifts the line that was drawn rather than tracing it back out of
        the finished picture. Nothing here changes the piece. */
-    /* ⭐️ FRANK, 24 August 2026: "give me a single button when viewing any
+    /* ⭐️ THE DESIGNER, 24 August 2026: "give me a single button when viewing any
        single piece to remove all the metadata (name, component, kind etc) -
        just strip back to all those fields being unfilled." A piece filled in
        from the wrong row of a contents list is quicker to start again than to
@@ -2097,7 +2097,7 @@
   });
 
   /* ------------------------------------------------------------ match */
-  /* Frank, 21 August 2026: "perhaps a drag and drop feature where I can
+  /* the designer, 21 August 2026: "perhaps a drag and drop feature where I can
      match index with cut pieces? easier to drag name of component onto cut
      piece (rather than vice versa)." So the NAME is what is picked up and
      the PIECE is what it lands on. Dragging a piece back onto the list
@@ -2125,7 +2125,7 @@
     list.innerHTML = "";
     var shown = 0;
 
-    /* ⭐️ FRANK, 23 August 2026: "in Match, it would be very helpful to be able
+    /* ⭐️ THE DESIGNER, 23 August 2026: "in Match, it would be very helpful to be able
        to collapse sections eg for [the] Core Box, [one supplement, another]…
        Just needs an arrow to expand collapse. Or just some other way to stop
        me having to scroll all the way past one supplement to be able to match
@@ -2189,7 +2189,7 @@
     if (!shown) list.innerHTML = '<p class="note" style="padding:10px">Nothing left in this filter. ✓</p>';
 
     /* ---- the grid of pieces */
-    /* ⭐️ FRANK, 24 August 2026: "in Match, I should have the option to limit
+    /* ⭐️ THE DESIGNER, 24 August 2026: "in Match, I should have the option to limit
        the display when de-selecting the tickbox 'only pieces with no component
        yet' to pieces cut from either core or one of the supplements (or
        whatever other core game + supplements I might otherwise be cutting).
@@ -2386,7 +2386,7 @@
       set.rows.forEach(function (it) {
       var tr = document.createElement("tr");
       tr.className = it.state;
-      /* ⭐️ FRANK, 24 August 2026: "if a piece has been marked as cut with a
+      /* ⭐️ THE DESIGNER, 24 August 2026: "if a piece has been marked as cut with a
          green tick (ie assumed to be complete and ready for the game) can you
          make it appear on hover over the green CUT pill?" A tick is a claim
          about a piece, and the piece is the evidence for it — so the claim
@@ -2401,7 +2401,7 @@
           // list still reads the old way, and that is what somebody checks against
           (it.from ? '<div class="tiny muted">one of the ' + esc(it.from) + "</div>" : "") +
           (it.notes ? '<div class="tiny muted">' + esc(it.notes) + "</div>" : "") + "</td>" +
-        /* ⭐️ FRANK, 24 August 2026, on a component that landed in the wrong
+        /* ⭐️ THE DESIGNER, 24 August 2026, on a component that landed in the wrong
            set: "So how do i get this in the right place, which is within
            [the other box]?" There was no way at all — a component's set was
            fixed when it was made, and there was no way to make a new set
@@ -2418,7 +2418,7 @@
         '<td><input data-k="kind" value="' + esc(it.kind || "") + '" style="width:8em"></td>' +
         '<td><input data-k="qty" class="qty" value="' + esc(it.qty || "") + '">' +
           // ⭐️ ONE IS ENOUGH, UNLESS EVERY ONE IS DIFFERENT. Nothing in a
-          // printed contents list tells those apart — 26 wound counters is
+          // printed contents list tells those apart — 26 damage counters is
           // one design printed 26 times, 24 damage cards is 24 different
           // cards — so the person says which, and the room never guesses.
           '<button class="quiet each" data-each="1" title="' +
@@ -2435,10 +2435,10 @@
            : (it.need || 1) > 1 ? esc("0 of " + it.need) : "not yet") + "</span></td>" +
         '<td class="pieces-links">' + links + "</td>" +
         '<td class="wacts">' +
-          '<button class="quiet" data-split="1" title="One line of a printed contents list often stands for several different components — three ship templates, not one thing three times. Break it into them, so each cut piece gets its own name and the game can tell them apart.">Split</button>' +
+          '<button class="quiet" data-split="1" title="One line of a printed contents list often stands for several different components — three movement templates, not one thing three times. Break it into them, so each cut piece gets its own name and the game can tell them apart.">Split</button>' +
           '<button class="quiet danger" data-del="1" title="Take this component off the list. No piece is touched.">×</button></td>';
       /* ⚠️⚠️ EVERY HANDLER ON THIS ROW WORKS BY ID, AND THE REASON IS A REAL
-         FAULT. Frank, 24 August 2026: "removing a piece in the checklist
+         FAULT. The designer, 24 August 2026: "removing a piece in the checklist
          doesn't work - verify that." It was worse than not working: it
          removed THE WRONG COMPONENT. `saveWantedAll()` replaces `wantedData`
          with the answer from the room and does not re-render — it must not,
@@ -2460,10 +2460,10 @@
           saveWantedAll();
         });
       });
-      /* ⭐️ A QUANTITY IS NOT A SET OF DESIGNS. Frank, 23 August 2026: a
-         game's supplements list one faction's "ship templates" where the box
+      /* ⭐️ A QUANTITY IS NOT A SET OF DESIGNS. The designer, 23 August 2026: a
+         game's supplements list one player's "movement templates" where the box
          holds three differently named ships — three different
-         pieces of card summed up in one line. Twenty-six wound counters, on
+         pieces of card summed up in one line. Twenty-six damage counters, on
          the other hand, really are one design and want one row. Only a person
          knows which is which, so the room offers and never decides. */
       tr.querySelector("select.setpick").addEventListener("change", function () {
@@ -2652,8 +2652,8 @@
     });
   });
 
-  /* ⭐️⭐️ THE SAFETY NET, AND A WAY TO REACH IT. Frank, 24 August 2026, on
-     being told to commit his checklist to git more often: "I'm afraid this
+  /* ⭐️⭐️ THE SAFETY NET, AND A WAY TO REACH IT. The designer, 24 August 2026, on
+     being told to commit their checklist to git more often: "I'm afraid this
      means nothing to me - it needs to be automated if it needs to happen." A
      backup somebody has to remember to make is not a backup, and one they
      cannot reach without a terminal is not a restore. */

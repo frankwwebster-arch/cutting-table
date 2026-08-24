@@ -188,8 +188,8 @@ def main():
               back.get(19, "") == "", {"at": 1900, "now": back.get(19)})
 
         print("\na piece marked as one of several designs of one component")
-        # ⭐️ The `alike` mark says "these are the two Wizard Markers, or the
-        # twelve ship templates — different DESIGNS of one component, keep them
+        # ⭐️ The `alike` mark says "these are the two player markers, or the
+        # twelve movement templates — different DESIGNS of one component, keep them
         # all". It is written onto the piece rather than kept in a list of its
         # own for exactly this reason: it has to survive a renumbering the way
         # a name does, or the room starts proposing to bin them again the
@@ -199,23 +199,23 @@ def main():
         pr5 = room.Project(d5)
         man5 = pr5.manifest()
         for stem in sorted(pr5.index().get("pieces", {})):
-            man5["pieces"].setdefault(stem, {})["alike"] = "v-wizard"
+            man5["pieces"].setdefault(stem, {})["alike"] = "v-marker"
         pr5.save_manifest(man5)
         outline(d5, [box(200, 100, 500, 240)] + THREE)   # one more above them
         cut(d5)
         marks = marks_by_box(d5, "alike")
         for y in (4, 9, 14):
             check("the variant mark at %-5s came through the renumbering" % (y * 100),
-                  marks.get(y) == "v-wizard", {"at": y * 100, "now": marks.get(y)})
+                  marks.get(y) == "v-marker", {"at": y * 100, "now": marks.get(y)})
         check("the new piece above them is not swept into the group",
               marks.get(1, "") == "", {"now": marks.get(1)})
 
-        # ⭐️ AND THE SAME FOR A FLAG THE PERSON HAS ANSWERED. Frank, 24 August
+        # ⭐️ AND THE SAME FOR A FLAG THE PERSON HAS ANSWERED. The designer, 24 August
         # 2026, of RUNS OFF THE SHEET: "I don't see a way to remove that flag
         # (because it doesn't matter)." There is one now — and if it did not
-        # survive a re-cut, every worry he had already looked at and waved
+        # survive a re-cut, every worry they had already looked at and waved
         # through would come back the next time the sheet was cut, which is
-        # the same fault as handing back the duplicates he had just set aside.
+        # the same fault as handing back the duplicates they had just set aside.
         man5 = pr5.manifest()
         for stem in sorted(pr5.index().get("pieces", {})):
             man5["pieces"].setdefault(stem, {})["fine"] = "edge tiny"
@@ -234,9 +234,9 @@ def main():
               waved.get(18, "") == "", {"now": waved.get(18)})
 
         print("\na piece SET ASIDE is moved, never deleted, and stays put")
-        # ⭐️ FRANK: "Binning a piece shouldn't be destructive — it should be
+        # ⭐️ THE DESIGNER: "Binning a piece shouldn't be destructive — it should be
         # merely to hide a piece from the main manifest. eg there are two
-        # identical ice fields. The game only needs to store one, even though
+        # identical terrain tiles. The game only needs to store one, even though
         # it could be placed twice in an actual game."
         d6 = bed(tmp + "/f", THREE)
         cut(d6)

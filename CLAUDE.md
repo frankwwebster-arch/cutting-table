@@ -6,11 +6,11 @@ workshop, from importing a game's scans to knowing what is still to cut.
 that works offline from a `file://` URL. The editor itself,
 `cutting_table.tpl.html`, is shared by both and must stay that way.
 
-**Public, MIT.** github.com/frankwwebster-arch/cutting-table. It grew out of
+**Public, MIT.** It grew out of
 one game's own project and is deliberately
 separate from it: nothing here knows about any particular game.
 
-⚠️⚠️ **KEEP IT GENERIC. This is the constraint on everything.** Frank, 22
+⚠️⚠️ **KEEP IT GENERIC. This is the constraint on everything.** The designer, 22
 August 2026: *"the cutting tool should remain relatively generic — not every
 user is going to be building their own version of [a game] to play on a computer!
 Output format is important."* The room's product is **a folder of named,
@@ -27,7 +27,7 @@ When a feature could be built either here or there, it goes there.
 ## Picking the work up
 
 ⭐️ **No prompt should be needed to start a session, and none should be
-relied on.** Frank's instruction, 22 August 2026: *"the house rules should be
+relied on.** The designer's instruction, 22 August 2026: *"the house rules should be
 contained in the readmes in the repo, not a prompt."* A prompt is lost the
 moment the chat is closed; this file is not. So everything about how to work
 here lives in these documents, and *"carry on with the Cutting Room"* is a
@@ -35,7 +35,7 @@ complete brief. If a session ever needs a rule that is not written down, the
 fix is to write it down here, not to put it in the next prompt.
 
 1. **Read this file, then `BACKLOG.md`.** BACKLOG's *NOW* section is the live
-   list and its ⭐️ marks what is next. Frank's most recent words outrank it.
+   list and its ⭐️ marks what is next. The designer's most recent words outrank it.
 2. **Take ONE thing and see it through** — code, documents, checks, commit,
    push. Say which you have taken and why before starting. Half a feature and
    a stale document is worse than not having begun.
@@ -49,18 +49,29 @@ fix is to write it down here, not to put it in the next prompt.
 
 ---
 
-## Working with Frank
+## Working with the designer
 
-- Frank is the user and the designer, and is **not a programmer**. Claude makes
-  every engineering decision. Explain what a change does, never how it is
-  coded, unless he asks.
-- **His eye is the instrument.** He has caught more real faults from looking at
+- **The person who uses this is the person who designed it**, and is **not a
+  programmer**. Claude makes every engineering decision. Explain what a change
+  does, never how it is coded, unless they ask.
+- **Their eye is the instrument.** They have caught more real faults from looking at
   the thing than any check has: the outlines that never left the browser, the
   cut pieces missing from the sheet thumbnails, the page margins being trimmed
-  off, and the editor stealing his typing. When he says something looks wrong,
+  off, and the editor stealing their typing. When they say something looks wrong,
   it is wrong.
 - Git: commit and push after each verified chunk, without being asked. Plain
   English messages that say what was wrong and why the fix is the fix.
+- ⚠️⚠️ **NOTHING HERE NAMES A GAME, A PUBLISHER OR A PERSON.** Not in the
+  code, not in a comment, not in an example, not in a check's test data. The
+  names crept in the first time through the *explanations* — a rule is easier
+  to justify with the real cardboard that taught it — and taking them out
+  again took three passes, of which the third found one that had wrapped
+  across a line break and so was invisible to a search. `check/check.sh` fails
+  on any of them now, reading each file with the line breaks taken out.
+  ⭐️ Write *"one game has two player marker cards"* rather than naming it. The
+  measurement is the evidence; the name never was.
+  ⭐️ **And no pronouns for the person either** — they/them. Nobody's are
+  written down here, and a document with no name in it should not still say he.
 - ⚠️ **This repository is PUBLIC and holds the TOOL ONLY.** Never commit a
   game's sheets, a baked HTML page (the sheets are inside it), a cut piece, or
   anything out of a `Cutting Room` project folder. `.gitignore` is written to
@@ -68,7 +79,7 @@ fix is to write it down here, not to put it in the next prompt.
 - **Keep these documents current, every session:**
   - `GUIDE.md` — ⭐️ **the walk-through**: the six steps in order, with
     pictures, for somebody who has never seen the room. It is the thing to
-    hand Frank. ⚠️ It **lifts from `ROOM.md` and must not duplicate it** —
+    hand the designer. ⚠️ It **lifts from `ROOM.md` and must not duplicate it** —
     ROOM.md is the reference and wins where they disagree (fault 24). Its
     pictures are made by `docs/make_guide_pictures.sh` off the DEMONSTRATION
     sheet, so re-run that when a screen changes.
@@ -83,33 +94,33 @@ fix is to write it down here, not to put it in the next prompt.
 ## Status (24 August 2026)
 
 The room is **built and in daily use** on two games, and 24 August was a day of
-Frank cutting a real game with it and saying what was wrong — twenty-one
-separate pieces of work, most of them his words verbatim in the faults below —
-and then, at the end, **the check against the contents list** he had asked for
+the designer cutting a real game with it and saying what was wrong — twenty-one
+separate pieces of work, most of them their words verbatim in the faults below —
+and then, at the end, **the check against the contents list** they had asked for
 by name. One
 game: 161 sheets, **221 components on the checklist**, cards and counters being
 cut and named in earnest. Another: 21 sheets imported.
 
 ⭐️ **What that day was mostly about**: a game is not a heap of sheets, it is a
-**box and its supplements**, and the room kept making him work a sheet at a
+**box and its supplements**, and the room kept making them work a sheet at a
 time. Sheets, Pieces, Match and the Checklist all group by box now, all fold,
 and all remember. See faults 37, 41 and 42 — the same complaint arriving three
 times because the first two fixes were made where it was reported rather than
 where it belonged.
 
-⚠️⚠️ **And the day's hard lesson: the room lost two of his components.** A
+⚠️⚠️ **And the day's hard lesson: the room lost two of their components.** A
 stale row handler removed the wrong one (fault 45), and what got them back was
-git, which he does not use. Everything that cannot be rebuilt now keeps its own
+git, which they do not use. Everything that cannot be rebuilt now keeps its own
 history (fault 49). *Read fault 45 before touching any list that saves as you
 type.*
 
 ⭐️⚠️ **And the day's second lesson: a list nobody can shorten is a list
-nobody reads.** Three of his complaints were the same complaint — a flag that
+nobody reads.** Three of their complaints were the same complaint — a flag that
 could not be cleared, a dropdown of 221 pieces, a dropdown of a few hundred
 components. See faults 50 and 51. **Whenever the room puts a list in front of
 somebody, ask what makes it shorter.**
 
-⭐️ **What is expensive is naming, not cutting.** Frank, having cut a sheet:
+⭐️ **What is expensive is naming, not cutting.** The designer, having cut a sheet:
 *"naming is always going to be the fiddly bit here as it will tend to rely on
 3rd party lists etc, or rules manuals which may be tricky to comprehend."* The
 room cuts a sheet in one press; what a piece is *called* comes from outside it.
@@ -145,19 +156,19 @@ Built that day, in order:
 5. **Drag and drop** — the whole window, and whole folders.
 
 **22 August**, first thing: *"it now runs VERY slowly when manipulating a
-sheet when cutting, all jerky. COMPLETELY unusable."* He was right, and it
+sheet when cutting, all jerky. COMPLETELY unusable."* They were right, and it
 was not subtle — during a two-second drag the browser painted **one frame**.
 Two faults, both of which only show at the size of a real game; they are
 numbers 11 and 12 below. It paints 120 frames in the same drag now. There is
 a `check/check.sh` since, which goes red on both if they ever come back.
 
-**Later the same day**, Frank cut with it for real and sent back five things,
+**Later the same day**, the designer cut with it for real and sent back five things,
 all of which were right and all of which are fixed: a phantom error on every
 drag in Match, a turn that did not turn the thumbnail beside it, a NAME field
 that looked redundant because the two ways of setting it disagreed, counts
-that never moved as he worked, and — the interesting one — the look-alike
-finder proposing to bin the second Wizard Marker card. **Similar is not the
-same as duplicate**; see fault 18. Chasing the re-cut test he had asked for
+that never moved as they worked, and — the interesting one — the look-alike
+finder proposing to bin the second player marker card. **Similar is not the
+same as duplicate**; see fault 18. Chasing the re-cut test they had asked for
 turned up a name that could lie in wait for the next piece cut in its place,
 and writing the message about *that* re-broke the whole editor twice over in
 the way fault 6 warns about.
@@ -171,7 +182,7 @@ rather than by reading the code.
 
 1. ⚠️⚠️ **THE WORK WAS IN THE BROWSER.** The baked Cutting Table kept outlines
    in `localStorage` and the only way out was a *Save a copy* button nobody had
-   told Frank about. He outlined four sheets; they never reached the game and
+   told the designer about. They outlined four sheets; they never reached the game and
    had to be read back out of Chrome's LevelDB by hand.
    **The room saves to the project a moment after every edit.** The browser's
    copy is the backup now, not the original. *Never reintroduce a
@@ -212,7 +223,7 @@ rather than by reading the code.
     stage**. A window showing 1200 pixels was clearing and repainting a
     16111 × 861 picture on every twitch of the hand: 55MB a frame, one frame
     in two seconds, and the piece ledger shoved off the side of the screen
-    where Frank could not see it at all. The fix is *one line* —
+    where the designer could not see it at all. The fix is *one line* —
     `grid-template-columns: minmax(0, 1fr)`. Any flex or grid child holding a
     list that can grow needs `min-width: 0` or the same treatment.
 12. 🖼 **A SHEET'S PICTURE IS FETCHED WHEN IT REACHES THE TABLE, NOT AT LOAD.**
@@ -237,7 +248,7 @@ rather than by reading the code.
     `dragenter`, `dragover` and `dragleave` all checked that the drag carried
     **Files**; `drop` did not. So dragging a component's name onto a piece —
     one thing on the page onto another — was taken for a file import, found no
-    files, and complained, *after* the link had been made. Frank: *"always
+    files, and complained, *after* the link had been made. The designer: *"always
     seems to serve an error code (even though it also appears to work!)"*.
     A guard that some of a set of handlers share is a guard that will be
     forgotten by one of them.
@@ -245,14 +256,14 @@ rather than by reading the code.
     The cut PNG is never rewritten — a re-cut and the look-alike hash both
     depend on the file being exactly what came off the sheet. Four places draw
     a piece; two applied the turn and two did not, so turning a piece turned
-    the big picture and not the row beside it, and Frank did it again thinking
+    the big picture and not the row beside it, and the designer did it again thinking
     it had been refused. They go through one function now. *A quarter turn
     also swaps width and height*, so a turned picture must be held to the
     shorter side of its box or it is clipped.
 16. 🧮 **TWO WAYS IN MUST DO THE SAME THING.** Dragging a component onto a
     piece filled its name in; choosing the same component from the dropdown
     did not. A piece linked that way read "(unnamed)" everywhere and step 4
-    counted it as still to do for ever. Frank: *"NAME seems redundant?"* —
+    counted it as still to do for ever. The designer: *"NAME seems redundant?"* —
     it was not redundant, the two routes simply disagreed.
 17. ⏱ **A COUNT WORKED OUT BY THE SERVER IS STALE THE MOMENT YOU CHANGE
     ANYTHING.** The five steps and their counts were read once at load, so
@@ -260,15 +271,15 @@ rather than by reading the code.
     thumbnail that would not turn: *the screen does not show what you just
     did, so you doubt it took and do it again.*
 18. 🎴 **SIMILAR IS NOT THE SAME AS DUPLICATE.** The look-alike finder knew
-    two answers — bin the spares, or unrelated — and one game has two wizard
-    marker cards (one per player) and twelve ship templates differing only in
-    the fleet's flag. Those are **designs of one component** and all of them
+    two answers — bin the spares, or unrelated — and one game has two player
+    marker cards (one per player) and twelve movement templates differing only in
+    the player's badge. Those are **designs of one component** and all of them
     are wanted. There is a third answer now, and the mark lives on the piece
     so it survives a re-cut.
 
-19. ⚠️ **NOTHING IN THE ROOM DELETES A CUT PIECE.** Frank: *"Binning a piece
+19. ⚠️ **NOTHING IN THE ROOM DELETES A CUT PIECE.** The designer: *"Binning a piece
     shouldn't be destructive — it should be merely to hide a piece from the
-    main manifest. eg there are two identical ice fields. The game only needs
+    main manifest. eg there are two identical terrain tiles. The game only needs
     to store one, even though it could be placed twice in an actual game."*
     A piece is **set aside**: moved to `pieces/spare/`, its manifest entry kept
     and marked `spare`. ⭐️ **The move is the whole mechanism** — anything
@@ -284,7 +295,7 @@ rather than by reading the code.
     *Cut this sheet* posts `{}` and the cut handler never read it, so those two
     bytes stayed in the socket and the **next** request on that connection was
     read starting from them: the room saw the request line `{}GET /p/...` and
-    answered **501 Unsupported method**. Frank would have seen the project page
+    answered **501 Unsupported method**. The designer would have seen the project page
     come up blank after a cut, at random, depending on which connection the
     browser happened to reuse.
     ⭐️ **It had been there all along and could not be seen**, because
@@ -307,7 +318,7 @@ rather than by reading the code.
     is in flight and refuses until the person says otherwise. *A quit that does
     not ask is a quit that loses work.*
 
-22. ⚠️⚠️ **WHAT LEAVES THE ROOM IS SOMEBODY ELSE'S WORK.** Frank, 22 August
+22. ⚠️⚠️ **WHAT LEAVES THE ROOM IS SOMEBODY ELSE'S WORK.** The designer, 22 August
     2026: *"some kind of warning that this is personal use, copyright in all
     things you cut is not your own — a real disclaimer. Don't share cut pieces
     etc etc."* Up to the export the pieces sit in one person's folder; after
@@ -337,18 +348,18 @@ rather than by reading the code.
 25. ⭐️ **A GUESS IS ONLY WORTH MAKING WHERE THE SHAPE REALLY SETTLES IT.**
     `guess_kind()` offers a kind from a piece's printed size — naming is the
     expensive part, and a measurement is free. Written from first principles
-    it had five rules; **tried against 79 real pieces Frank had
+    it had five rules; **tried against 79 real pieces the designer had
     already cut and named, two of them were wrong**:
-    - **ruler** called two ICE FIELDS rulers — 1.89 × 6.79in, long and thin,
+    - **ruler** called two TERRAIN TILES rulers — 1.89 × 6.79in, long and thin,
       but ragged blobs filling three quarters of their box. A ruler is a
       printed strip, so it must be **solid** (`cover > 0.90`).
     - **tile** spoke exactly once in 79 pieces and called a turn template a
       tile. **The rule is gone.** A 2in square is not only ever one thing.
-    - and it was silent about the wizard cards, because a publisher in
+    - and it was silent about the player marker cards, because a publisher in
       1993 did not buy standard card stock. A card is held in the hand, so
       its **proportions** give it away where its measurements do not.
     It speaks about 28 of the 79 now and is right about all 28.
-    ⭐️ **And it no longer offers *token* for a round chit.** Frank, shown the
+    ⭐️ **And it no longer offers *token* for a round chit.** The designer, shown the
     result: *"not sure I know the difference between a token and a counter
     tbh!"* — there is not a firm one, `kind` decides only which heading a
     piece sits under, and a rule that hands somebody a distinction they
@@ -396,7 +407,7 @@ rather than by reading the code.
 
 30. ⚠️ **A SIZE IS NOT A SHAPE, AND A SHAPE IS NOT A SCALE.** The shelf
     first kept a shape *at* its printed size and laid it down only at that
-    size. Frank: *"the size of a shape is agnostic, surely, as I can just
+    size. The designer: *"the size of a shape is agnostic, surely, as I can just
     scale a shape whilst retaining its shape?"* — quite so, and the same
     outline serves a game that prints its door an inch and a half wide and
     one that prints it two. But the fix is **not** to let a piece be forced
@@ -409,11 +420,11 @@ rather than by reading the code.
     from different boxes match).
 
 31. ⭐️⚠️ **A CONTROL THAT DOES NOT SAY WHAT IT DOES IS A CONTROL NOBODY
-    PRESSES.** Frank, 23 August 2026: *"I don't, for example, have any idea
+    PRESSES.** The designer, 23 August 2026: *"I don't, for example, have any idea
     what 'straight to the table' means on the project selection screen, so a
     hover tool or just in line text popup or whatever explaining what all the
     features and buttons do would be very helpful. And that's not just for me,
-    obviously!"* He had been using the room for two days. **Every button now
+    obviously!"* They had been using the room for two days. **Every button now
     carries a plain sentence** — `data-tip`, or an ordinary `title`, which
     `room/tips.js` takes over so the same words are never written twice — and
     `check.sh` fails, by name, on a button that carries neither. That check is
@@ -438,14 +449,14 @@ rather than by reading the code.
     ever — eight times a second until the tab was closed.
 
 34. ⭐️⚠️ **A QUANTITY IS NOT A SET OF DESIGNS, AND A PRINTED CONTENTS LIST
-    CANNOT TELL YOU WHICH IT MEANT.** Frank, 23 August 2026: *"in [one game]
+    CANNOT TELL YOU WHICH IT MEANT.** The designer, 23 August 2026: *"in [one game]
     the contents of the supplements only gives generic descriptions of ship
-    cards belonging to the factions the supplements bring to the game"* — one
-    line naming a faction's ship templates where the box holds three ships,
+    cards belonging to the players the supplements bring to the game"* — one
+    line naming a player's movement templates where the box holds three ships,
     each with a name of its own.
     Two different things arrive as one line with a number on it:
-    **26 wound counters** is one design printed twenty-six times — you cut
-    ONE, and one row is right — while **3 ship templates** is three different
+    **26 damage counters** is one design printed twenty-six times — you cut
+    ONE, and one row is right — while **3 movement templates** is three different
     pieces of card. The room believed the list, so Match could only give all
     three pieces the SAME name, and a game reading the manifest afterwards
     cannot tell them apart. A checklist line can now be **split into the
@@ -457,7 +468,7 @@ rather than by reading the code.
     and **a name somebody typed themselves is never overwritten** — only a
     name the room put there itself.
 
-35. ⭐️ **THE LIST OPENS ON THE WORK, NOT ON EVERYTHING.** Frank, 23 August
+35. ⭐️ **THE LIST OPENS ON THE WORK, NOT ON EVERYTHING.** The designer, 23 August
     2026: *"the default view should be 'To outline', not 'All'… Otherwise I
     waste time wading through lots of cut and filed sheets before I find my
     next sheet to cut."* A hundred and sixty-one sheets, and the ones already
@@ -473,13 +484,13 @@ rather than by reading the code.
     sheet matches that"*, which would read as a fault.
 
 36. ⭐️⚠️ **ONE IS ENOUGH, UNLESS EVERY ONE IS DIFFERENT.** A sheet prints
-    twenty-six identical wound counters and the game repeats one for ever, so
-    `26 Wound counters` wants **one** piece cut — that is the rule the whole
+    twenty-six identical damage counters and the game repeats one for ever, so
+    `26 Damage counters` wants **one** piece cut — that is the rule the whole
     room is built on and it has not changed. But `24 Damage cards` is
     twenty-four DIFFERENT pieces of card, and one of them is not the deck.
     Both arrive as one line with a number on it, and **nothing in a printed
     contents list tells them apart**, so each line carries `each` and the
-    person sets it: *one is enough* or *all different*. Frank, 23 August 2026:
+    person sets it: *one is enough* or *all different*. The designer, 23 August 2026:
     *"build checklist counting deck against quantity — it's then my
     responsibility to ensure I have the correct number of cards to fill each
     deck."*
@@ -495,7 +506,7 @@ rather than by reading the code.
     for an ordinary component it insists on exactly one.
 
 37. ⭐️ **EVERY LIST IN THE ROOM FOLDS, AND THERE IS ONE MECHANISM FOR IT.**
-    Frank, 23 August 2026, having had it in Match: *"I want the same ability
+    The designer, 23 August 2026, having had it in Match: *"I want the same ability
     to collapse and expand core/expansions/extras etc throughout the platform
     (eg in Checklist, sheets, match, pieces etc) - it's super helpful."* A
     game and its supplements are one long list on every page, and the box
@@ -511,10 +522,10 @@ rather than by reading the code.
     wrapper. And a search always overrules a fold, or a component would hide
     inside a folded set while you were searching for it by name.
 
-38. ⭐️⚠️ **THE PAGES ARE READ FRESH; THE PYTHON IS NOT.** Frank, 23 August
+38. ⭐️⚠️ **THE PAGES ARE READ FRESH; THE PYTHON IS NOT.** The designer, 23 August
     2026, pressing a button built that same afternoon: *"bug — trying to split
-    the [faction] ship templates… when I press 'Split it' I get a 'no such call'
-    error."* Nothing was wrong with the split. His room had been open for
+    the [a player's] movement templates… when I press 'Split it' I get a 'no such call'
+    error."* Nothing was wrong with the split. Their room had been open for
     hours: `room/*.html` and `room/*.js` are sent off the disk on every
     request, so the **new button was there**, while the Python is whatever was
     loaded when the process started, so the **route behind it was not**. A
@@ -524,10 +535,10 @@ rather than by reading the code.
     against the clock it started at (`stale_code()`, `/api/health`) and every
     page carries a plain banner when they disagree: *close the room and open
     it again*. ⭐️ **Expect this every time a session adds an endpoint while
-    Frank has the room open** — and now the room says so instead of him
+    the designer has the room open** — and now the room says so instead of them
     finding out through a button that appears to be broken.
 
-39. ⚠️⚠️ **A SET IS NOT "THE ROWS THAT HAPPEN TO SIT TOGETHER".** Frank, 23
+39. ⚠️⚠️ **A SET IS NOT "THE ROWS THAT HAPPEN TO SIT TOGETHER".** The designer, 23
     August 2026: *"on #pieces the collapse/expand mechanic is going awry, just
     not working correctly, seems to be segmenting the core box over and
     over."*
@@ -550,7 +561,7 @@ rather than by reading the code.
     ⭐️ A piece with no sheet also had an **empty** heading, which reads as a
     fault in itself. It says *Not off any sheet this project knows* now.
 
-40. ⭐️ **YOU CANNOT JUDGE A PIECE AT FORTY-SIX PIXELS.** Frank, 23 August
+40. ⭐️ **YOU CANNOT JUDGE A PIECE AT FORTY-SIX PIXELS.** The designer, 23 August
     2026: *"if platform is suggesting '[n] pieces look like this one' it's
     incredibly difficult to see them in the tiny viewport it provides - can
     you make them appear larger/preview on hover (I don't want to click away
@@ -571,7 +582,7 @@ rather than by reading the code.
     hover with no button.
 
 41. ⭐️ **A SUPPLEMENT IS THIRTY SHEETS, SO "ONE SHEET" IS THE WRONG GRAIN.**
-    Frank, 24 August 2026: *"in Match, I should have the option to limit the
+    The designer, 24 August 2026: *"in Match, I should have the option to limit the
     display… to pieces cut from either core or one of the supplements…
     otherwise I get served with 200+ objects from across the whole game when
     I'm just trying to rationalise one supplement or something."* The board
@@ -581,7 +592,7 @@ rather than by reading the code.
     way the Sheets page works it out, so the two pages agree what a box is.
 
 42. ⭐️⚠️ **A GAME IS WORKED THROUGH A BOX AT A TIME, NOT A SHEET AT A TIME.**
-    Frank, 24 August 2026, an hour after the same fix landed on Match: *"the
+    The designer, 24 August 2026, an hour after the same fix landed on Match: *"the
     Pieces view is now pretty useless, and very frustrating to use. I don't
     want to go sheet by sheet, I'm much more likely to want to see core or
     supplement pieces - the random sheet numbers are not
@@ -596,7 +607,7 @@ rather than by reading the code.
     is probably wrong.**
 
 43. ⭐️ **THREE THINGS A PERSON NAMING THREE HUNDRED PIECES ASKS FOR.**
-    Frank, 24 August 2026, all in one message:
+    The designer, 24 August 2026, all in one message:
     - *"give me a single button when viewing any single piece to remove all
       the metadata (name, component, kind etc) - just strip back to all those
       fields being unfilled."* **Start this piece again** empties every box at
@@ -619,11 +630,11 @@ rather than by reading the code.
     in **after** its markup.
 
 44. ⚠️⚠️ **A FOLD MUST NEVER SWALLOW SOMETHING YOU JUST ASKED FOR.**
-    Frank, 24 August 2026: *"BUG - adding a new component does not work, so
-    far as I can tell - I just tried to create a new Chaos Experience Reward
+    The designer, 24 August 2026: *"BUG - adding a new component does not work, so
+    far as I can tell - I just tried to create a new Reward
     counter, typed in the name, clicked add, and nothing happened."*
     It had worked perfectly. The component was on the disk and its row was in
-    the table — inside a set he had **folded away**, so the one thing he was
+    the table — inside a set they had **folded away**, so the one thing they were
     watching for was hidden the instant it appeared. A fold is a way of not
     looking at what you are done with; it must never be a way of losing what
     you have just made.
@@ -637,7 +648,7 @@ rather than by reading the code.
     feature as broken.
 
 45. ⚠️⚠️ **A ROW'S HANDLERS MUST WORK BY ID, BECAUSE A SAVE REPLACES THE
-    LIST UNDER THEM.** Frank, 24 August 2026: *"removing a piece in the
+    LIST UNDER THEM.** The designer, 24 August 2026: *"removing a piece in the
     checklist doesn't work - verify that."* It was worse than not working: it
     **removed the wrong component**. `saveWantedAll()` puts the room's answer
     back into `wantedData` and does NOT re-render — it must not, because it
@@ -649,7 +660,7 @@ rather than by reading the code.
     away. Every handler on a checklist row now looks its item up by **id**,
     which is the only thing about a row that survives a save.
 
-46. ⭐️ **A CARD'S BACK IS ANOTHER PIECE, NOT A PROPERTY OF THE CARD.** Frank,
+46. ⭐️ **A CARD'S BACK IS ANOTHER PIECE, NOT A PROPERTY OF THE CARD.** The designer,
     24 August 2026: *"when I'm in the process of cutting a deck of cards, how
     do I set the correct back to them? Note that it's not always the same back
     within the same set."* Cut the back once and let every card point at it:
@@ -659,8 +670,8 @@ rather than by reading the code.
     anybody reading the inventory. A whole deck takes its back in one press
     from the same bar that gives them their component.
 
-47. ⭐️ **ONE DESIGN, CUT ONCE, WANTED TWENTY TIMES.** Frank, 24 August 2026:
-    *"in the Chaos Magic deck, one of the cards (the Power card) needs to
+47. ⭐️ **ONE DESIGN, CUT ONCE, WANTED TWENTY TIMES.** The designer, 24 August 2026:
+    *"in the one of the card decks, one of the cards (one of them) needs to
     appear x20, whereas the other 12 are unique. How do we manage that?"* The
     room's rule does not change — one of each design is cut, because a picture
     repeats for nothing — but the game reading the manifest has to be told
@@ -678,9 +689,9 @@ rather than by reading the code.
 
 49. ⭐️⭐️⚠️ **THE ROOM KEEPS ITS OWN HISTORY, BECAUSE A BACKUP SOMEBODY HAS
     TO REMEMBER IS NOT A BACKUP.** On 24 August 2026 a bug of the room's own
-    (fault 45) threw two of Frank's components away. What got them back was
-    that his project folder happens to live inside a git
-    repository — and told he might commit it more often he said, exactly
+    (fault 45) threw two of the designer's components away. What got them back was
+    that their project folder happens to live inside a git
+    repository — and told they might commit it more often they said, exactly
     right: *"I'm afraid this means nothing to me - it needs to be automated if
     it needs to happen."*
     So the three stores that **cannot be rebuilt** — `outlines.json` (the work
@@ -700,7 +711,7 @@ rather than by reading the code.
     replaces is kept too, so restoring is not a one-way door either.
 
 50. ⭐️⚠️ **A FLAG THAT CANNOT BE ANSWERED IS NOT A QUESTION, IT IS A STAIN.**
-    Frank, 24 August 2026: *"some of the pieces I've cut are flagged as RUNS
+    The designer, 24 August 2026: *"some of the pieces I've cut are flagged as RUNS
     OFF THE SHEET. That's a reasonable thing to flag, but I don't see a way to
     remove that flag (because it doesn't matter), and I don't mind about the
     overrun."*
@@ -722,7 +733,7 @@ rather than by reading the code.
     sentence in the bar, and the *Worth a look* filter. That is **fault 24 for
     the fifth time**.
 
-51. ⭐️⭐️ **A LIST OF TWO HUNDRED IS NOT A LIST.** Frank, 24 August 2026, of
+51. ⭐️⭐️ **A LIST OF TWO HUNDRED IS NOT A LIST.** The designer, 24 August 2026, of
     two different dropdowns in one message: *"helpful if a card back element
     can be flagged as such, and then ONLY card backs appear in the ITS BACK
     dropdown, or that really is an exhaustive process"*, and *"I really do
@@ -745,8 +756,8 @@ rather than by reading the code.
       at the last place in the room that still treated the whole game as one
       flat list.
     ⭐️ The part worth keeping: **nothing says which set a box of sheets
-    answers to.** A component belongs to a `group` the person named ("Plague
-    Fleet"); a piece comes off a sheet whose id begins with a box
+    answers to.** A component belongs to a `group` the person named ("the
+    supplement"); a piece comes off a sheet whose id begins with a box
     ("plague-07"). Rather than ask, or match names and be clever, the room
     **learns it from the links already made** — a hundred pieces off this book
     linked to components in that set is better evidence than any rule about
@@ -757,18 +768,18 @@ rather than by reading the code.
     how many it holds, so the length is never a surprise.
 
 52. ⭐️⭐️ **A DECK COUNTED AS ONE CARD READS AS DONE ON THE FIRST CARD CUT.**
-    The end-of-job report Frank asked for by name was written, and then run
+    The end-of-job report the designer asked for by name was written, and then run
     over the real game — and it found something no reasoning had: **nine of
     that game's twelve decks** had never been set to *all different*, so each
     of them wanted ONE piece. A thirty-two-card deck with one card cut would
     have shown as accounted for, and the box as complete when it is not. That
     is fault 36's whole subject, and nothing in the room had ever said so.
-    ⚠️⚠️ **And the rule is the KIND, not the number.** `26 Wound counters` has
+    ⚠️⚠️ **And the rule is the KIND, not the number.** `26 Damage counters` has
     exactly the same shape — a quantity of twenty-six wanting one piece — and
     is exactly RIGHT, because one design is printed twenty-six times. Written
     to include `card` as well as `deck` and read against the real list, the
     finding count went from nine to twenty **and all eleven it added were
-    wrong**: the two WIZARD cards are two designs of one component (fault 18),
+    wrong**: the two PLAYER MARKER cards are two designs of one component (fault 18),
     and the nine *anti-flyer armament card* lines are one card printed twice.
     ⭐️ That is habit 2 below earning its keep for the second time: reading the
     game's own data changed this rule twice in ten minutes.
@@ -804,6 +815,23 @@ rather than by reading the code.
     easy question in place of the real one is worse than no check**, because it
     is a green light over the fault. "Is the file there?" was easy; "is the
     file where a reader will look for it?" was the question.
+
+55. ⚠️⚠️ **A NAME THAT WRAPS ACROSS A LINE BREAK IS INVISIBLE TO A SEARCH.**
+    Taking one game's names out of this repository took three passes. The
+    first took out the publisher and the products; the second the component
+    names; and a search after the second still came up clean while a two-word
+    name sat in `CLAUDE.md` with the line ending between its two words. An
+    ordinary search cannot see it, and neither can a person reading down a
+    list of matches, because it is not in the list.
+    ⭐️ So the check reads every file **with the line breaks taken out**, and it
+    is the only reason the last one was found.
+    ⚠️ Its first run reported the repository as riddled with all twenty-seven
+    forbidden words: it had found **its own list**, which is written in one of
+    the files it searches. The list is cut out of whatever file carries it —
+    and only the list, so a name really written into that file is still caught.
+    ⭐️ The general shape, worth more than this instance: **a check whose
+    subject includes the check itself needs to say so, or it reports its own
+    definition as the problem.**
 
 ---
 
@@ -881,7 +909,7 @@ and hands the finished pieces over with a button.
 | `sheets/` | each sheet as a 300dpi PNG | yes, from the source PDFs |
 | `masks/` | one flat colour per outline | yes, from the outlines |
 | `pieces/` | the cut pieces | yes, from sheets + outlines |
-| `pieces/spare/` | pieces **set aside** — the second identical ice field. The hand-over globs `pieces/` and does not recurse, so this folder is how a piece is kept without being handed over | yes |
+| `pieces/spare/` | pieces **set aside** — the second identical terrain tile. The hand-over globs `pieces/` and does not recurse, so this folder is how a piece is kept without being handed over | yes |
 | `pieces/index.json` | where each piece came from: sheet, box, ink | yes |
 | `manifest.json` | what each piece IS: name, kind, note, turn, component, **its back** (another piece), **how many copies the game needs** | ⭐️ **NO** |
 | `wanted.json` | the checklist | ⭐️ **NO** |
@@ -920,7 +948,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 321 checks, about a minute
+check/check.sh          # 322 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1048,8 +1076,8 @@ never failed has not been shown to work.
 
 **2. ⭐️⭐️ READ THE REAL GAME'S DATA BEFORE TRUSTING YOUR OWN REASONING.**
 `guess_kind()` was written from first principles and looked entirely sensible.
-Run over the 79 real pieces Frank had already cut and named, **two of its
-five rules were wrong** — it called two ice fields rulers, and the one thing it
+Run over the 79 real pieces the designer had already cut and named, **two of its
+five rules were wrong** — it called two terrain tiles rulers, and the one thing it
 ever called a tile was a turn template. No amount of thinking would have found
 that; ten minutes of reading would, and did. See fault 25.
 

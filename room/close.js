@@ -1,8 +1,8 @@
 /* Closing the Cutting Room, from the Cutting Room.
  *
- * ⭐️ Frank, 22 August 2026: "a simpler way to open and quit. I don't like
+ * ⭐️ The designer, 22 August 2026: "a simpler way to open and quit. I don't like
  * terminal at the best of times." Quitting used to mean finding the Terminal
- * window the room was started from and closing it. He is already looking at
+ * window the room was started from and closing it. They are already looking at
  * the room in a browser, so the room closes itself from here.
  *
  * ⚠️ Nothing here may cut a save short. Fault 1 — the fault this whole tool
@@ -90,10 +90,10 @@
   }
 
   /* ⭐️⚠️ A ROOM RUNNING YESTERDAY'S CODE MUST SAY SO.
-     Frank, 23 August 2026, pressing a button built that afternoon: "when I
+     The designer, 23 August 2026, pressing a button built that afternoon: "when I
      press 'Split it' I get a 'no such call' error."
 
-     He had left the room open for hours. Its pages are read off the disk on
+     They had left the room open for hours. Its pages are read off the disk on
      every request, so the new button was there; its Python is whatever was
      loaded when the process started, so the route behind the button was not.
      A running program cannot re-read itself, and nothing said so — the button

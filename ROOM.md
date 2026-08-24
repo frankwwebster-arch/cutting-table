@@ -166,7 +166,7 @@ painted *inside* an island is the same blue as the sheet, so the automatic
 flood walks in through a lagoon and cuts the piece in half. That is why the
 outline is drawn by hand once and everything either side of it is automatic.
 
-⚠️ **A counter only needs cutting ONCE.** The sheet prints twenty BLAZE
+⚠️ **A counter only needs cutting ONCE.** The sheet prints twenty identical damage
 counters; the game repeats one for ever. Outline one of each design.
 
 Your work is saved into the project as you draw — the strip at the top right
@@ -196,7 +196,7 @@ landed you can adjust it like anything you drew yourself.
 
 #### ⭐️ One box becomes the ruler for a whole game
 
-This is the reason to keep shapes at all. Frank, 23 August 2026: *"Say I cut a
+This is the reason to keep shapes at all. The designer, 23 August 2026: *"Say I cut a
 corridor shape from [a game's] core box, that should become the ultimate source
 of truth for the exact dimensions of all [that game's] corridor pieces,
 regardless of where they come from."*
@@ -253,7 +253,7 @@ its pieces follow them, even where adding a piece renumbers the rest.
 
 ### 5 · Name, and match
 
-⭐️ **A game is worked through a box at a time.** Frank, 24 August 2026: *"I
+⭐️ **A game is worked through a box at a time.** The designer, 24 August 2026: *"I
 don't want to go sheet by sheet, I'm much more likely to want to see core or
 supplement pieces — the random sheet numbers are not
 useful."* So **Pieces** gathers its pieces by **box** — the core game, each
@@ -393,8 +393,8 @@ and two answers:
   stay in the Pieces list, dimmed and marked *set aside*. One press puts one
   back.
 - **These are variants — keep them all** — they are *different designs of one
-  component*. One game has two wizard marker cards, so that each player has
-  their own, and twelve ship templates identical but for the fleet's flag in
+  component*. One game has two player marker cards, so that each player has
+  their own, and twelve movement templates identical but for the player's badge in
   the corner. They are not duplicates and you want all of them.
 
 Press the second and the bar turns green: *N designs of the same component,
@@ -446,7 +446,7 @@ piece cut from a supplement may perfectly well be a core component that was
 reprinted, and it is still there to choose.
 
 ⭐️ **How many the game needs** is for a design printed once and used many
-times — the Power card that appears twenty times in a deck of thirteen. You
+times — the one card that appears twenty times in a deck of thirteen. You
 still cut it **once**; this is what tells whatever reads the pieces to repeat
 it. It is not the same as the checklist's quantity: the checklist counts what
 you have cut, this says what the game does with it.
@@ -470,7 +470,7 @@ follows the piece when the sheet is cut again, so a re-cut will not hand the
 game back the nineteen duplicates you had just put away.
 
 It is for the second copy of a thing the game only needs once: *there are two
-identical ice fields; the game stores one, and can place it twice.* A piece set
+identical terrain tiles; the game stores one, and can place it twice.* A piece set
 aside stops counting as work still to do, stops being flagged as a look-alike,
 and is left out of the hand-over — because the hand-over reads the pieces
 folder itself and does not look inside `spare/`.
@@ -493,7 +493,7 @@ only way sets are made, and everything in the room groups by them.
 A line's quantity means one of two quite different things, and only you know
 which. Under the **Qty** box each line says which the room is assuming:
 
-- **One is enough** — the sheet prints twenty-six identical wound counters and
+- **One is enough** — the sheet prints twenty-six identical damage counters and
   the game repeats one for ever, so cutting **one** finishes the line. This is
   what the room has always assumed, and it is right for counters, markers and
   anything printed over and over.
@@ -513,7 +513,7 @@ deck is counted — how many **actual pieces** that is.
 ### ⭐️ When one line means several components
 
 A printed contents list often sums several different components up in one
-line — *3 ship templates*, *4 dungeon doors* — where the box really holds
+line — *3 movement templates*, *4 dungeon doors* — where the box really holds
 three ships with three different names. That matters more than it looks:
 until the line is broken up, Match can only give all three pieces the **same
 name**, and whatever reads the pieces afterwards cannot tell them apart.
@@ -522,7 +522,7 @@ Press **Split** on the row and give the real names, one a line. The one line
 becomes three components, each wanted once, each remembering the printed line
 it came out of. Then every piece linked in Match gets its own name.
 
-⚠️ **This is not the same as a quantity.** *26 wound counters* is one design
+⚠️ **This is not the same as a quantity.** *26 damage counters* is one design
 printed twenty-six times — you cut one, and one row is right. Only you know
 which lines are which, so the room offers Split on every row and never uses it
 by itself.
@@ -554,10 +554,10 @@ boxes to correct a name, a quantity or a sheet reference in place.
 paste the box's own contents list, one component a line:
 
 ```
-26 Wound counters
+26 Damage counters
 Turning template x2
-Elf Range Ruler
-9 | Sea Monster Templates | template
+Long range ruler
+9 | Large templates | template
 ```
 
 A leading or trailing number becomes the quantity; the third field after a
@@ -591,7 +591,7 @@ It says, set by set:
   deck of thirty-two counted as one piece reads as *done* the moment one card
   is cut, so the percentage above it means nothing. Set that line to *all
   different* on the Checklist and the count becomes worth reading. ⚠️ It only
-  ever says this about a **deck**: `26 Wound counters` has exactly the same
+  ever says this about a **deck**: `26 Damage counters` has exactly the same
   shape and is exactly right, because one design is printed twenty-six times.
 - ⭐️ **Cut pieces that answer to nothing on the list** — the inverse, and the
   one nothing else can tell you. Each is either something the printed contents
