@@ -1,0 +1,776 @@
+# The Cutting Room — the manual
+
+*A local web app for cutting the components out of a board game's scanned
+sheets, and for knowing how much of the game you have cut. Every screen and
+every button; the walk-through is [GUIDE.md](GUIDE.md).*
+
+Everything happens on your own machine. The room listens on `127.0.0.1`
+only, fetches nothing over the network, and never sends a scan anywhere.
+
+---
+
+> ⭐️ **New here?** [GUIDE.md](GUIDE.md) is the walk-through — the six
+> steps in order, with pictures, written for somebody who has never seen
+> the room. **This** file is the reference: every screen and every button.
+> Where the two disagree, believe this one.
+
+## Starting it, and stopping it
+
+Double-click **`Cutting Room.command`** on the Desktop. The browser opens on
+the room. A terminal window opens behind it and can be ignored — it is only
+where the room writes down what it is doing.
+
+**If you have no launcher yet**, make one. You only ever do this once:
+
+```sh
+/usr/bin/python3 ~/Projects/cutting-table/cutting_room.py --install-launcher
+```
+
+That writes `Cutting Room.command` onto your Desktop, pointing at wherever you
+put this folder. If you move the folder, run it again. (If a launcher is
+already there and says something different, the old one is kept beside it as
+`Cutting Room.command.was` — nothing is thrown away.)
+
+**To stop the room, press *Close the Cutting Room*** at the top right of any
+of its pages. You do not need to find the terminal window. The room checks
+first that nothing is half-finished: if an import or a cut is still running,
+or a cutting table is open somewhere with an edit that has not reached the
+disk yet, it says exactly what it is waiting for and lets you decide. When it
+does close, the page turns into a sign saying so.
+
+**Nothing is lost by closing it.** Everything you have cut and named is in the
+project's folder and was written there as you worked; the browser is only ever
+showing you what is already on the disk.
+
+Starting it by hand still works, and so does closing the terminal window:
+
+```sh
+/usr/bin/python3 ~/Projects/cutting-table/cutting_room.py --open
+```
+
+It needs Python with **numpy** and **Pillow** (the system `/usr/bin/python3`
+on this Mac has both), and **pdftoppm** (`brew install poppler`) for PDFs.
+
+---
+
+## ⚠️ What you cut is not yours
+
+Copyright in a game's artwork, its design and its words belongs to its
+publisher and to the artists who made it. Cutting it up and naming the pieces
+changes none of that. **Nothing that comes out of this room is yours to give
+away.**
+
+It is for use on a copy of a game you own, for your own use — replacing a piece
+you have lost, playing a game you already have, keeping a record of your own
+shelf. Do not put cut pieces on the internet, share them, sell them, or build
+them into anything you release.
+
+The room is a tool, like a scalpel. It gives you no rights over anything you
+cut with it, and its authors are not lawyers: what counts as personal or fair
+use differs from country to country, and where you stand is yours to know. The
+same notice goes into every folder step 6 writes, so it travels with the pieces.
+
+---
+
+## The steps
+
+### 1 · A project, one per game
+
+Type the game's name and press **Start it**. That is the whole of it — a folder
+appears in `~/Documents/Cutting Room/<name>/` and everything about that game
+lives in it.
+
+Or skip even that: **drop the game's scans on the front page** — a folder will
+do — and the project makes itself, named after the folder you dropped. You can
+rename it later in one field.
+
+⚠️ **Nothing else is required to begin.** The checklist (step 5) is a way of
+keeping score and can be left until you want it — or never made at all.
+
+A game that already has a folder somewhere else (inside its own code
+repository, say) is registered rather than created — the *Where do the files
+come from?* panel has the box, or:
+
+```sh
+/usr/bin/python3 cutting_room.py --register /path/to/that/folder
+```
+
+### 2 · Import — drop the scans on it
+
+⭐️ **Drop them anywhere on the page.** The whole window is the target, and a
+curtain comes down while you are holding them to say what it will take. There
+is no small box to find, and — the reason this matters — a file dropped on a
+page that is not expecting one makes the browser **navigate away to that file**
+and lose what you were doing. That cannot happen here.
+
+| What you drop | What you get |
+|---|---|
+| **PDF** | every page becomes a sheet, rendered at 300 dpi |
+| **PNG / JPEG / TIFF** | one sheet |
+| **Word (.docx)** | every picture inside it becomes a sheet |
+| **Word (.doc)**, the old binary kind | converted first (macOS `textutil`), then as above |
+| **ZIP** | opened, and everything inside it imported |
+| ⭐️ **A whole folder** | walked to the bottom, subfolders and all, in the order the files are named |
+
+Each file gets a row: *waiting*, *reading*, and then how many sheets it made —
+or why it could not be read. **One bad file no longer stops the rest.**
+Anything that is not a kind the room reads is left alone and counted.
+
+⭐️ **A folder from Google Drive or Dropbox:** download it — Drive hands you a
+ZIP, Dropbox and Drive for Desktop give you a real folder — and drop **that**.
+One gesture, whole game. If you drop a folder on the *front* page with no name
+typed, the project takes the folder's own name.
+
+⚠️ **One file by link** is also possible (the small *…or fetch one file from a
+link* panel), and a Google Drive share link is understood. It only works for a
+file shared **"anyone with the link"** — a private file answers with a sign-in
+*page*, and the room tells you so rather than filing the page as a sheet. A
+link to a *folder* cannot work at all. **Dragging is nearly always easier.**
+
+⚠️ **300 dpi is the whole basis of the sizes.** A PDF at true size rendered at
+300 dpi gives pieces whose inches are right by construction. A photograph or a
+scan at unknown scale does not — for those, use **Measure something** in the
+table's Scale panel (drag a line across anything whose real length you know)
+and every size after that is anchored to it.
+
+⭐️ **The sheet list opens on the work still to do.** With a hundred sheets
+imported, the ones already cut and filed are the ones in the way — so *Sheets*
+opens on **To outline**, and whichever filter you choose is remembered for that
+game. A sheet you have ticked as **finished with** drops out of it even if
+nothing was ever outlined on it, which is what that tick is for: a sheet whose
+pieces were all duplicates of ones you had already cut is finished, and should
+not keep asking.
+
+### 3 · Outline — at the Cutting Table
+
+Press **Outline** on a sheet. The table opens with that sheet loaded.
+
+| | |
+|---|---|
+| `T` | outline — click corner by corner, or drag to sketch freehand |
+| `A` | adjust — drag nodes, band off a run of them, stretch or turn the whole piece |
+| `R` `E` | rectangle, ellipse — hold shift for a square or circle |
+| `Enter` | close the outline you are drawing |
+| `G` | drop a cross of guides; everything snaps to them |
+| `V` | step through sheet / cut / shapes |
+| `[` `]` | turn the sheet a quarter, to fit a wide screen |
+| `S` | lay a kept shape down — one click each, or drag out a size |
+| `⌘D` | duplicate a piece, for a shape that repeats off-grid |
+| `⌘Z` | undo, sixty steps deep |
+| `esc` | abandon what you are drawing |
+
+**Add the suggested outlines** does the easy sheets for you. On cards and
+counters printed on a plain ground it finds every piece exactly and there is
+nothing left to draw. On terrain it is a rough start to correct — the sea
+painted *inside* an island is the same blue as the sheet, so the automatic
+flood walks in through a lagoon and cuts the piece in half. That is why the
+outline is drawn by hand once and everything either side of it is automatic.
+
+⚠️ **A counter only needs cutting ONCE.** The sheet prints twenty BLAZE
+counters; the game repeats one for ever. Outline one of each design.
+
+Your work is saved into the project as you draw — the strip at the top right
+says *kept in the room* — and into the browser as well, so a moment offline
+costs nothing.
+
+#### Shapes kept — draw a shape once, use it for ever
+
+Some games are printed on one die: every door the same rectangle, every room
+tile the same square, every card the same card. **Shapes kept**, on the left of
+the table, is for those.
+
+1. Outline one of them properly, and choose it.
+2. Press **Keep this shape** and give it a name — *door*, *round counter*.
+3. Press it in the list to pick it up (the tool changes to **Lay a shape**),
+   then **click wherever each one goes**. One click, one piece. The dotted
+   outline under the pointer is exactly where it will land.
+4. `esc` puts it down again.
+
+**The shape is the thing; the size is an offer.** A kept shape remembers the
+size it was drawn at, in inches, and lays down at that size — usually what you
+want. But you can type another size in the two boxes, or **drag the shape out**
+on the sheet like a rectangle, and it scales without changing shape. Drag one
+to the right size and the next click keeps it, so a run of them takes one
+measurement. What is kept is the shape's nodes and its curve, so once it has
+landed you can adjust it like anything you drew yourself.
+
+#### ⭐️ One box becomes the ruler for a whole game
+
+This is the reason to keep shapes at all. Frank, 23 August 2026: *"Say I cut a
+corridor shape from [a game's] core box, that should become the ultimate source
+of truth for the exact dimensions of all [that game's] corridor pieces,
+regardless of where they come from."*
+
+A sheet from an expansion, a fan PDF or a scanned magazine is at **whatever
+scale it happens to be at**, and a piece cut from it will be a few per cent out
+— which shows the moment you put it on the board next to a core-box piece. A
+kept shape fixes that, because a shape whose true size you know is a **ruler**:
+
+1. Cut and keep one corridor from the core box. That is the source of truth.
+2. Open the new sheet, and outline one corridor on it — roughly is fine, or lay
+   the kept shape over it and drag it until it covers the printed piece.
+3. Pick the kept shape up and press **Scale the sheet to this shape**. The room
+   works the sheet's real dots-per-inch back from the two sizes, says what it
+   is about to do, and asks.
+4. Now **every** size on that sheet is in the game's own units. Lay the shape
+   for the rest of the corridors and they are not merely close — they are the
+   same outline, to the pixel.
+
+The Scale panel puts it back if you change your mind, and *Measure something*
+still works for a sheet you have no kept shape for.
+
+#### From a piece already cut
+
+You do not have to be at the table. On the **Pieces** step, any cut piece has
+**Keep the shape** beside it: the outline it was cut from is still on file, so
+the room lifts the line that was drawn rather than tracing it back out of the
+finished picture. It is exact, and it changes nothing about the piece.
+
+**Starred for this game, searchable across all of them.** The list shows the
+shapes starred for the game you are in, which is short enough to work down. The
+search box goes through **every game's** shapes on the shelf — so a door drawn
+for one dungeon game can be found while cutting another — and the ★
+brings it over without taking it away from the game it came out of. A shape
+kept while working on a game is starred for it automatically.
+
+⚠️ The **×** forgets a shape everywhere, because the shelf is shared. It never
+touches a piece already outlined with it: the shelf holds patterns, not work.
+
+The shelf is a file of its own, `shapes.json`, **beside** the projects rather
+than inside one — that is what lets every game reach it. Offline, the baked
+Cutting Table keeps its shelf in the browser instead, and has no stars, because
+there is no project there to star them for.
+
+### 4 · Cut
+
+**Cut this sheet** (at the table) or **Cut** (on the sheet card). Every
+outline becomes its own PNG at full resolution, with a smoothed edge pulled
+slightly inside the line so the printed die-cut mark cannot show on the
+finished piece, and each is measured in inches.
+
+Cut a sheet again after correcting an outline and the names already given to
+its pieces follow them, even where adding a piece renumbers the rest.
+
+### 5 · Name, and match
+
+⭐️ **A game is worked through a box at a time.** Frank, 24 August 2026: *"I
+don't want to go sheet by sheet, I'm much more likely to want to see core or
+supplement pieces — the random sheet numbers are not
+useful."* So **Pieces** gathers its pieces by **box** — the core game, each
+supplement — and its *Show* list offers each box with its sheets underneath.
+**Match** has the same list above its board, so it can be held to the box you
+are rationalising instead of serving you the whole game. The boxes are worked
+out from the sheet names, the same way the Sheets page groups them, so every
+page agrees about what a box is.
+
+⚠️ **A piece under *Not off any sheet this project knows*** is a picture
+sitting in the pieces folder that the room has no record of cutting. It is not
+an error — a project whose pieces folder is shared with something else (a
+game's own repository, say) will have them — but if you did not expect it, that
+is where to look.
+
+⭐️ **Every list in the room folds.** A game and its supplements are one long
+list, and the box you are working through is somewhere down the middle of it.
+So every heading — a set of components on **Match** and on the **Checklist**, a
+book of sheets on **Sheets**, a sheet's pieces on **Pieces** — has an arrow and
+a count, and folds away at a press. Each stays as you leave it, per game. A
+search always reaches inside a folded set, so nothing you are looking for can
+hide in one.
+
+Two ways round, and the second is usually quicker:
+
+- **Pieces** — one piece at a time on a one-inch grid: a name, what kind of
+  thing it is, a note, a quarter-turn so the printing reads upright.
+  **← and →** move between pieces and **⏎ in the name box saves and goes on**,
+  so naming forty-five pieces is a typing job rather than a clicking one.
+- **Match** — ⭐️ **drag a component's name from the list on the left onto the
+  piece it is.** The piece takes that name and the checklist ticks it off.
+  Drag a piece back onto the list to undo it. Double-click a piece to open it
+  on the Pieces page.
+
+**The name and the component are not the same thing, and you need both.** The
+component says *which entry on the checklist this piece answers*; the name says
+*what the thing is*, and the name is what goes into the game's manifest and is
+read back by the game. The checklist is optional — a game may have no component
+list at all — so the name is the record that always exists. Choosing a
+component, either way round, **fills the name in for you** if the piece has not
+got one, and says so under the box; type over it whenever a piece needs a name
+of its own.
+
+#### The room offers a kind, so you do not have to say it
+
+Naming is the expensive part of the whole business — a name usually comes from
+somewhere outside the room, a contents list or a rules manual — so the room
+takes what steps out of it that it can. It has measured every piece, and a
+shape says a good deal on its own: **2.5 × 3.5in is a playing card whatever the
+game is printed for.**
+
+So above the piece list you will find something like
+
+> **The room can see what 26 of these pieces probably are.**
+> 12 pieces look like **counters** — 0.63 × 0.63 in, a small square, the size
+> counters are punched at.   *[Call these 12 counters]*
+
+One press takes a whole run of them. The same offer sits under the **Kind** box
+for whichever piece you are naming, with a *Use it* beside it. Both say the
+measurement they were judged on, so you can see whether to believe them.
+
+**It offers; it never decides.** Nothing is filled in until you press, a kind
+you have already set is never overwritten, and the offer goes away as soon as
+you have answered it. *Not now* puts the whole thing away.
+
+⭐️ **A round chit is offered as a counter, the same as a square one.** There
+was a *token* on the list for round ones and it has been taken off, because
+there is no firm difference — it varies by publisher and often by nothing at
+all — and a kind you cannot choose between is a decision handed back to you by
+the one part of the room whose whole job is to take decisions away. The reason
+beside the offer still says which you are looking at ("0.74 in across with its
+corners off"), the measurements still carry the shape, and *token* is still on
+the **Kind** box if your game really does tell them apart.
+
+**What a kind actually does**, so you know how much to care: it is the heading
+a piece sits under. It groups the contact sheet, sorts the inventory
+spreadsheet and fills the filter on the checklist — and nothing else. No cut,
+no export and no hand-over behaves differently because of it.
+
+It knows three things — **counters** (any small chit, square, round or
+hexagonal), **cards**, and **rulers** — and it is **silent about everything
+else**, on purpose. A piece
+the size of a page might be a board, a chart, a player mat or the back of the
+box; a two-inch square might be a floor tile or a turn template. There is no
+way to tell from a measurement, so the room does not pretend there is. On the
+real sheet it was tried against it spoke about 28 pieces out of 79 and
+was right about all 28.
+
+Once a kind is known it pays for itself again: the **This is the component…**
+list puts the components of that same kind at the top, under a heading of their
+own, so there is less of the checklist to read past.
+
+**Turn it** is a *fixed, one-time correction*: this piece was printed sideways
+on the sheet, hand it over the right way up. The hand-over bakes the turn into
+the finished picture. It is **not** for turning a piece during play — a turning
+template that gets spun around the table is the game's business at run time;
+the room's job is only to give it to the game upright and at its true printed
+size.
+
+### After the cut — what the room noticed
+
+The Pieces page is also the review. Each piece carries flags, and the filter
+chips at the top select them:
+
+| | |
+|---|---|
+| **No name** | nothing has said what it is yet |
+| **N alike** | this piece and N−1 others look like the same component — unless you have said they are variants, in which case they stop being flagged |
+| **Worth a look** | it runs off the edge of the sheet, or is very small, or is mostly empty — usually an outline that wants correcting |
+
+⭐️ **Every flag can be answered, including by saying it does not matter.**
+Open a piece the room is worried about and the worry is written out in full,
+with **That is fine** beside it. Press it and the room stops flagging that
+piece for that reason — on its row and in *Worth a look* — and says instead
+that you looked and waved it through, with **Flag it again** if you change your
+mind. Nothing about the piece changes and nothing is cut again.
+
+⚠️ It matters more than it sounds. *Worth a look* is a list of things to deal
+with, and a flag nothing can clear means the list never empties — so after a
+week it is never opened, and the next flag on it, the one that really is a bad
+outline, is never seen either. A sheet scanned edge to edge will flag half its
+pieces as *runs off the sheet* quite correctly and quite uselessly; wave them
+through and the list is worth reading again.
+
+The answer is written onto the piece, so it **follows it when the sheet is cut
+again**, exactly as a name does.
+
+⭐️ **Look-alikes are the useful one.** A component sheet prints twenty of each
+counter and **only one is wanted** — the game repeats it for ever. Open any
+piece with an *alike* flag and a bar appears with the whole set side by side,
+and two answers:
+
+- **Keep this one, set the other N aside** — they really are the same thing
+  printed over and over. This is the common case and the whole economics of a
+  counter sheet. ⚠️ **Nothing is deleted.** The spares are moved into a `spare`
+  folder inside the pieces store, where the hand-over does not look, and they
+  stay in the Pieces list, dimmed and marked *set aside*. One press puts one
+  back.
+- **These are variants — keep them all** — they are *different designs of one
+  component*. One game has two wizard marker cards, so that each player has
+  their own, and twelve ship templates identical but for the fleet's flag in
+  the corner. They are not duplicates and you want all of them.
+
+Press the second and the bar turns green: *N designs of the same component,
+kept on purpose*. The room stops proposing to set them aside, the *alike* flag comes
+off them, and each keeps its own id and its own picture. **The checklist still
+counts the component once**, however many of the set are linked to it. There is
+an undo on the bar if you change your mind.
+
+The mark is written onto each piece, so it **follows them when the sheet is cut
+again**, exactly as a name does.
+
+⚠️ **It never sets anything aside on its own, and it should not.** Two counters
+can be the same size, the same shape and the same colour and still be different
+counters. The room puts them next to each other; your eye decides.
+
+⭐️ **Judging a look-alike.** The row of pictures in *N pieces look like this
+one* is there for one decision — the same piece twice, or two designs of one
+component — so **hover any of them** to see that piece at full size under the
+pointer, with its id and printed size. Nothing is clicked and no page is left.
+The same works on the row of pictures beside a suggested kind.
+
+⭐️ **Naming a whole deck at once.** Tick **choose several at once** above the
+piece list and every row gets a tick box, with *all shown* and *none* beside
+it. Tick the pieces — a filter or a box first makes that quick — choose the
+component, and **Apply to the ticked pieces** gives them all the same one.
+A piece that already has a name of its own keeps it; only blanks are filled.
+
+⭐️ **A card's back is another piece.** Cut the back once — it is a piece like
+any other — then set it on each card with **Its back**, or on a whole deck at
+once from the *choose several* bar. A set with three different backs is simply
+three pieces. The inventory names the file each back was written as.
+
+⭐️ **Mark your backs, and the list stops being a haystack.** Set a back
+piece's **Kind** to **card back** and *Its back* offers only the backs — on a
+real game that is six pieces to choose from instead of two hundred. Untick
+**only pieces marked as a card back** under the box to see everything again;
+until you have marked any, the whole list is shown as before. Nothing guesses
+this: the room cannot see the back of a card, and a wrong back applied to a
+deck of thirty-two in one press is exactly the kind of confident wrong answer
+it refuses to give.
+
+⭐️ **The component list puts your box first.** *This is the component…* on a
+piece cut from a supplement's sheets offers that supplement's components
+first, then the rest of that box, then the same sort of thing from elsewhere,
+then everything else — each band saying how many it holds. It works out which
+set a box of sheets answers to from the links you have already made, so it gets
+better as you go and needs nothing set up. ⚠️ It **orders**; it never hides. A
+piece cut from a supplement may perfectly well be a core component that was
+reprinted, and it is still there to choose.
+
+⭐️ **How many the game needs** is for a design printed once and used many
+times — the Power card that appears twenty times in a deck of thirteen. You
+still cut it **once**; this is what tells whatever reads the pieces to repeat
+it. It is not the same as the checklist's quantity: the checklist counts what
+you have cut, this says what the game does with it.
+
+⭐️ **Start this piece again** empties every box on the piece being viewed —
+name, component, kind, use, id, turn, note — in one press, for a piece filled
+in from the wrong row of a list. It asks first, and it does not touch the
+picture, the outline, whether the piece is set aside, its look-alike mark, or
+the flags you have waved through.
+
+⭐️ **On the Checklist, hover the green pill** on any component counted as cut
+and the piece it was counted from appears, full size. The piece names beside it
+do the same.
+
+### Setting a piece aside
+
+⚠️ **Nothing in the room throws a cut piece away.** *Set this piece aside* — on
+the look-alike bar or on the piece itself — **moves** it into `pieces/spare/`.
+Its name, kind, note, turn and component link are all kept, and the mark
+follows the piece when the sheet is cut again, so a re-cut will not hand the
+game back the nineteen duplicates you had just put away.
+
+It is for the second copy of a thing the game only needs once: *there are two
+identical ice fields; the game stores one, and can place it twice.* A piece set
+aside stops counting as work still to do, stops being flagged as a look-alike,
+and is left out of the hand-over — because the hand-over reads the pieces
+folder itself and does not look inside `spare/`.
+
+To undo it, open the piece and press **Put this piece back in play**.
+
+**Order** re-groups the list: by sheet, by size (which clusters counters and
+cards on its own), or by name (which puts everything unnamed together).
+
+---
+
+## The checklist — how complete is the cutting?
+
+⭐️ **Every component belongs to a set**, and the **Set** column moves it: the
+core game, or a supplement. Choosing *+ a new set…* makes one — that is the
+only way sets are made, and everything in the room groups by them.
+
+### ⭐️ One is enough, unless every one is different
+
+A line's quantity means one of two quite different things, and only you know
+which. Under the **Qty** box each line says which the room is assuming:
+
+- **One is enough** — the sheet prints twenty-six identical wound counters and
+  the game repeats one for ever, so cutting **one** finishes the line. This is
+  what the room has always assumed, and it is right for counters, markers and
+  anything printed over and over.
+- **All different** — a deck of twenty-four damage cards is twenty-four
+  different pieces of card. The line then reads *3 of 24* and is not done until
+  every one is cut.
+
+Press the word to change it. Pasting a list has a tick for the whole list —
+*these are decks* — since a contents list is usually all one sort at a time.
+
+Two things follow. A deck is the one place where **many** name matches are
+right, so *Confirm the likely links* ties up every piece whose name matches a
+deck, where for an ordinary component it insists on exactly one. And the
+summary gives the sum both ways: components accounted for, and — where any
+deck is counted — how many **actual pieces** that is.
+
+### ⭐️ When one line means several components
+
+A printed contents list often sums several different components up in one
+line — *3 ship templates*, *4 dungeon doors* — where the box really holds
+three ships with three different names. That matters more than it looks:
+until the line is broken up, Match can only give all three pieces the **same
+name**, and whatever reads the pieces afterwards cannot tell them apart.
+
+Press **Split** on the row and give the real names, one a line. The one line
+becomes three components, each wanted once, each remembering the printed line
+it came out of. Then every piece linked in Match gets its own name.
+
+⚠️ **This is not the same as a quantity.** *26 wound counters* is one design
+printed twenty-six times — you cut one, and one row is right. Only you know
+which lines are which, so the room offers Split on every row and never uses it
+by itself.
+
+Two useful things follow. A piece already linked to the old line **follows** to
+the first of the new components rather than being left pointing at nothing —
+and a name **you** typed is never overwritten, only one the room filled in. And
+if you had already cut and named those pieces by hand, each new component finds
+its own piece, so *Confirm the likely links* ties them all up in one press.
+
+⚠️ **Optional.** Cutting works perfectly well without one; make it when you
+want to keep score.
+
+The **Checklist** tab is the index of every component the game should have:
+each counter, template, ruler, card deck, tile and chart, with the printed
+quantity and which sheet it is on. Against each one:
+
+| | |
+|---|---|
+| **cut ✓** | a cut piece is linked to it |
+| **probably cut** | no link, but a piece's *name* matches — press **Confirm the likely links** to make them firm |
+| **not yet** | nothing yet |
+
+The percentage at the top is how much of the game is accounted for. Filter by
+kind, by group (core box / expansion / magazine) or by state, and type in the
+boxes to correct a name, a quantity or a sheet reference in place.
+
+**Building the list.** Press **Paste the contents list** and type or
+paste the box's own contents list, one component a line:
+
+```
+26 Wound counters
+Turning template x2
+Elf Range Ruler
+9 | Sea Monster Templates | template
+```
+
+A leading or trailing number becomes the quantity; the third field after a
+`|` sets the kind. Everything can be edited afterwards.
+
+⭐️ **A program can write this list.** It is plain JSON, and `PUT` to
+`/api/p/<project>/wanted` with an `items` array replaces the lot. If whatever
+you are cutting *for* already knows what the pieces should be — a game engine
+that has read the rulebook, a spreadsheet, a published contents list — let it
+write the list rather than typing it twice. Each item takes `id`, `name`,
+`kind`, `group` (which box), `qty`, `each` (⭐️ *all different*, which is what
+makes a deck count properly), `match`, `where` and `notes`.
+
+---
+
+## ⭐️⭐️ The check at the end — is everything really there?
+
+On **Take it away**, above the button, is *Check the cut against the contents
+list*. It is the last thing to read before the pieces leave the room, and it
+is a **report**: it changes nothing at all.
+
+It says, set by set:
+
+- **Components with nothing cut** — the plain gaps.
+- **Not enough cut yet** — *Damage cards, 24 of 32*. And it distinguishes
+  *some are cut but not all* from *nothing is cut and a name merely looks
+  right*, because those are worth very different amounts.
+- **Counted only because a name looks right** — a **guess**. Tie the piece to
+  the component, or say it is not the same thing, before trusting the total.
+- ⭐️⭐️ **Decks the list counts as a single card** — read this one first. A
+  deck of thirty-two counted as one piece reads as *done* the moment one card
+  is cut, so the percentage above it means nothing. Set that line to *all
+  different* on the Checklist and the count becomes worth reading. ⚠️ It only
+  ever says this about a **deck**: `26 Wound counters` has exactly the same
+  shape and is exactly right, because one design is printed twenty-six times.
+- ⭐️ **Cut pieces that answer to nothing on the list** — the inverse, and the
+  one nothing else can tell you. Each is either something the printed contents
+  list forgot, a piece cut twice, or a piece cut from the wrong place.
+- **Pieces with no name**, **pieces held back**, and **anything set aside** —
+  so each of those is a decision and not an accident.
+
+**Read the whole check** opens it as a page to read and to print. The same
+report goes into the exported folder twice: `check-against-the-list.html` to
+read, and `check-against-the-list.json` for a program — so whatever ingests
+the pieces has the room's own account of what is missing instead of working it
+out again.
+
+⚠️ With no contents list it says so, plainly, rather than reporting every
+piece you have as answering to nothing. The checklist is optional and this
+does not quietly make it compulsory.
+
+---
+
+## 6 · Take it away — the way out
+
+Press **Take it away**. The room writes a folder beside the project called
+`export`, and it is a plain folder that anything can read:
+
+| | |
+|---|---|
+| `pieces/` | one picture per component — an ordinary PNG with a transparent background, at full scan resolution, **named by what it is** rather than by which corner of which sheet it came off. Turned pieces come out the right way up. |
+| `pieces/spare/` | the duplicates you set aside, kept rather than thrown away |
+| `inventory.csv` | the whole list as a spreadsheet — opens in Numbers or Excel. Every piece with its size in inches *and* millimetres, its kind, which sheet it came off, and any note you made |
+| `inventory.json` | the same list again, for a program to read |
+| `contact-sheet.html` | every piece at its true printed size on one page. Open it in a browser, or print it |
+| `still-to-cut.html` | the checklist, to print and take to the table with a scalpel |
+| `laser/` | one pair of files per outlined sheet: a **cut file** at true size in millimetres, and the **printable sheet** to go with it |
+
+**None of it is shaped for any particular program**, and that is deliberate.
+The same folder is what a Tabletop Simulator or Tabletopia mod wants, what a
+VASSAL module wants, what somebody reprinting a lost counter at true size
+wants, and what somebody archiving an out-of-print box wants. Anything that
+needs a special format writes that last small step on its own side — the way
+a hand-over hook does, below.
+
+### Cutting new pieces on a laser or craft cutter
+
+The `laser/` folder has two files per sheet. Print the `-print.png` **at
+100%** — not "fit to page" — stick it to your board, and load the `-cut.svg`.
+The cut lines are in the sheet's own positions, so they fall exactly on the
+printing. Every piece is a different colour, because LightBurn and its like
+sort a job into layers by colour, so they arrive already sorted.
+
+⚠️ **Check one measurement with a ruler before you cut anything.** The contact
+sheet and the checklist both carry a 25mm square for exactly this: if it does
+not measure 25mm, the printer has scaled the page and nothing on it is true
+size.
+
+⚠️ The folder is **replaced whole** every time you export, so keep nothing of
+your own in it. Everything in it can be made again from the sheets and the
+outlines.
+
+---
+
+## Hand-overs
+
+A project can carry **hooks** — a button that runs a command in the game's
+own folder when the cutting is done. A game might have two: one hands the cut
+pieces to the game, the other rebuilds a proof page. They are declared in
+`project.json`:
+
+```json
+"hooks": [
+  {"id": "finish", "label": "Hand the cut pieces to the game",
+   "cmd": ["/usr/bin/python3", "tools/finish_pieces.py"],
+   "cwd": "/path/to/the/game"}
+]
+```
+
+---
+
+## ⭐️ If something goes wrong
+
+Three things in a project cannot be rebuilt from the scans: the **outlines**
+you drew, the **names** you gave the pieces, and the **checklist**. The room
+keeps the last **sixty** copies of each, by itself, every time one of them is
+saved — you do not have to do anything, and there is nothing to remember.
+
+**Settings** lists them: when each was kept and what was in it (*221
+components*, *79 pieces named*), with a button to put one back. The copy it
+replaces is kept as well, so putting one back is not a one-way door either.
+
+⚠️ Close the cutting table before putting **outlines** back — a table left open
+will save what is on its screen over the top of them.
+
+## Where everything lives
+
+```
+<project>/
+  project.json        the project: its name, its paths, its hooks, its sheets
+  sheets/             every sheet as a 300dpi PNG   (rebuildable; git-ignored)
+  outlines.json       every outline on every sheet  ← THE THING TO KEEP
+  masks/              one flat colour per outline, per sheet
+  pieces/             every cut piece as its own PNG
+  pieces/index.json   where each piece came from: sheet, box, ink
+  manifest.json       what each piece IS: name, kind, note, turn, component
+  wanted.json         the checklist: what the game should have
+
+<the room's home, e.g. ~/Documents/Cutting Room/>
+  projects.json       where the projects are
+  shapes.json         the shelf of kept shapes, shared by every game
+```
+
+⚠️ **`outlines.json` is the file to keep.** The masks and every cut piece can
+be rebuilt from it and the scans; nothing else can.
+
+A project's `paths` may point any of those somewhere else — a game's project
+can point them at that game's own `reference/` and `assets/` folders, so what is
+cut in the room is exactly what the game loads.
+
+---
+
+## ⭐️ If you do not know what a button does, the room will tell you
+
+Every button, link and box in the room carries a plain sentence saying what it
+does. **Point at it** and the sentence appears beside it.
+
+If you would rather read the whole page at once — or you are on a touch screen,
+where there is no pointing — press **What does this do?** at the top right. Every
+explanation is then written out underneath its own control, and stays that way
+until you press it again. It is remembered between visits.
+
+The cutting table has the same sentences on hover. It has no switch, because
+every inch of its top bar is a tool and the sheet gets what is left.
+
+⭐️ **This is a rule of the room, not a feature of it:** a control that does not
+say what it does is a control nobody presses. Anything added here must carry its
+sentence, and the checks refuse a button that does not.
+
+## ⚠️ If a button says "no such call"
+
+The room's **pages** are read off the disk every time you ask for one, so they
+are always the newest. The room's **program** is whatever was loaded when you
+opened it, and a running program cannot re-read itself. So if the Cutting Room
+has been updated while it was open, you can be looking at a new button whose
+answer does not exist yet.
+
+The room notices this and says so in a band across the top of every page.
+**Close the room and open it again** and the button will work. Nothing is ever
+at risk: everything cut and named is on the disk.
+
+## Keyboard
+
+At the table, single keys pick tools — but ⚠️ **only when you are not typing**.
+The moment the cursor is in a name or note box, every key belongs to you and
+the shortcuts stand down (Escape lets go of the box). That was not true before
+21 August 2026, and typing "Treasure chest" in a name box used to change the
+tool four times on the way past.
+
+| Where | | |
+|---|---|---|
+| Table | `T` `A` `R` `E` | outline · adjust · rectangle · ellipse |
+| Table | `G` `V` `[` `]` | guides · change the view · turn the sheet |
+| Table | `S` | lay a kept shape down, one click each |
+| Table | `⏎` `esc` `⌘Z` `⌘D` | close the outline · abandon · undo · duplicate |
+| Pieces | `←` `→` | the piece before / after |
+| Pieces | `⏎` *in the name box* | save it and go on to the next |
+
+## Two things that are easy to get wrong
+
+**Colours are identity.** The cutter tells pieces apart by the colour each
+outline was drawn in, so two *touching* pieces of the same colour would come
+out as one. The table never hands out a colour already in use.
+
+**Sheet ids are storage keys.** A sheet is `<prefix>-<page>` — `core-03`,
+`plague-09` — and the outlines are filed under that id. Never renumber or
+re-prefix a set somebody has started outlining.
+
+---
+
+## What must not go in this repository
+
+Game components are copyrighted. This repository holds the **tool**, never
+the sheets, never a baked page (which has the sheets inside it), and never a
+cut piece. `.gitignore` is written to keep them out, and it should stay that
+way.

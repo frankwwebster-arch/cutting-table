@@ -1,0 +1,4234 @@
+<title>The Cutting Table</title>
+<style>
+  :root {
+    /* A workbench that commits to one look on purpose: the printed sheet is
+       the only thing on the page whose colour must be judged, so everything
+       round it is a quiet dark ground in both host themes. */
+    --ground:  #0D1218;
+    --panel:   #151C25;
+    --panel-2: #1C2530;
+    --rule:    #27323F;
+    --ink:     #DCE3EB;
+    --muted:   #8493A4;
+    --brass:   #C8A24A;
+    --brass-d: #8A6E2E;
+    --danger:  #E05252;
+    --good:    #4FB477;
+
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+    --rail: 268px;
+    --ledger: 272px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--ui);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ⚠️⚠️ minmax(0, 1fr), NOT THE IMPLIED auto. A grid column left to size
+     itself takes the width of its WIDEST CONTENT and refuses to go below
+     it, and the sheet rail of a 161-sheet game is sixteen thousand pixels
+     wide. Every row of the page went with it, the stage went with the row,
+     and the canvas went with the stage — so a window showing twelve
+     hundred pixels was clearing and repainting a picture sixteen thousand
+     wide on every twitch of the hand. Fifty-five megabytes a frame. This
+     one line is the difference between jerky and smooth. */
+  .shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    height: 100dvh;
+  }
+
+  /* Everything that was only ever a keyboard shortcut, given a button. */
+  .acts {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 18px;
+    background: var(--ground);
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+  .acts .btn { padding: 5px 11px; font-size: 12.5px; }
+  .acts .sep { width: 1px; height: 20px; background: var(--rule); margin: 0 4px; }
+  .acts .which {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 2px;
+  }
+  .acts .which b { color: var(--brass); font-weight: 600; }
+
+  /* ---------------------------------------------------------------- top bar */
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 10px 18px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+
+  /* On a laptop the sheet descriptions are the first thing to go, so the
+     controls stay on one row. */
+  @media (max-width: 1500px) { .tab .nm { display: none; } }
+  @media (max-width: 1080px) { .mark span { display: none; } }
+
+  .mark { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+  .mark h1 {
+    font-family: var(--display);
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  .mark span {
+    font-size: 11px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ⚠️ A GAME CAN HAVE A HUNDRED AND SIXTY SHEETS, so the rail scrolls
+     rather than running off the side of the world. `min-width: 0` is what
+     lets it: without it a flex item will not shrink below its content, and
+     161 tabs of content is sixteen thousand pixels. See `.shell` above for
+     what that cost when it happened. */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    flex: 1 1 320px;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+    padding-bottom: 3px;
+  }
+  /* When the tabs will not fit beside the buttons the rail takes a line of
+     its own, below them. `railRoom()` decides by measuring, because how
+     many sheets fit depends on the window and on the length of their
+     names, not on a number somebody guessed. */
+  .tabs.many { flex-basis: 100%; order: 9; }
+  /* The name of the book a run of sheets came out of, said once at the
+     head of the run instead of on all thirty-nine of its tabs. */
+  .tabs .grp {
+    flex: 0 0 auto;
+    align-self: center;
+    white-space: nowrap;
+    font-size: 10px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 3px 0 11px;
+    border-left: 1px solid var(--rule);
+  }
+  .tabs .grp:first-child { border-left: 0; padding-left: 2px; }
+  .tabs::-webkit-scrollbar { height: 7px; }
+  .tabs::-webkit-scrollbar-thumb {
+    background: var(--rule); border-radius: 4px;
+  }
+  .tabs::-webkit-scrollbar-thumb:hover { background: var(--brass-d); }
+  .tab {
+    flex: 0 0 auto;
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--muted);
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .tab:hover { border-color: var(--brass-d); color: var(--ink); }
+  .tab[aria-selected="true"] {
+    background: var(--panel-2);
+    border-color: var(--brass);
+    color: var(--ink);
+  }
+  .tab b { font-family: var(--mono); font-weight: 600; font-size: 12px; }
+  .tab .n {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--brass);
+    font-variant-numeric: tabular-nums;
+  }
+  .tab .tick { font-size: 12px; color: var(--good); }
+
+  .btn {
+    appearance: none;
+    border: 1px solid var(--rule);
+    background: var(--panel-2);
+    color: var(--ink);
+    border-radius: 3px;
+    padding: 7px 14px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--brass-d); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .btn.primary {
+    background: var(--brass);
+    border-color: var(--brass);
+    color: #1A1405;
+    font-weight: 600;
+  }
+  .btn.primary:hover:not(:disabled) { background: #D8B15C; }
+  .btn.quiet { background: transparent; }
+
+  :where(button, [tabindex]):focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+
+  /* ------------------------------------------------------------------ body */
+
+  .work {
+    display: grid;
+    grid-template-columns: var(--rail) 1fr var(--ledger);
+    min-height: 0;
+  }
+
+  .rail {
+    background: var(--panel);
+    border-right: 1px solid var(--rule);
+    /* the list of pieces takes what is left, so nothing below it is pushed
+       off the bottom of a laptop screen */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 16px 18px;
+  }
+
+  .rail section { display: flex; flex-direction: column; gap: 10px; }
+  /* a class selector beats the browser's own [hidden] rule, so say it here */
+  .rail section[hidden] { display: none; }
+  .rail .grow { flex: 1; min-height: 0; }
+  .ledger { border-right: 0; border-left: 1px solid var(--rule); }
+  /* The list of pieces must never be squeezed to nothing by the panels
+     above it — it is how a piece is chosen in the first place. The column
+     itself scrolls, so the list can simply be as long as it is. */
+  .ledger .grow { flex: none; }
+  .ledger .pieces { min-height: 96px; }
+
+  .how { border-top: 1px solid var(--rule); padding-top: 12px; }
+  .how[hidden] { display: none; }
+  .how > *:not(summary) { margin-top: 10px; }
+  .how .of { color: var(--brass); font-weight: 600; }
+  .how summary {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+  .how summary::-webkit-details-marker { display: none; }
+  .how summary::after { content: " +"; font-family: var(--mono); }
+  .how[open] summary::after { content: " \2212"; }
+  .how summary:hover { color: var(--ink); }
+  .how .steps { margin-top: 10px; }
+
+  .rail h2 {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .tools.three { grid-template-columns: 1fr 1fr 1fr; }
+  .tools.three .tool { padding: 7px 4px; font-size: 12px; }
+  .tool {
+    appearance: none;
+    border: 1px solid var(--rule);
+    background: var(--panel-2);
+    color: var(--muted);
+    border-radius: 3px;
+    padding: 9px 6px 8px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .tool:hover { color: var(--ink); border-color: var(--brass-d); }
+  .tool[aria-pressed="true"] {
+    border-color: var(--brass);
+    color: var(--ink);
+    background: #202A36;
+  }
+  .tool kbd {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .note {
+    color: var(--muted);
+    font-size: 12.5px;
+    margin: 0;
+  }
+  .note b { color: var(--ink); font-weight: 600; }
+
+  .steps {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .steps b { color: var(--ink); font-weight: 600; }
+  .steps code { font-family: var(--mono); font-size: 11.5px; color: var(--brass); }
+
+  .toggles { display: flex; flex-direction: column; gap: 8px; }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .toggle input { accent-color: var(--brass); width: 14px; height: 14px; }
+  .toggle:hover { color: var(--ink); }
+
+  .pieces { display: flex; flex-direction: column; gap: 3px; }
+  .slider { display: flex; align-items: center; gap: 10px; }
+  .slider input {
+    flex: 1;
+    accent-color: var(--brass);
+    min-width: 0;
+  }
+  .slider span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--brass);
+    font-variant-numeric: tabular-nums;
+    width: 34px;
+    text-align: right;
+  }
+
+  .swatches { display: flex; gap: 6px; }
+  .swatches button {
+    appearance: none;
+    flex: 1;
+    height: 26px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+  }
+  .swatches button:hover { border-color: var(--brass-d); }
+  .swatches button[aria-pressed="true"] {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 1px var(--ink) inset;
+  }
+
+  /* A shape kept to be laid down again: a small drawing of it, what it is
+     called, and the printed size it will land at. */
+  .shelf { display: flex; flex-direction: column; gap: 6px; }
+  .kept {
+    /* the shape, its star and its × — three columns, said out loud, or the
+       third wraps onto a line of its own underneath. It did. */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 4px;
+    align-items: center;
+  }
+  .kept .pick {
+    appearance: none;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    text-align: left;
+    background: var(--panel-2);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--muted);
+    font: inherit;
+    padding: 5px 7px;
+    cursor: pointer;
+    min-width: 0;
+  }
+  .kept .pick:hover { color: var(--ink); border-color: var(--brass-d); }
+  .kept.on .pick {
+    border-color: var(--brass);
+    color: var(--ink);
+    background: #202A36;
+  }
+  .kept .pick b {
+    display: block;
+    font-weight: 600;
+    font-size: 12.5px;
+    overflow-wrap: anywhere;
+  }
+  .kept .pick .dim {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--brass-d);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .kept canvas { display: block; width: 34px; height: 34px; }
+  .kept .kill {
+    appearance: none;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 2px;
+  }
+  .kept .kill:hover { color: var(--danger); }
+  .kept .star {
+    appearance: none;
+    background: none;
+    border: 0;
+    color: var(--rule);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 1px;
+  }
+  .kept .star:hover { color: var(--brass); }
+  .kept .star[aria-pressed="true"] { color: var(--brass); }
+
+  .find {
+    background: var(--ground);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--ink);
+    font: inherit;
+    font-size: 12.5px;
+    padding: 6px 7px;
+    width: 100%;
+  }
+  .find:focus { outline: 1px solid var(--brass-d); }
+
+  /* ⚠️ `display` beats the browser's own [hidden] rule, so the hidden state
+     has to be said out loud or the size boxes sit there when nothing is
+     being carried. That is fault 23, which cost a button standing in plain
+     sight for a day. */
+  #layBox { display: flex; flex-direction: column; gap: 7px; }
+  #layBox[hidden] { display: none; }
+
+  /* ⚠️ THE NAME WAS THE ONLY PART OF THE ROW THAT COULD SHRINK, so in a
+     272px ledger it was the only part that did: the number, the node
+     count, the size and the × all refuse, and every piece read `C…`.
+     Two rows instead of one — the name on its own line, the small print
+     beneath it — and a name takes as many lines as it needs. Nothing in
+     this list is ever hidden now; that was Frank's call, over capping it
+     at two lines, on the grounds that a name he cannot read is no use to
+     him. Costs about sixteen pixels a row. */
+  .piece {
+    display: grid;
+    grid-template-columns: 14px auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "swatch num  name kill"
+      "swatch meta meta kill";
+    align-items: start;
+    row-gap: 1px;
+    column-gap: 8px;
+    padding: 6px 7px;
+    border-radius: 3px;
+    background: var(--panel-2);
+    cursor: pointer;
+  }
+  .piece:hover, .piece.hot { outline: 1px solid var(--brass-d); }
+  .swatch { width: 12px; height: 12px; border-radius: 2px; }
+  /* the swatch spans both lines, so it sits against the name, not between */
+  .piece .swatch { grid-area: swatch; margin-top: 3px; }
+  .piece .lab { grid-area: num; font-family: var(--mono); font-size: 12px; }
+  .piece .dim {
+    grid-area: meta;
+    font-family: var(--mono);
+    font-size: 11px;
+    white-space: nowrap;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+  }
+  .piece .nodes {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--brass-d);
+    font-variant-numeric: tabular-nums;
+  }
+  .piece .kill {
+    grid-area: kill;
+    align-self: start;
+    appearance: none;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 2px;
+  }
+  .piece .kill:hover { color: var(--danger); }
+
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .fields input {
+    background: var(--ground);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 6px;
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+  .fields input:focus { border-color: var(--brass); outline: none; }
+
+  /* naming a piece */
+  .field {
+    display: flex; flex-direction: column; gap: 3px; margin-bottom: 7px;
+    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .field input, .field textarea {
+    background: var(--ground); border: 1px solid var(--rule);
+    border-radius: 3px; color: var(--ink); font-family: inherit;
+    font-size: 12px; padding: 5px 6px; width: 100%;
+    text-transform: none; letter-spacing: normal; resize: vertical;
+  }
+  .field input:focus, .field textarea:focus {
+    border-color: var(--brass); outline: none;
+  }
+  .piece.hidden { opacity: 0.4; }
+  .piece .nm {
+    grid-area: name;
+    min-width: 0;
+    /* wraps rather than ellipsising — see the note on .piece above.
+       `anywhere` so a single long unbroken word cannot push the column
+       wider than the ledger (fault 11's lesson, in miniature). */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--ink);
+  }
+  /* an empty first line reads as a fault; say what it is instead */
+  .piece .nm.none { color: var(--muted); font-style: italic; }
+  h2 .of { color: var(--brass); font-weight: 600; }
+
+  /* what a measured line is worth, asked for the moment it is drawn */
+  .ruler { margin-top: 8px; display: grid; gap: 7px; }
+  .ruler[hidden] { display: none; }
+  .ruler label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .ruler input {
+    background: var(--ground);
+    border: 1px solid var(--brass);
+    border-radius: 3px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 5px 6px;
+    width: 74px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ruler input:focus { outline: none; box-shadow: 0 0 0 2px rgba(200,162,74,.3); }
+  #scaleNow b { color: var(--brass); }
+
+  .piece.current { outline: 1px solid var(--brass); }
+
+  .empty { color: var(--muted); font-size: 13px; font-style: italic; padding: 4px 0; }
+
+  /* ---------------------------------------------------------------- canvas */
+
+  .stage {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    background:
+      repeating-conic-gradient(#11171E 0% 25%, #0D1218 0% 50%) 0 0 / 22px 22px;
+    overflow: hidden;
+  }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  canvas.trace { cursor: crosshair; }
+  canvas.adjust { cursor: default; }
+  canvas.grab { cursor: grabbing; }
+  canvas.pan { cursor: grab; }
+
+  .hint {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    background: rgba(13, 18, 24, 0.92);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 7px 13px;
+    font-size: 12px;
+    color: var(--muted);
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 92%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hint kbd {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 1px 4px;
+  }
+  .hint b { color: var(--brass); font-weight: 600; }
+
+  .zoom {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    display: flex;
+    gap: 4px;
+    background: rgba(13, 18, 24, 0.9);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 4px;
+  }
+  .zoom button {
+    appearance: none;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+  .zoom button:hover { background: var(--panel-2); color: var(--ink); }
+  .zoom #zspin {
+    border-left: 1px solid var(--rule);
+    margin-left: 2px;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .saved {
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-d);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .saved.on { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* Narrower than this and three columns leave no sheet to work on, so the
+     panes go back above and below it. */
+  @media (max-width: 1180px) {
+    .work { grid-template-columns: var(--rail) 1fr; }
+    .ledger {
+      grid-column: 1 / -1;
+      border-left: 0;
+      border-top: 1px solid var(--rule);
+      max-height: 30dvh;
+    }
+  }
+
+  @media (max-width: 880px) {
+    body { overflow: auto; }
+    .shell { height: auto; }
+    .work { grid-template-columns: 1fr; }
+    .rail { border-right: 0; border-bottom: 1px solid var(--rule); }
+    .stage { height: 68dvh; }
+    .ledger { max-height: none; }
+  }
+</style>
+
+<div class="shell">
+  <header class="bar">
+    <div class="mark">
+      <h1>The Cutting Table</h1>
+      <span id="subject">Card components</span>
+    </div>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <button class="btn quiet" id="addSheet" title="Bring another scan in — a page that turned up late, or one from another box. It joins the end of the row of tabs above.">
+      + Sheet
+    </button>
+    <input type="file" id="sheetFile" accept="image/*" multiple hidden>
+    <button class="btn quiet" id="clear" title="Take every outline off THIS sheet and start it again. Only this sheet, and Undo puts it back.">Clear sheet</button>
+    <button class="btn" id="exportSvg" title="A file for a laser or craft cutter: these outlines at true size in millimetres, one closed path per piece.">Export cut&nbsp;SVG</button>
+    <button class="btn primary" id="export" title="A picture of the outlines filled in flat colour, which is what the cutter reads to separate the pieces. Only needed if you are cutting outside the room.">Export mask&nbsp;PNG</button>
+  </header>
+
+  <div class="acts">
+    <button class="btn" id="aUndo" type="button" title="Undo the last thing you did here — sixty steps deep. Also Cmd-Z.">Undo</button>
+    <button class="btn" id="aClose" type="button" title="Join the outline you are drawing back to where it started, and finish it. Also the Enter key.">Close outline</button>
+    <span class="sep"></span>
+    <button class="btn" id="aDup" type="button" title="Another copy of the chosen piece, put down beside it to be dragged where it belongs. For a shape that repeats but not on any regular spacing.">Duplicate piece</button>
+    <button class="btn" id="aTidy" type="button" title="Drop the points that stand out of line with their neighbours — the shake in a freehand line. The shape stays as drawn; it just gets fewer points to grab hold of.">Tidy piece</button>
+    <button class="btn" id="aDel" type="button" title="Remove the chosen outline from this sheet. Undo puts it back. Nothing already cut is touched.">Delete piece</button>
+    <span class="which" id="aWhich">no piece chosen</span>
+    <span class="sep"></span>
+    <button class="btn" id="aGuide" type="button" title="Drop a cross of lines where the pointer is. Everything snaps to them, so two crosses give you a box to pull a piece exactly into.">Guides here</button>
+    <button class="btn" id="aTurn" type="button" title="Turn the whole sheet a quarter, to fit a landscape page on a landscape screen. It changes nothing about the pieces.">Turn the sheet</button>
+  </div>
+
+  <div class="work">
+    <aside class="rail">
+      <section>
+        <h2>Tool</h2>
+        <div class="tools">
+          <button class="tool" id="tTrace" type="button" aria-pressed="true"
+                  title="Draw round a piece: click corner by corner, or hold the button down and sketch freehand. Enter closes the shape.">
+            Outline <kbd>T</kbd>
+          </button>
+          <button class="tool" id="tAdjust" type="button" aria-pressed="false"
+                  title="Put an outline right: drag its points, move the whole piece, or stretch and turn it by the box that appears round it.">
+            Adjust <kbd>A</kbd>
+          </button>
+          <button class="tool" id="tRect" type="button" aria-pressed="false"
+                  title="Drag out a rectangle — the quickest way to outline a card or a square counter. Hold shift for a perfect square.">
+            Rectangle <kbd>R</kbd>
+          </button>
+          <button class="tool" id="tEllipse" type="button" aria-pressed="false"
+                  title="Drag out an oval, for a round counter or a blast marker. Hold shift for a perfect circle.">
+            Ellipse <kbd>E</kbd>
+          </button>
+          <button class="tool" id="tLay" type="button" aria-pressed="false"
+                  title="Put down a shape you have kept before, at whatever size you want. Pick one from Shapes kept, below, then click where each one goes.">
+            Lay a shape <kbd>S</kbd>
+          </button>
+        </div>
+        <p class="note" id="toolNote"></p>
+      </section>
+
+      <details class="how">
+        <summary>How it goes</summary>
+        <ol class="steps">
+          <li>Every piece the machine could find is <b>already outlined</b>.
+              Switch to <b>Adjust</b> and drag its nodes onto the real
+              edge — that is most of the work gone.</li>
+          <li>For anything it missed: <b>click your way round the piece</b>,
+              corner by corner. Straight runs take two clicks; drag instead
+              if you would rather sketch a curve freehand.</li>
+          <li>Let go of the mouse whenever you like — the outline stays open
+              until you close it yourself.</li>
+          <li><b>Click the first node again</b> to close it, or press
+              <b>Enter</b>.</li>
+          <li>Outline <b>just inside</b> the printed cut line — the cutter
+              pulls in another hair, so that line never reaches the finished
+              piece.</li>
+          <li>If the sheet is a scan or a photograph rather than a PDF at
+              true size, set its <b>scale</b> first — measure something on it
+              whose real length you know, or every size here is a guess.</li>
+          <li>Export, and send me the file. The <b>mask PNG</b> cuts the
+              artwork out of the sheet; the <b>cut SVG</b> is the same
+              outlines at true size, for the laser.</li>
+        </ol>
+      </details>
+
+      <section>
+        <h2>Shapes kept</h2>
+        <button class="btn" id="shapeKeep" type="button" title="Put the chosen piece's shape on the shelf, to lay down again as often as you like — on this sheet, on another, or in another game.">Keep this shape</button>
+        <input type="search" id="shapeFind" class="find" maxlength="60"
+               placeholder="search every game's shapes">
+        <p class="note" id="shelfSays"></p>
+        <div class="shelf" id="shelf"></div>
+        <div id="layBox" hidden>
+          <div class="fields">
+            <label>Lay it at <input type="number" id="layW" step="0.01"
+                                    min="0.05" max="60"></label>
+            <label>By <input type="number" id="layH" step="0.01"
+                             min="0.05" max="60"></label>
+          </div>
+          <button class="btn" id="layTrue" type="button" title="Go back to the size this shape was drawn at.">Back to its own size</button>
+          <p class="note">If the piece you are working on <b>is</b> this
+            shape, the shape can tell the sheet its scale &mdash; then every
+            size on this sheet is measured against the box the shape came out
+            of, and every piece you cut from it matches.</p>
+          <button class="btn" id="layScale" type="button" title="Say that the piece on the table IS this shape, and the room works out what this sheet's real scale must be. Use it on a sheet from an expansion or a magazine, so its pieces come out the same size as the ones from the box.">Scale the sheet to this shape</button>
+        </div>
+        <p class="note">A shape drawn <b>once</b> and laid down wherever it
+          goes &mdash; on any sheet, in any game. It remembers the size it was
+          drawn at and offers it, but <b>the shape is the point, not the
+          size</b>: type another, or drag one out on the sheet, and it scales
+          without changing shape. The list is the ones <b>starred for this
+          game</b>; the search box reaches <b>every game's</b>, and a star
+          brings one over.</p>
+      </section>
+
+      <section>
+        <h2>Guides</h2>
+        <p class="note"><b>G</b> drops a cross where the pointer is, and
+          everything <b>snaps</b> to it — two crosses give you a box to pull
+          an ellipse exactly into. Move them in <b>Adjust</b>, double-click
+          to remove.</p>
+        <div class="tools">
+          <button class="btn" id="guideAdd" type="button" title="Drop a cross of lines that everything snaps to.">Add a cross</button>
+          <button class="btn" id="guideClear" type="button" title="Take all the guide crosses off this sheet.">Clear guides</button>
+        </div>
+        <div class="swatches" id="guideInks"></div>
+      </section>
+
+    </aside>
+
+    <div class="stage" id="stage">
+      <canvas id="cv" class="trace"></canvas>
+      <div class="zoom">
+        <button id="zout" title="Zoom out">&minus;</button>
+        <button id="zfit" title="Fit the whole sheet on the screen.">Fit</button>
+        <button id="zin" title="Zoom in">+</button>
+        <button id="zspin" title="Turn the sheet a quarter turn">&#8635;</button>
+      </div>
+      <div class="saved" id="saved">Saved</div>
+      <div class="hint" id="hint"></div>
+    </div>
+    <aside class="rail ledger">
+      <details class="how" id="repeatBox" hidden>
+        <summary>Repeat <span class="of" id="repeatOf"></span></summary>
+        <div class="fields">
+          <label>Across <input type="number" id="acrossN" min="1" max="40"
+                               value="1"></label>
+          <label>Down <input type="number" id="downN" min="1" max="40"
+                             value="1"></label>
+          <label>Step across <input type="number" id="stepX" step="0.01"></label>
+          <label>Step down <input type="number" id="stepY" step="0.01"></label>
+        </div>
+        <button class="btn" id="doRepeat" type="button" title="Copy the chosen piece across and down on the spacing above — for a sheet of counters printed on a regular grid.">Lay them out</button>
+        <p class="note">Steps are in inches, corner to corner, starting at the
+          piece's own size — right for a sheet with no gutters, widen for one
+          with gaps. For a shape that repeats off any pitch, use
+          <b>Duplicate</b> above.</p>
+      </details>
+
+      <section id="namingPanel" hidden>
+        <h2>This piece</h2>
+        <label class="toggle">
+          <input type="checkbox" id="soloPiece">
+          <span>Work on this one alone</span>
+        </label>
+        <p class="note">Hides every other outline on the sheet, so nothing
+          else can be grabbed by accident while a shape is being trimmed.
+          Arriving here from a link opens this way.</p>
+        <label class="field">Name
+          <input type="text" id="pieceName" maxlength="80"
+                 placeholder="what you would call it"></label>
+        <label class="field">Note
+          <textarea id="pieceNote" rows="2" maxlength="400"
+                    placeholder="anything worth remembering about it"></textarea></label>
+        <p class="note">Kept with the outline and written into the exported
+          JSON, so whatever cuts these pieces knows what each one is.</p>
+      </section>
+
+      <section class="grow">
+        <h2>Pieces on this sheet</h2>
+        <div class="pieces" id="pieces"></div>
+      </section>
+
+      <section>
+        <h2>This sheet</h2>
+        <div class="tools three">
+          <button class="tool" id="vSheet" type="button" aria-pressed="true"
+                  title="The scan as it is, with your outlines drawn over it.">
+            Sheet
+          </button>
+          <button class="tool" id="vCut" type="button" aria-pressed="false"
+                  title="The sheet with everything outside your outlines thrown away, so you can judge a piece as it will actually come out. The points are still draggable.">
+            Cut
+          </button>
+          <button class="tool" id="vShapes" type="button" aria-pressed="false"
+                  title="The outlines on their own, without the artwork underneath, for checking their shapes against each other.">
+            Shapes
+          </button>
+        </div>
+        <p class="note"><b>Cut</b> shows the pieces as they will come out,
+          nodes still draggable.</p>
+        <button class="btn" id="suggest" type="button"
+                title="Let the room find the pieces on this sheet by itself and outline them. On cards and counters printed on a plain ground it usually does the whole sheet; on terrain it is a rough start to correct by hand.">
+          Add the suggested outlines
+        </button>
+        <p class="note">Skips any you have outlined yourself.</p>
+        <label class="toggle" style="margin-top: 10px">
+          <input type="checkbox" id="sheetDone">
+          <span>I have finished with this sheet</span>
+        </label>
+        <button class="btn quiet" id="dropSheet" type="button" hidden
+                title="Remove a sheet you added to this page yourself. The outlines on it go with it; nothing in the project is touched.">
+          Take this sheet out of the table
+        </button>
+        <p class="note">Ticks it in the tabs above. Nobody but you can know
+          when a sheet is done — a sheet with ten outlines on it may still
+          be half finished.</p>
+      </section>
+
+      <section>
+        <h2>Scale</h2>
+        <p class="note" id="scaleNow"></p>
+        <div class="tools">
+          <button class="btn" id="scaleSet" type="button" title="For a scan or a photograph, whose scale nobody knows. Drag a line across something on the sheet whose real length you know, type the length, and every size on this sheet is worked back from it.">Measure something</button>
+          <button class="btn" id="scaleOff" type="button" title="Forget the scale measured for this sheet and treat it as an ordinary 300 dpi page again.">Back to 300</button>
+        </div>
+        <div class="ruler" id="scaleAsk" hidden>
+          <label>That line is
+            <input type="number" id="scaleLen" step="0.01" min="0.01"> in
+          </label>
+          <button class="btn" id="scaleGo" type="button" title="Take the length you have typed as the true length of the line you drew, and work this sheet's scale back from it.">Set the scale</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Keeping the work</h2>
+        <p class="note">Saved as you go. <b>Save a copy</b> to carry it.</p>
+        <div class="tools">
+          <button class="btn" id="saveWork" type="button" title="Write every outline in this page out as a file you can keep, or carry to another machine.">Save a copy</button>
+          <button class="btn" id="openWork" type="button" title="Read a saved copy back in, replacing what is here.">Open a copy</button>
+        </div>
+        <input type="file" id="workFile" accept=".json,application/json"
+               hidden>
+      </section>
+    </aside>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var SHEETS = /*__SHEETS__*/;
+  var SUBJECT = "/*__SUBJECT__*/";
+
+  /* Hues far enough apart that the cutter can tell two touching shapes
+     apart from their colour alone. */
+  var INKS = ["#FF3B30", "#34C759", "#FFD60A", "#0A84FF", "#FF2D95",
+              "#5AC8FA", "#FF9F0A", "#BF5AF2", "#FFFFFF", "#00C7BE",
+              "#A2845E", "#6E56CF"];
+
+  /* A PDF page rendered at true size comes out at exactly this, by
+     construction, and everything the tool says about a piece's real size
+     rests on it. A scan or a photograph does not: it is at whatever scale
+     the glass and the crop left it at, and a couple of per cent out is the
+     difference between a piece that drops into the box and one that does
+     not. So a sheet can be told its own scale instead — measure something
+     on it whose real length is known, and the number is worked back from
+     that. Kept with that sheet's outlines. */
+  var DPI = 300;
+  var scales = {};        // sheet id -> dots per inch, where one was measured
+
+  function dpi() {
+    return (sheet && scales[sheet.id]) || DPI;
+  }
+
+  var STORE = "cuttingtable.v2.";
+  var GRAB = 9;          // screen px within which a node can be taken hold of
+  var EDGE = 9;          // screen px within which a click lands on a segment
+  var DRAGGED = 4;       // screen px past which a press counts as a drag
+  var SIMPLIFY = 2.5;    // sheet px: how far a freehand run may be straightened
+
+  var cv = document.getElementById("cv");
+  var ctx = cv.getContext("2d");
+  var stage = document.getElementById("stage");
+  var elPieces = document.getElementById("pieces");
+  var elTabs = document.getElementById("tabs");
+  var elSaved = document.getElementById("saved");
+  var elHint = document.getElementById("hint");
+  var elSuggest = document.getElementById("suggest");
+  var elNote = document.getElementById("toolNote");
+  var VIEWS = { sheet: document.getElementById("vSheet"),
+                cut: document.getElementById("vCut"),
+                shapes: document.getElementById("vShapes") };
+  var look = "sheet";
+  try {
+    var keptLook = localStorage.getItem(STORE + "look");
+    if (keptLook && VIEWS[keptLook]) look = keptLook;
+  } catch (e) { /* the default will do */ }
+
+  /* The transparency check laid behind a cut, so what has been thrown away
+     reads as thrown away rather than as sea. Built once as a tile. */
+  var VOID_TILE = (function () {
+    var t = document.createElement("canvas");
+    t.width = t.height = 96;
+    var c = t.getContext("2d");
+    c.fillStyle = "#1B222B";
+    c.fillRect(0, 0, 96, 96);
+    c.fillStyle = "#141A22";
+    c.fillRect(0, 0, 48, 48);
+    c.fillRect(48, 48, 48, 48);
+    return t;
+  })();
+  var voidFill = null;
+
+  function setLook(v) {
+    look = v;
+    Object.keys(VIEWS).forEach(function (k) {
+      VIEWS[k].setAttribute("aria-pressed", String(k === v));
+    });
+    try { localStorage.setItem(STORE + "look", v); } catch (e) {}
+    draw();
+  }
+  var TOOLS = {
+    trace: document.getElementById("tTrace"),
+    adjust: document.getElementById("tAdjust"),
+    rect: document.getElementById("tRect"),
+    ellipse: document.getElementById("tEllipse"),
+    lay: document.getElementById("tLay")
+  };
+
+  var sheet = null;
+  var view = { s: 1, x: 0, y: 0, rot: 0 };   // rot in quarter turns, 0-3
+  var pieces = [];            // [{ink, pts: [[x, y], ...]}]
+  var draft = null;           // the outline being drawn, still open
+  var tool = "trace";
+  var hover = -1;             // piece under the pointer, in Adjust
+  var hotNode = null;         // {piece, node} under the pointer
+  var grabbed = null;         // {piece, node} being dragged
+  var moving = null;          // {piece, from} — a whole piece being shifted
+  var xform = null;           // a stretch, squash or turn in progress
+  var guides = [];            // [{axis: "x"|"y", at: n}] — lines to line up on
+  var railing = null;         // a guide being dragged
+  var sel = null;             // {piece, nodes: []} — nodes picked out together
+  var marquee = null;         // the rubber band picking them out
+  var current = -1;           // the piece the Repeat panel works on
+  var ghosts = null;          // where a repeat would put its copies
+  var shelf = [];             // shapes kept to be laid down again
+  var laying = null;          // the one the pointer is carrying, if any
+  /* ⭐️ THE SHAPE IS WHAT IS KEPT; THE SIZE IS ONLY AN OFFER. Frank, 23
+     August 2026: "the size of a shape is agnostic, surely, as I can just
+     scale a shape whilst retaining its shape?" Quite so — the same door
+     outline serves a game that prints it an inch and a half wide and one
+     that prints it two. So a kept shape remembers the size it was drawn at,
+     because that is free and usually right, and then lets it be changed:
+     type a size, or drag the shape out on the sheet like a rectangle. The
+     scaling is always UNIFORM — a shape that has been squashed is a
+     different shape, and stretching is what the transform box is for once
+     it has landed. */
+  var laySize = null;         // {w, h} in inches, what the next one will be
+  var layBox = null;          // a size being dragged out on the sheet
+  var box2 = null;            // a rectangle or ellipse being dragged out
+  var ruler = null;           // {a, b} — a line laid across something measured
+  var measuring = false;      // waiting for that line to be drawn
+  var press = null;           // a pointer press in progress
+  var panning = null;
+  var spacing = false;
+  var cursor = null;          // last pointer position, in sheet coordinates
+  var undoStack = [];
+  var savedTimer = null;
+  /* Curved pieces are rounded through their own nodes by this much. It was
+     a slider, and it came out again: at the zoom you work at you cannot see
+     what it does, and a control nobody can judge is worse than none. The
+     rounding itself stays, because a thirty-node island really would cut
+     with flat chords without it. */
+  var smooth = 0.5;
+
+  /* Guides are drawn over a printed sheet, so no one colour is right for
+     every sheet. Magenta is the default because printed game components are
+     very seldom anywhere near it. */
+  var GUIDE_INKS = [
+    { name: "Magenta", line: "#FF2BE0" },
+    { name: "Lime", line: "#B4FF1F" },
+    { name: "Orange", line: "#FF7A00" },
+    { name: "White", line: "#FFFFFF" },
+    { name: "Black", line: "#080C11" }
+  ];
+  var guideInk = GUIDE_INKS[0].line;
+  try {
+    var keptInk = localStorage.getItem(STORE + "guideInk");
+    if (keptInk) guideInk = keptInk;
+  } catch (e) { /* the default will do */ }
+
+  document.getElementById("subject").textContent = SUBJECT;
+
+  /* ---------------------------------------------------------------- images */
+
+  /* ⚠️ A SHEET'S PICTURE IS FETCHED WHEN IT REACHES THE TABLE, NOT BEFORE.
+     A 300dpi sheet is 2550 x 4200, which is forty megabytes of pixels once
+     the browser has unpacked it; arming all 161 sheets of a game at once
+     asked for seven gigabytes and every drag on the sheet went to pieces.
+     Three pictures are held at a time — the one being worked on and the two
+     before it, so stepping back a sheet is still instant. */
+  var HELD = 3;
+  var armed = [];
+
+  function armSheet(s) {
+    if (!s.img) {
+      s.img = new Image();
+      s.img.onload = function () { if (s === sheet) draw(); };
+      s.img.src = s.src;
+    }
+    var at = armed.indexOf(s);
+    if (at >= 0) armed.splice(at, 1);
+    armed.unshift(s);
+    while (armed.length > HELD) {
+      var old = armed.pop();
+      if (old !== sheet) old.img = null;   // let go; the browser keeps the file
+    }
+    return s;
+  }
+
+  /* ------------------------------------------------------------ persistence */
+
+  function load(s) {
+    sheet = s;
+    armSheet(s);
+    pieces = [];
+    draft = null;
+    guides = [];
+    sel = null;
+    undoStack = [];
+    ruler = null;
+    measuring = false;
+    if (elScaleAsk) elScaleAsk.hidden = true;
+    var had = false;
+    try {
+      var raw = localStorage.getItem(STORE + s.id);
+      if (raw) {
+        var got = JSON.parse(raw);
+        pieces = got.pieces || [];
+        draft = got.draft || null;
+        guides = got.guides || [];
+        if (got.dpi > 0) scales[s.id] = got.dpi;
+        had = true;
+      }
+      var spun = localStorage.getItem(STORE + "rot." + s.id);
+      view.rot = spun ? (parseInt(spun, 10) % 4 + 4) % 4 : 0;
+    } catch (e) { /* a private window, or a full store — outline afresh */ }
+    recolour();
+    // The automatic attempt is never laid down on its own. A sheet opens
+    // exactly as it was left, and the guesses only arrive when they are
+    // asked for — an outline on the sheet should be one somebody meant to
+    // put there, not something to be told apart from your own work.
+    current = -1;
+    if (pieces.length) setCurrent(0);
+    fit();
+    refresh();
+  }
+
+  /* Which colour a new piece takes. It used to be the number of pieces so
+     far, which repeats the moment one is deleted — draw, delete, draw, and
+     you are handed the same colour again. Take the lowest colour nobody is
+     using instead. Past twelve pieces a colour has to come round again, so
+     pick the one already furthest away: the cutter reads colour as
+     identity, and two touching pieces in one colour would cut as one. */
+
+  function nextInk(pts) {
+    var used = {};
+    pieces.forEach(function (p) { used[p.ink] = (used[p.ink] || 0) + 1; });
+    for (var i = 0; i < INKS.length; i++) if (!used[i]) return i;
+
+    var here = pts ? centroid(pts) : [0, 0];
+    var best = 0, furthest = -1;
+    for (var k = 0; k < INKS.length; k++) {
+      var near = Infinity;
+      pieces.forEach(function (p) {
+        if (p.ink !== k) return;
+        var c = centroid(p.pts);
+        near = Math.min(near, Math.hypot(c[0] - here[0], c[1] - here[1]));
+      });
+      if (near > furthest) { furthest = near; best = k; }
+    }
+    return best;
+  }
+
+  /* Anything stored back when colours could repeat gets sorted out on the
+     way in, rather than leaving Frank to spot it. */
+  function recolour() {
+    var seen = {}, mended = 0;
+    pieces.forEach(function (p, i) {
+      if (p.ink === undefined || seen[p.ink]) {
+        var was = pieces;
+        pieces = pieces.slice(0, i);          // only what came before counts
+        p.ink = nextInk(p.pts);
+        pieces = was;
+        mended++;
+      }
+      seen[p.ink] = true;
+    });
+    if (mended) save();
+    return mended;
+  }
+
+  function centroid(pts) {
+    var x = 0, y = 0;
+    pts.forEach(function (p) { x += p[0]; y += p[1]; });
+    return [x / pts.length, y / pts.length];
+  }
+
+  function addSuggested(quiet) {
+    var offered = (sheet.suggested || []);
+    if (!offered.length) {
+      if (!quiet) window.alert("There is no automatic attempt at this sheet.");
+      return 0;
+    }
+    var added = 0;
+    offered.forEach(function (pts) {
+      var mine = centroid(pts);
+      for (var i = 0; i < pieces.length; i++) {
+        // already outlined by hand, one way round or the other
+        if (inside(mine, pieces[i].pts)) return;
+        if (inside(centroid(pieces[i].pts), pts)) return;
+      }
+      var mine2 = pts.map(function (p) { return [p[0], p[1]]; });
+      pieces.push({ ink: nextInk(mine2), curve: true, pts: mine2 });
+      added++;
+    });
+    if (added && !quiet) { save(); refresh(); }
+    return added;
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORE + sheet.id, JSON.stringify(
+        { pieces: pieces, draft: draft, guides: guides,
+          dpi: scales[sheet.id] || 0 }));
+      elSaved.classList.add("on");
+      clearTimeout(savedTimer);
+      savedTimer = setTimeout(function () {
+        elSaved.classList.remove("on");
+      }, 900);
+    } catch (e) { /* nothing to be done; the export still works */ }
+  }
+
+  function mark() {
+    undoStack.push(JSON.stringify(
+      { pieces: pieces, draft: draft, guides: guides }));
+    if (undoStack.length > 60) undoStack.shift();
+    if (elUndo) elUndo.disabled = false;
+  }
+
+  function undo() {
+    if (!undoStack.length) return;
+    var was = JSON.parse(undoStack.pop());
+    pieces = was.pieces;
+    draft = was.draft;
+    guides = was.guides || [];
+    grabbed = null;
+    refresh();
+    save();
+  }
+
+  function setCurrent(i) {
+    if (i === current) { showRepeat(); says(); draw(); return; }
+    current = i;
+    if (i >= 0 && pieces[i]) {
+      var d = bounds(outline(pieces[i]));
+      elStepX.value = (d[0] / dpi()).toFixed(2);
+      elStepY.value = (d[1] / dpi()).toFixed(2);
+    }
+    showRepeat();
+    says();
+    naming();
+    list();
+    draw();
+  }
+
+  /* ------------------------------------------------------- naming a piece */
+
+  /* An outline on its own says where to cut, and nothing about what has
+     been cut. A piece can carry a name and a note, kept with the outline
+     and written into the exported JSON, so that whatever picks the pieces
+     up afterwards knows what each one is without anyone guessing from a
+     thumbnail. */
+
+  var elNamingPanel = document.getElementById("namingPanel");
+  var elPieceName = document.getElementById("pieceName");
+  var elPieceNote = document.getElementById("pieceNote");
+  var elSolo = document.getElementById("soloPiece");
+
+  /* One piece at a time. Trimming a shape that sits against three others
+     means every drag is a chance to take hold of the wrong outline; with
+     this on, the others are not drawn and cannot be touched. */
+  var solo = false;
+
+  function visible(i) { return !solo || i === current; }
+
+  elSolo.addEventListener("change", function () {
+    solo = elSolo.checked && current >= 0;
+    list();
+    draw();
+  });
+
+  function naming() {
+    var pc = current >= 0 ? pieces[current] : null;
+    elNamingPanel.hidden = !pc;
+    if (!pc) { solo = false; elSolo.checked = false; return; }
+    elSolo.checked = solo;
+    if (document.activeElement !== elPieceName) {
+      elPieceName.value = pc.name || "";
+    }
+    if (document.activeElement !== elPieceNote) {
+      elPieceNote.value = pc.note || "";
+    }
+  }
+
+  function named(field, el) {
+    el.addEventListener("input", function () {
+      var pc = current >= 0 ? pieces[current] : null;
+      if (!pc) return;
+      var v = el.value.trim();
+      if (v) pc[field] = v;
+      else delete pc[field];
+      list();
+      save();
+    });
+  }
+  named("name", elPieceName);
+  named("note", elPieceNote);
+
+  /* The toolbar has to say what Duplicate and Delete would act on, or they
+     are a guess. */
+  /* The automatic attempt is never laid down unasked, so the button has to
+     say what is waiting behind it — otherwise a sheet with fifty guesses
+     ready looks exactly like a sheet with none. */
+  function offers() {
+    var n = (sheet && sheet.suggested ? sheet.suggested.length : 0);
+    elSuggest.textContent = n
+      ? "Add the " + n + " suggested outline" + (n === 1 ? "" : "s")
+      : "No automatic attempt at this sheet";
+    elSuggest.disabled = !n;
+  }
+
+  function says() {
+    var on = current >= 0 && !!pieces[current];
+    elWhich.innerHTML = on
+      ? "piece <b>" + String(current + 1).padStart(2, "0") + "</b>"
+      : "no piece chosen";
+    elDup.disabled = !on;
+    elDel.disabled = !on;
+    elTidy.disabled = !on;
+    elUndo.disabled = !undoStack.length;
+    elClose.disabled = !(draft && draft.pts.length >= 3);
+  }
+
+  function refresh() {
+    list(); tabs(); showRepeat(); says(); naming(); offers(); hintFor();
+    scaleSays(); draw();
+  }
+
+  /* -------------------------------------------------------------- geometry */
+
+  function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+
+  function segDist(p, a, b) {
+    var vx = b[0] - a[0], vy = b[1] - a[1];
+    var L = vx * vx + vy * vy;
+    var t = L ? ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / L : 0;
+    t = Math.max(0, Math.min(1, t));
+    return { d: Math.hypot(p[0] - (a[0] + t * vx), p[1] - (a[1] + t * vy)),
+             at: [a[0] + t * vx, a[1] + t * vy] };
+  }
+
+  function inside(p, pts) {
+    var yes = false;
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      var a = pts[i], b = pts[j];
+      if ((a[1] > p[1]) !== (b[1] > p[1]) &&
+          p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) {
+        yes = !yes;
+      }
+    }
+    return yes;
+  }
+
+  /* Straighten a freehand run: drop any point that sits within `tol` of the
+     line between the points that survive either side of it. Keeps a sketched
+     curve looking the same while leaving few enough nodes to grab hold of. */
+  function simplify(pts, tol) {
+    if (pts.length < 3) return pts.slice();
+    var keep = new Array(pts.length);
+    keep[0] = keep[pts.length - 1] = true;
+    (function span(lo, hi) {
+      if (hi <= lo + 1) return;
+      var worst = 0, at = -1;
+      for (var i = lo + 1; i < hi; i++) {
+        var d = segDist(pts[i], pts[lo], pts[hi]).d;
+        if (d > worst) { worst = d; at = i; }
+      }
+      if (worst > tol) { keep[at] = true; span(lo, at); span(at, hi); }
+    })(0, pts.length - 1);
+    return pts.filter(function (_, i) { return keep[i]; });
+  }
+
+  /* A dragged-out rectangle or ellipse becomes an ordinary outline with
+     nodes on it, so it can be adjusted afterwards like anything else — a
+     rectangle keeps its four corners, and an ellipse takes enough nodes
+     that no flat spot shows at 300dpi. */
+
+  function corners(a, b, square) {
+    var x0 = Math.min(a[0], b[0]), x1 = Math.max(a[0], b[0]);
+    var y0 = Math.min(a[1], b[1]), y1 = Math.max(a[1], b[1]);
+    if (square) {
+      var side = Math.max(x1 - x0, y1 - y0);
+      if (b[0] < a[0]) x0 = x1 - side; else x1 = x0 + side;
+      if (b[1] < a[1]) y0 = y1 - side; else y1 = y0 + side;
+    }
+    return [x0, y0, x1, y1];
+  }
+
+  function rectPts(a, b, square) {
+    var c = corners(a, b, square);
+    return [[c[0], c[1]], [c[2], c[1]], [c[2], c[3]], [c[0], c[3]]];
+  }
+
+  function ellipsePts(a, b, circle) {
+    var c = corners(a, b, circle);
+    var rx = (c[2] - c[0]) / 2, ry = (c[3] - c[1]) / 2;
+    var cx = c[0] + rx, cy = c[1] + ry;
+    var round = Math.PI * (3 * (rx + ry) -
+                Math.sqrt((3 * rx + ry) * (rx + 3 * ry)));
+    var n = Math.max(24, Math.min(96, Math.round(round / 40)));
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var t = i / n * Math.PI * 2;
+      pts.push([cx + Math.cos(t) * rx, cy + Math.sin(t) * ry]);
+    }
+    return pts;
+  }
+
+  /* The transform box: the way to stretch, squash, spin or shift a whole
+     piece without touching a single node. Eight handles round a padded
+     bounding box, and one above it to turn by. */
+
+  var HANDLE = 4.5;       // screen px, half the side of a handle
+  var BOXPAD = 16;        // screen px the box stands off the piece
+  var TURNARM = 26;       // screen px the turning handle stands above it
+
+  /* Round the line as drawn, not round the nodes: on a curved piece the line
+     runs outside its own nodes, and a box that left it hanging outside was
+     the thing that made the corners impossible to work on. */
+  function extent(pc) {
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    outline(pc).forEach(function (p) {
+      if (p[0] < x0) x0 = p[0];
+      if (p[0] > x1) x1 = p[0];
+      if (p[1] < y0) y0 = p[1];
+      if (p[1] > y1) y1 = p[1];
+    });
+    var pad = BOXPAD / view.s;
+    return [x0 - pad, y0 - pad, x1 + pad, y1 + pad];
+  }
+
+  /* handle -> [x, y] on the box, and the point it scales away from */
+  var GRIP = [[0, 0], [0.5, 0], [1, 0], [1, 0.5],
+              [1, 1], [0.5, 1], [0, 1], [0, 0.5]];
+
+  function handles(b) {
+    var out = GRIP.map(function (g) {
+      return [b[0] + (b[2] - b[0]) * g[0], b[1] + (b[3] - b[1]) * g[1]];
+    });
+    out.push([(b[0] + b[2]) / 2, b[1] - TURNARM / view.s]);   // the turn grip
+    return out;
+  }
+
+  function findHandle(i, p) {
+    if (i < 0 || !pieces[i]) return -1;
+    var hs = handles(extent(pieces[i]));
+    for (var k = 0; k < hs.length; k++) {
+      // by distance, not by a bounding square: a square of this size reaches
+      // half again as far across its diagonal as it does across its face,
+      // which is enough to reach past the box and onto the piece itself
+      if (dist(p, hs[k]) * view.s <= HANDLE + 3) return k;
+    }
+    return -1;
+  }
+
+  function applyXform(p, shift) {
+    var pc = pieces[xform.piece];
+    if (xform.grip === 8) {                       // turning
+      var a = Math.atan2(p[1] - xform.centre[1], p[0] - xform.centre[0]);
+      var turn = a - xform.from;
+      if (shift) turn = Math.round(turn / (Math.PI / 12)) * (Math.PI / 12);
+      var cos = Math.cos(turn), sin = Math.sin(turn);
+      pc.pts = xform.orig.map(function (q) {
+        var dx = q[0] - xform.centre[0], dy = q[1] - xform.centre[1];
+        return [xform.centre[0] + dx * cos - dy * sin,
+                xform.centre[1] + dx * sin + dy * cos];
+      });
+      return;
+    }
+    var g = GRIP[xform.grip];
+    var sx = 1, sy = 1;
+    if (g[0] !== 0.5) {
+      var wasX = xform.grab[0] - xform.anchor[0];
+      if (Math.abs(wasX) > 1e-6) sx = (p[0] - xform.anchor[0]) / wasX;
+    }
+    if (g[1] !== 0.5) {
+      var wasY = xform.grab[1] - xform.anchor[1];
+      if (Math.abs(wasY) > 1e-6) sy = (p[1] - xform.anchor[1]) / wasY;
+    }
+    if (shift && g[0] !== 0.5 && g[1] !== 0.5) {  // a corner, in proportion
+      var m = Math.min(Math.abs(sx), Math.abs(sy));
+      sx = m * (sx < 0 ? -1 : 1);
+      sy = m * (sy < 0 ? -1 : 1);
+    }
+    pc.pts = xform.orig.map(function (q) {
+      return [xform.anchor[0] + (q[0] - xform.anchor[0]) * sx,
+              xform.anchor[1] + (q[1] - xform.anchor[1]) * sy];
+    });
+  }
+
+  /* Guides: lines laid across the sheet to line things up on. They are
+     worth far more if they pull, so anything being placed or dragged snaps
+     to one within a few pixels of the pointer. */
+
+  var SNAP = 6;               // screen px within which a guide takes hold
+
+  function snapped(p) {
+    var out = [p[0], p[1]];
+    guides.forEach(function (g) {
+      var i = g.axis === "x" ? 0 : 1;
+      if (Math.abs(p[i] - g.at) * view.s <= SNAP) out[i] = g.at;
+    });
+    return out;
+  }
+
+  function guideAt(p) {
+    for (var i = 0; i < guides.length; i++) {
+      var k = guides[i].axis === "x" ? 0 : 1;
+      if (Math.abs(p[k] - guides[i].at) * view.s <= SNAP) return i;
+    }
+    return -1;
+  }
+
+  function addGuides(both) {
+    if (!cursor) return;
+    mark();
+    guides.push({ axis: "x", at: cursor[0] });
+    if (both) guides.push({ axis: "y", at: cursor[1] });
+    save();
+    draw();
+  }
+
+  /* Picking out a run of nodes and moving them as one. On a rounded piece
+     the useful correction is usually "this whole side is a little too far
+     in", which node by node is miserable. Drag a band round them on open
+     water, then drag any one of them and they all come. */
+
+  function picked(i, n) {
+    return !!sel && sel.piece === i && sel.nodes.indexOf(n) >= 0;
+  }
+
+  function pickIn(band, add) {
+    var x0 = Math.min(band.a[0], band.b[0]), x1 = Math.max(band.a[0], band.b[0]);
+    var y0 = Math.min(band.a[1], band.b[1]), y1 = Math.max(band.a[1], band.b[1]);
+    var tally = [];
+    pieces.forEach(function (pc, i) {
+      if (!visible(i)) return;
+      var got = [];
+      pc.pts.forEach(function (q, n) {
+        if (q[0] >= x0 && q[0] <= x1 && q[1] >= y0 && q[1] <= y1) got.push(n);
+      });
+      if (got.length) tally.push({ piece: i, nodes: got });
+    });
+    if (!tally.length) return add ? sel : null;
+    // one piece at a time: the one with most nodes in the band. Moving parts
+    // of two outlines at once is never what anybody meant.
+    tally.sort(function (a, b) { return b.nodes.length - a.nodes.length; });
+    var win = tally[0];
+    if (add && sel && sel.piece === win.piece) {
+      win.nodes.forEach(function (n) {
+        if (sel.nodes.indexOf(n) < 0) sel.nodes.push(n);
+      });
+      sel.last = win.nodes[win.nodes.length - 1];
+      return sel;
+    }
+    win.last = win.nodes[win.nodes.length - 1];
+    return win;
+  }
+
+  /* Building the run up by clicking, which is what an awkward run wants.
+     A band has to be dragged on open water, so a run along a coastline
+     that has other nodes crowded behind it cannot be lassoed without
+     catching them too — and on a piece that fills the sheet there may be
+     no open water to start the drag on at all.
+
+     Shift takes the whole stretch of outline from the last node picked to
+     this one; Cmd adds or drops a single node. The nodes are a closed
+     ring, so "the stretch between" is the shorter way round — which is
+     what the eye means by it, and it makes the far side of a piece
+     reachable by clicking its two ends. */
+
+  function toggleNode(i, n) {
+    if (!sel || sel.piece !== i) {
+      sel = { piece: i, nodes: [n], last: n };
+      return;
+    }
+    var at = sel.nodes.indexOf(n);
+    if (at >= 0) sel.nodes.splice(at, 1);
+    else sel.nodes.push(n);
+    sel.last = n;
+    if (!sel.nodes.length) sel = null;
+  }
+
+  function ringArc(n, a, b) {
+    var fwd = [], back = [], i;
+    for (i = a; ; i = (i + 1) % n) { fwd.push(i); if (i === b) break; }
+    for (i = a; ; i = (i - 1 + n) % n) { back.push(i); if (i === b) break; }
+    return fwd.length <= back.length ? fwd : back;
+  }
+
+  function spanTo(i, n) {
+    var pc = pieces[i];
+    if (!pc) return;
+    if (!sel || sel.piece !== i || sel.last === undefined) {
+      sel = { piece: i, nodes: [n], last: n };
+      return;
+    }
+    ringArc(pc.pts.length, sel.last, n).forEach(function (k) {
+      if (sel.nodes.indexOf(k) < 0) sel.nodes.push(k);
+    });
+    sel.last = n;
+  }
+
+  /* Deleting the whole picked run at once. Trimming a lumpy stretch of
+     freehand back to a few nodes is the commonest repair there is, and
+     double-clicking them away one at a time re-flattens the curve and
+     re-tests every node between each removal. */
+
+  function dropPicked() {
+    if (!sel || !sel.nodes.length) return 0;
+    var pc = pieces[sel.piece];
+    if (!pc) { sel = null; return 0; }
+    var gone = sel.nodes.slice().sort(function (a, b) { return b - a; });
+    var left = pc.pts.length - gone.length;
+    if (left < 3) {
+      elHint.innerHTML = "An outline needs three nodes, and that would " +
+        "leave " + left + ". Drop some from the run first, or delete the " +
+        "whole piece.";
+      return 0;
+    }
+    mark();
+    gone.forEach(function (k) { pc.pts.splice(k, 1); });
+    sel = null;
+    hotNode = null;
+    refresh();
+    save();
+    return gone.length;
+  }
+
+  /* A node dragged well outside the piece leaves a spike, and a spike is
+     worse than it looks: the bounding box grows to contain it, so the
+     transform box ends up nowhere near the shape it is supposed to be
+     round. Hunting the stray node down at high zoom is miserable, so:
+     find the nodes that stand far out of line with their own neighbours
+     and drop them.
+
+     "Far out of line" is measured against the piece itself — how far each
+     node sits off the line between the two either side of it, compared
+     with what that is for a typical node on the same outline. A coastline
+     of a hundred small wanders has a small typical value and a spike is
+     obvious against it; a rectangle has four corners that are all equally
+     "far out" and so nothing is picked. It has to clear a real distance
+     as well, so no amount of statistics can nibble a fine outline. */
+
+  function stray(pts) {
+    var n = pts.length;
+    if (n < 5) return [];
+    var off = pts.map(function (q, i) {
+      return segDist(q, pts[(i - 1 + n) % n], pts[(i + 1) % n]).d;
+    });
+    var mid = off.slice().sort(function (a, b) { return a - b; })[n >> 1];
+    var floor = 0.12 * dpi();                 // never touch anything this small
+    var bar = Math.max(mid * 6, floor);
+    var out = [];
+    off.forEach(function (d, i) { if (d > bar) out.push(i); });
+    return out.length < n - 3 ? out : [];   // it is the shape, not a spike
+  }
+
+  function tidy() {
+    if (current < 0 || !pieces[current]) return 0;
+    var pts = pieces[current].pts;
+    var bad = stray(pts);
+    if (!bad.length) return 0;
+    mark();
+    pieces[current].pts = pts.filter(function (_, i) {
+      return bad.indexOf(i) < 0;
+    });
+    refresh();
+    save();
+    return bad.length;
+  }
+
+  function nudge(dx, dy) {
+    if (!sel || !sel.nodes.length) return;
+    mark();
+    var pts = pieces[sel.piece].pts;
+    sel.nodes.forEach(function (n) { pts[n] = [pts[n][0] + dx, pts[n][1] + dy]; });
+    list();
+    save();
+    draw();
+  }
+
+  /* Laying a piece out across a grid. Counter sheets and card sheets are
+     both printed on a regular pitch — the magic cards run twelve to a page,
+     three across and four down, every one different art the game needs — so
+     outlining one and stepping it out beats outlining two hundred. */
+
+  function repeatPlan() {
+    if (current < 0 || !pieces[current]) return null;
+    var across = Math.max(1, parseInt(elAcross.value, 10) || 1);
+    var down = Math.max(1, parseInt(elDown.value, 10) || 1);
+    var sx = (parseFloat(elStepX.value) || 0) * dpi();
+    var sy = (parseFloat(elStepY.value) || 0) * dpi();
+    if (across * down <= 1) return null;
+    var base = pieces[current].pts;
+    var out = [];
+    for (var c = 0; c < across; c++) {
+      for (var d = 0; d < down; d++) {
+        if (!c && !d) continue;                    // the original stays put
+        var ox = c * sx, oy = d * sy;
+        out.push(base.map(function (q) { return [q[0] + ox, q[1] + oy]; }));
+      }
+    }
+    return out;
+  }
+
+  function showRepeat() {
+    var on = current >= 0 && !!pieces[current];
+    elRepeat.hidden = !on;
+    if (!on) { ghosts = null; return; }
+    elRepeatOf.textContent = String(current + 1).padStart(2, "0");
+    if (!elRepeat.open) { ghosts = null; return; }
+    ghosts = repeatPlan();
+  }
+
+  function bounds(pts) {
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    pts.forEach(function (p) {
+      if (p[0] < x0) x0 = p[0];
+      if (p[0] > x1) x1 = p[0];
+      if (p[1] < y0) y0 = p[1];
+      if (p[1] > y1) y1 = p[1];
+    });
+    return [x1 - x0, y1 - y0];
+  }
+
+  /* ---------------------------------------------------------------- layout */
+
+  function box() { return stage.getBoundingClientRect(); }
+
+  function resize() {
+    if (elTabs.children.length) railRoom();   // a narrower window, a longer rail
+    var r = box();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cv.style.width = r.width + "px";
+    cv.style.height = r.height + "px";
+    draw();
+  }
+
+  function fit() {
+    var r = box();
+    var wide = view.rot % 2 ? sheet.h : sheet.w;
+    var tall = view.rot % 2 ? sheet.w : sheet.h;
+    view.s = Math.min(r.width / wide, r.height / tall) * 0.94;
+    var b = spread();
+    view.x = (r.width - (b[2] - b[0])) / 2 - b[0];
+    view.y = (r.height - (b[3] - b[1])) / 2 - b[1];
+    draw();
+  }
+
+  function spin(by) {
+    view.rot = ((view.rot + by) % 4 + 4) % 4;
+    try {
+      localStorage.setItem(STORE + "rot." + sheet.id, String(view.rot));
+    } catch (e) { /* nothing to be done */ }
+    fit();
+  }
+
+  function zoomBy(f, cx, cy) {
+    var r = box();
+    if (cx === undefined) { cx = r.width / 2; cy = r.height / 2; }
+    var ns = Math.min(12, Math.max(0.02, view.s * f));
+    view.x = cx - (cx - view.x) * (ns / view.s);
+    view.y = cy - (cy - view.y) * (ns / view.s);
+    view.s = ns;
+    draw();
+  }
+
+  /* Turning the sheet on screen is a view trick and nothing more: outlines,
+     guides and everything exported stay in the sheet's own coordinates, so
+     a piece traced sideways is the same piece. Only the way in and the way
+     out are turned. */
+
+  function turn(v, back) {
+    var r = ((back ? -view.rot : view.rot) % 4 + 4) % 4;
+    if (r === 1) return [-v[1], v[0]];
+    if (r === 2) return [-v[0], -v[1]];
+    if (r === 3) return [v[1], -v[0]];
+    return [v[0], v[1]];
+  }
+
+  function toSheet(ev) {
+    var r = box();
+    var v = turn([ev.clientX - r.left - view.x, ev.clientY - r.top - view.y],
+                 true);
+    return [v[0] / view.s, v[1] / view.s];
+  }
+
+  /* Where the sheet's four corners land, so it can be centred whichever way
+     up it is. */
+  function spread() {
+    var c = [[0, 0], [sheet.w, 0], [sheet.w, sheet.h], [0, sheet.h]]
+      .map(function (q) { return turn([q[0] * view.s, q[1] * view.s]); });
+    var xs = c.map(function (q) { return q[0]; });
+    var ys = c.map(function (q) { return q[1]; });
+    return [Math.min.apply(null, xs), Math.min.apply(null, ys),
+            Math.max.apply(null, xs), Math.max.apply(null, ys)];
+  }
+
+  /* --------------------------------------------------------------- drawing */
+
+  /* Straight from node to node, or curved through them.
+
+     A piece cut from card is not a polygon, and a run of straight chords
+     round an island shows as faceting. So a curved piece is drawn as a
+     Catmull-Rom spline through its own nodes, written out as the cubic
+     Béziers the canvas actually draws — the curve passes exactly through
+     every node, so adjusting one still does what it looks like it does.
+     `smooth` is how much curve: 0 is the bare polygon, 1 is the full
+     spline. Cards and counters are left straight, which is what square
+     corners want.
+
+     Each segment's two handles are a third of that segment's own length,
+     laid along the direction the line runs in as it passes the node. The
+     textbook form scales them by the span from the node before to the node
+     after instead, and that comes apart exactly where this tool is worked
+     hardest. Sketch a curve freehand and its nodes land a few pixels apart;
+     click the corner it runs into and the next node is hundreds of pixels
+     away. The span across that pair is then enormous while the segment it
+     is applied to is tiny, and the line hooks far outside the piece — thirty
+     screen pixels out, past the box drawn round it, over the artwork
+     belonging to the piece next door. A cubic whose handles are a third of
+     its chord cannot do that however the nodes are spaced: it stays within
+     a quarter of that chord of the straight line between them. */
+
+  function unit(x, y) {
+    var L = Math.hypot(x, y);
+    return L ? [x / L, y / L] : null;
+  }
+
+  /* Past this much of a turn the line takes a corner instead of bending
+     round it. A piece cut from a card sheet is a coastline with the card's
+     own straight edges on two or three sides, and a clicked corner between
+     them has to come out square: rounding one off puts the line a long way
+     from where it was put, which is the whole complaint. A curve sketched
+     freehand turns by a few degrees a node and never comes near this. */
+  var CORNER = Math.cos(52 * Math.PI / 180);
+
+  /* The direction the line runs in at node i: the bisector of the two
+     segments meeting there, so it does not care how long either of them is.
+     Null where the line has no direction to keep — at a corner, or at the
+     open end of a draft. */
+  function along(pts, i, close) {
+    var n = pts.length;
+    var back = (close || i > 0)
+      ? unit(pts[i][0] - pts[(i - 1 + n) % n][0],
+             pts[i][1] - pts[(i - 1 + n) % n][1]) : null;
+    var on = (close || i < n - 1)
+      ? unit(pts[(i + 1) % n][0] - pts[i][0],
+             pts[(i + 1) % n][1] - pts[i][1]) : null;
+    if (!back) return on;
+    if (!on) return back;
+    if (back[0] * on[0] + back[1] * on[1] < CORNER) return null;
+    return unit(back[0] + on[0], back[1] + on[1]);
+  }
+
+  /* The two handles and the far end of the segment leaving node k. Shared by
+     the drawing and by the flattening below, so what gets hit-tested is the
+     very same curve that is on screen. */
+  function arc(pts, k, close) {
+    var n = pts.length;
+    var p1 = pts[k], p2 = pts[(k + 1) % n];
+    var L = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) * smooth / 3;
+    var a = along(pts, k, close), b = along(pts, (k + 1) % n, close);
+    return [a ? [p1[0] + a[0] * L, p1[1] + a[1] * L] : [p1[0], p1[1]],
+            b ? [p2[0] - b[0] * L, p2[1] - b[1] * L] : [p2[0], p2[1]], p2];
+  }
+
+  function trace(p, pts, close, curve) {
+    p.beginPath();
+    addPath(p, pts, close, curve);
+  }
+
+  function addPath(p, pts, close, curve) {
+    var n = pts.length;
+    p.moveTo(pts[0][0], pts[0][1]);
+    if (!curve || smooth <= 0 || n < 3) {
+      for (var i = 1; i < n; i++) p.lineTo(pts[i][0], pts[i][1]);
+      if (close) p.closePath();
+      return;
+    }
+    var last = close ? n : n - 1;
+    for (var k = 0; k < last; k++) {
+      var c = arc(pts, k, close);
+      p.bezierCurveTo(c[0][0], c[0][1], c[1][0], c[1][1], c[2][0], c[2][1]);
+    }
+    if (close) p.closePath();
+  }
+
+  /* ------------------------------------------------------ the line as drawn */
+
+  /* Everything that has to agree with the eye — what is under the pointer,
+     where a new node goes, how big the piece is, where its box stands —
+     used to work on the straight chords between the nodes. A curved piece
+     does not show those chords, and where the two part company the tool
+     stops making sense: click the line and nothing happens, because the line
+     the code is measuring against is somewhere else entirely.
+
+     So flatten the drawn curve into a fine polyline, once per change, and
+     work from that. Each point is [x, y, k]: k is the node it came after,
+     which is what tells an inserted node where it belongs in the ring. */
+
+  var FLAT = 8;                 // samples per segment
+  var flats = new WeakMap();    // kept off the piece: pieces are serialised
+
+  function stamp(pts) {
+    var s = pts.length;
+    for (var i = 0; i < pts.length; i++) {
+      s = (s * 31 + Math.round(pts[i][0] * 4) * 7 +
+           Math.round(pts[i][1] * 4)) % 4294967291;
+    }
+    return s + ":" + smooth;
+  }
+
+  function flatten(pc) {
+    var pts = pc.pts, n = pts.length, out = [], i;
+    if (!pc.curve || smooth <= 0 || n < 3) {
+      for (i = 0; i < n; i++) out.push([pts[i][0], pts[i][1], i]);
+      return out;
+    }
+    for (var k = 0; k < n; k++) {
+      var p1 = pts[k], c = arc(pts, k, true);
+      for (var s = 0; s < FLAT; s++) {
+        var u = s / FLAT, v = 1 - u;
+        out.push([v*v*v*p1[0] + 3*v*v*u*c[0][0] + 3*v*u*u*c[1][0] + u*u*u*c[2][0],
+                  v*v*v*p1[1] + 3*v*v*u*c[0][1] + 3*v*u*u*c[1][1] + u*u*u*c[2][1],
+                  k]);
+      }
+    }
+    return out;
+  }
+
+  function outline(pc) {
+    var key = stamp(pc.pts);
+    var got = flats.get(pc);
+    if (got && got.key === key) return got.pts;
+    var made = flatten(pc);
+    flats.set(pc, { key: key, pts: made });
+    return made;
+  }
+
+  function node(p, at, r, fill, stroke) {
+    p.beginPath();
+    p.arc(at[0], at[1], r, 0, Math.PI * 2);
+    p.fillStyle = fill;
+    p.fill();
+    p.lineWidth = 1.5 / view.s;
+    p.strokeStyle = stroke;
+    p.stroke();
+  }
+
+  /* ⚠️ ONE REPAINT PER FRAME. A trackpad reports a drag 120 times a second
+     and each report used to repaint the whole sheet and rebuild the piece
+     rail, so the picture fell steadily behind the hand. Asking for a frame
+     is cheap; the frame does the work once. */
+  var frame = 0, wantPaint = false, wantList = false;
+
+  function tick() {
+    frame = 0;
+    if (wantPaint) { wantPaint = false; paint(); }
+    if (wantList) { wantList = false; relist(); }
+  }
+
+  function ask() {
+    if (!frame) frame = requestAnimationFrame(tick);
+  }
+
+  function draw() { wantPaint = true; ask(); }
+  function list() { wantList = true; ask(); }
+
+  var coming = false;      // the sheet's picture has not arrived yet
+
+  function paint() {
+    if (!sheet) return;
+    coming = false;
+    var r = box();
+    ctx.clearRect(0, 0, r.width, r.height);
+    ctx.save();
+    ctx.translate(view.x, view.y);
+    ctx.rotate(view.rot * Math.PI / 2);
+    ctx.scale(view.s, view.s);
+
+    var cuts = pieces.filter(function (pc, i) {
+      return pc.pts.length > 2 && visible(i);
+    });
+
+    if (look === "sheet" && sheet.img && sheet.img.complete) {
+      ctx.drawImage(sheet.img, 0, 0, sheet.w, sheet.h);
+    } else if (look === "sheet") {
+      // the picture is on its way. Its ground goes down now so the sheet
+      // has its shape and its outlines while it comes, rather than the
+      // stage sitting empty as though the sheet were missing.
+      ctx.fillStyle = "#141A22";
+      ctx.fillRect(0, 0, sheet.w, sheet.h);
+      coming = true;
+    } else if (look === "cut") {
+      if (!voidFill) voidFill = ctx.createPattern(VOID_TILE, "repeat");
+      ctx.fillStyle = voidFill;
+      ctx.fillRect(0, 0, sheet.w, sheet.h);
+      if (cuts.length && sheet.img && sheet.img.complete) {
+        ctx.save();
+        ctx.beginPath();
+        cuts.forEach(function (pc) { addPath(ctx, pc.pts, true, pc.curve); });
+        ctx.clip();
+        ctx.drawImage(sheet.img, 0, 0, sheet.w, sheet.h);
+        ctx.restore();
+      }
+    } else {
+      ctx.fillStyle = "#0A0E13";
+      ctx.fillRect(0, 0, sheet.w, sheet.h);
+    }
+
+    if (guides.length) {
+      // laid down twice: a dark line first, then the bright dashes over it,
+      // so a guide stays readable over pale sand as well as dark sea
+      guides.forEach(function (g) {
+        ctx.beginPath();
+        if (g.axis === "x") { ctx.moveTo(g.at, 0); ctx.lineTo(g.at, sheet.h); }
+        else { ctx.moveTo(0, g.at); ctx.lineTo(sheet.w, g.at); }
+        ctx.strokeStyle = guideInk === "#080C11" ? "#F2F6FA" : "#0A1016";
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 3.5 / view.s;
+        ctx.setLineDash([]);
+        ctx.stroke();
+        ctx.strokeStyle = guideInk;
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 1.5 / view.s;
+        ctx.setLineDash([10 / view.s, 6 / view.s]);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+    }
+
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+
+    pieces.forEach(function (pc, i) {
+      if (pc.pts.length < 3 || !visible(i)) return;
+      var ink = INKS[pc.ink % INKS.length];
+      trace(ctx, pc.pts, true, pc.curve);
+      if (look !== "cut") {
+        ctx.globalAlpha = look === "shapes" ? 1 : (i === hover ? 0.5 : 0.38);
+        ctx.fillStyle = ink;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      ctx.strokeStyle = ink;
+      // over a cut the outline is a hairline: it is there to be grabbed, not
+      // to be looked at, and the point of the view is to judge the edge
+      ctx.globalAlpha = look === "cut" ? (i === hover ? 0.9 : 0.35) : 1;
+      ctx.lineWidth = (look === "cut" ? (i === hover ? 1.5 : 1)
+                                      : (i === hover ? 3 : 2)) / view.s;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    });
+
+    // in Adjust, whichever piece is being pointed at gets its nodes and a
+    // box round it to stretch, squash, turn or shift the whole thing by
+    if (tool === "adjust" && sel && pieces[sel.piece] && hover !== sel.piece) {
+      hover = sel.piece;            // keep a picked run in sight
+    }
+    if (tool === "adjust" && hover >= 0 && pieces[hover]) {
+      var pc = pieces[hover];
+      var ink = INKS[pc.ink % INKS.length];
+      var b = extent(pc);
+
+      ctx.strokeStyle = "#C8A24A";
+      ctx.globalAlpha = 0.75;
+      ctx.lineWidth = 1 / view.s;
+      ctx.setLineDash([5 / view.s, 4 / view.s]);
+      ctx.strokeRect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
+      ctx.setLineDash([]);
+
+      var hs = handles(b);
+      ctx.beginPath();                       // the arm up to the turn grip
+      ctx.moveTo((b[0] + b[2]) / 2, b[1]);
+      ctx.lineTo(hs[8][0], hs[8][1]);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      var side = (HANDLE * 2) / view.s;
+      hs.forEach(function (g, i) {
+        if (i === 8) {
+          node(ctx, g, HANDLE / view.s, "#C8A24A", "#0D1218");
+          return;
+        }
+        ctx.fillStyle = "#C8A24A";
+        ctx.strokeStyle = "#0D1218";
+        ctx.lineWidth = 1.5 / view.s;
+        ctx.fillRect(g[0] - side / 2, g[1] - side / 2, side, side);
+        ctx.strokeRect(g[0] - side / 2, g[1] - side / 2, side, side);
+      });
+
+      pc.pts.forEach(function (pt, i) {
+        var hot = hotNode && hotNode.piece === hover && hotNode.node === i;
+        var got = picked(hover, i);
+        node(ctx, pt, (hot ? 7 : got ? 6 : 4.5) / view.s,
+             hot ? "#FFFFFF" : got ? "#FFFFFF" : ink,
+             got ? ink : "#0D1218");
+      });
+    }
+
+    if (ghosts && ghosts.length && current >= 0 && pieces[current]) {
+      var gink = INKS[pieces[current].ink % INKS.length];
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = gink;
+      ctx.lineWidth = 1.5 / view.s;
+      ctx.setLineDash([7 / view.s, 5 / view.s]);
+      ghosts.forEach(function (g) {
+        trace(ctx, g, true, pieces[current].curve);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    /* What is about to be laid down, drawn where it would land — the same
+       promise the repeat ghosts make. */
+    if (tool === "lay" && laying && (cursor || layBox)) {
+      var fit0 = layBox ? layInBox(laying, layBox) : null;
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = "#C8A24A";
+      ctx.lineWidth = 1.5 / view.s;
+      ctx.setLineDash([7 / view.s, 5 / view.s]);
+      trace(ctx, fit0 ? layPts(laying, fit0.at, fit0)
+                      : layPts(laying, cursor, laySize), true, laying.curve);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    if (marquee) {
+      var mx = Math.min(marquee.a[0], marquee.b[0]);
+      var my = Math.min(marquee.a[1], marquee.b[1]);
+      var mw = Math.abs(marquee.a[0] - marquee.b[0]);
+      var mh = Math.abs(marquee.a[1] - marquee.b[1]);
+      ctx.fillStyle = "#C8A24A";
+      ctx.globalAlpha = 0.12;
+      ctx.fillRect(mx, my, mw, mh);
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = "#C8A24A";
+      ctx.lineWidth = 1 / view.s;
+      ctx.setLineDash([6 / view.s, 4 / view.s]);
+      ctx.strokeRect(mx, my, mw, mh);
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    if (box2) {
+      var shown = tool === "rect" ? rectPts(box2.a, box2.b, box2.square)
+                                  : ellipsePts(box2.a, box2.b, box2.square);
+      var ink3 = INKS[pieces.length % INKS.length];
+      trace(ctx, shown, true, tool !== "rect");
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = ink3;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = ink3;
+      ctx.lineWidth = 2 / view.s;
+      ctx.setLineDash([8 / view.s, 5 / view.s]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    if (draft && draft.pts.length) {
+      var ink2 = INKS[pieces.length % INKS.length];
+      if (draft.pts.length > 1) {
+        trace(ctx, draft.pts, false, true);
+        ctx.strokeStyle = ink2;
+        ctx.lineWidth = 2 / view.s;
+        ctx.stroke();
+      }
+      if (tool === "trace" && cursor && draft.pts.length) {
+        ctx.beginPath();
+        var last = draft.pts[draft.pts.length - 1];
+        ctx.moveTo(last[0], last[1]);
+        ctx.lineTo(cursor[0], cursor[1]);
+        ctx.strokeStyle = ink2;
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 1.5 / view.s;
+        ctx.setLineDash([7 / view.s, 5 / view.s]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+      }
+      draft.pts.forEach(function (pt, i) {
+        node(ctx, pt, (i === 0 ? 6.5 : 3.5) / view.s,
+             i === 0 ? "#0D1218" : ink2, ink2);
+      });
+    }
+
+    /* The measuring line, with the length it is being read as. Drawn with
+       ticks on the ends because what is being measured is where those ends
+       are, to the pixel — the line between them is only there to be seen. */
+    if (ruler) {
+      var ux = ruler.b[0] - ruler.a[0], uy = ruler.b[1] - ruler.a[1];
+      var len = Math.hypot(ux, uy);
+      ctx.strokeStyle = "#C8A24A";
+      ctx.lineWidth = 1.5 / view.s;
+      ctx.beginPath();
+      ctx.moveTo(ruler.a[0], ruler.a[1]);
+      ctx.lineTo(ruler.b[0], ruler.b[1]);
+      ctx.stroke();
+      if (len > 0.5) {
+        var tx = -uy / len * 7 / view.s, ty = ux / len * 7 / view.s;
+        ctx.beginPath();
+        ctx.moveTo(ruler.a[0] - tx, ruler.a[1] - ty);
+        ctx.lineTo(ruler.a[0] + tx, ruler.a[1] + ty);
+        ctx.moveTo(ruler.b[0] - tx, ruler.b[1] - ty);
+        ctx.lineTo(ruler.b[0] + tx, ruler.b[1] + ty);
+        ctx.stroke();
+        ctx.save();
+        ctx.scale(1 / view.s, 1 / view.s);
+        ctx.rotate(-view.rot * Math.PI / 2);
+        ctx.font = "600 12px " + "ui-monospace, Menlo, monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        var mid = turn([(ruler.a[0] + ruler.b[0]) / 2 * view.s,
+                        (ruler.a[1] + ruler.b[1]) / 2 * view.s]);
+        var say = (len / dpi()).toFixed(2) + " in at " + Math.round(dpi()) + " dpi";
+        ctx.strokeStyle = "#0D1218";
+        ctx.lineWidth = 3;
+        ctx.strokeText(say, mid[0], mid[1] - 10);
+        ctx.fillStyle = "#C8A24A";
+        ctx.fillText(say, mid[0], mid[1] - 10);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+
+    if (coming) {
+      ctx.font = "13px ui-monospace, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#7C8B9C";
+      ctx.fillText("fetching the sheet\u2026", r.width / 2, r.height / 2);
+    }
+  }
+
+  /* ------------------------------------------------------------- the tools */
+
+  var NOTES = {
+    trace: "Click corner by corner, or drag to sketch. <b>Enter</b> closes the shape.",
+    adjust: "Hover a piece for its box: corner or side to stretch, the grip above to turn, inside to move. Pick out a run of nodes with <b>shift</b>-click along the outline, <b>&#8984;</b>-click for one at a time, or a band dragged on open water &mdash; then drag any one to move them all, or <b>delete</b> to remove the lot. Click a line to add a node, <b>double-click</b> to remove one.",
+    rect: "Drag out a rectangle. Hold <b>shift</b> for a square. Its four corners stay adjustable.",
+    ellipse: "Drag out an ellipse. Hold <b>shift</b> for a circle.",
+    lay: "Pick a kept shape below, then <b>click where each one goes</b>. It lands at the size in the boxes &mdash; or <b>drag out</b> the size you want, and the next one keeps it."
+  };
+
+  var HINTS = {
+    trace: "Click round a piece, or drag to sketch &middot; <kbd>space</kbd> to " +
+           "pan &middot; <kbd>&#8984;</kbd>scroll to zoom",
+    adjust: "Stretch by the box &middot; turn by the grip above &middot; move " +
+            "from inside &middot; band off a run of nodes on open water and " +
+            "drag or <kbd>arrow</kbd> them together",
+    rect: "Drag out a rectangle &middot; <kbd>shift</kbd> for a square " +
+          "&middot; <kbd>G</kbd> drops guides to snap to",
+    ellipse: "Drag out an ellipse &middot; <kbd>shift</kbd> for a circle " +
+             "&middot; <kbd>G</kbd> drops guides to snap to",
+    lay: "Pick a shape from <b>Shapes kept</b> &middot; click where each one " +
+         "goes &middot; <kbd>esc</kbd> puts it down"
+  };
+
+  function setTool(t) {
+    tool = t;
+    Object.keys(TOOLS).forEach(function (k) {
+      TOOLS[k].setAttribute("aria-pressed", String(k === t));
+    });
+    elNote.innerHTML = NOTES[t];
+    hover = -1;
+    hotNode = null;
+    box2 = null;
+    sel = null;
+    cv.className = t === "adjust" ? "adjust" : "trace";
+    hintFor();
+    draw();
+  }
+
+  function hintFor() {
+    if (measuring) {
+      elHint.innerHTML = "Drag a line across something you have measured " +
+        "&middot; <kbd>esc</kbd> to leave the scale alone";
+    } else if (tool === "adjust" && sel && sel.nodes.length) {
+      elHint.innerHTML = "<b>" + sel.nodes.length + " node" +
+        (sel.nodes.length === 1 ? "" : "s") + " picked</b> &middot; drag one " +
+        "to move them all &middot; <kbd>shift</kbd>-click to extend along " +
+        "the outline &middot; <kbd>&#8984;</kbd>-click for one &middot; " +
+        "<kbd>delete</kbd> removes them &middot; <kbd>esc</kbd> drops the run";
+    } else if (tool === "lay" && laying) {
+      var big = layBox ? layInBox(laying, layBox) : laySize;
+      elHint.innerHTML = "Carrying <b>" + plain(laying.name) + "</b> at <b>" +
+        ((big && big.w) || laying.w).toFixed(2) + " × " +
+        ((big && big.h) || laying.h).toFixed(2) + " in</b> &middot; " +
+        (layBox ? "let go to lay it out at that size"
+                : "click where each one goes, or <b>drag out</b> the size " +
+                  "you want &middot; <kbd>esc</kbd> puts it down");
+    } else if (tool === "lay") {
+      elHint.innerHTML = "Nothing picked up &mdash; choose a shape from " +
+        "<b>Shapes kept</b> on the left, or outline a piece and keep it";
+    } else if (tool === "trace" && draft && draft.pts.length) {
+      elHint.innerHTML = "<b>" + draft.pts.length + " nodes</b> &middot; click " +
+        "the first node or press <kbd>Enter</kbd> to close &middot; " +
+        "<kbd>&#8984;Z</kbd> undo &middot; <kbd>esc</kbd> abandon";
+    } else {
+      elHint.innerHTML = HINTS[tool];
+    }
+  }
+
+  Object.keys(TOOLS).forEach(function (k) {
+    TOOLS[k].addEventListener("click", function () { setTool(k); });
+  });
+
+  function closeDraft() {
+    if (!draft || draft.pts.length < 3) return false;
+    mark();
+    var shut = simplify(draft.pts, SIMPLIFY);
+    pieces.push({ ink: nextInk(shut), curve: true, pts: shut });
+    setCurrent(pieces.length - 1);
+    draft = null;
+    refresh();
+    save();
+    return true;
+  }
+
+  /* ----------------------------------------------------------------- input */
+
+  function findHover(p) {
+    var found = -1, best = null;
+    for (var i = pieces.length - 1; i >= 0; i--) {
+      if (!visible(i)) continue;      // hidden means out of reach, not just unseen
+      var pts = pieces[i].pts;
+      for (var j = 0; j < pts.length; j++) {
+        if (dist(p, pts[j]) * view.s <= GRAB) {
+          hotNode = { piece: i, node: j };
+          return i;
+        }
+      }
+      var line = outline(pieces[i]);
+      if (found < 0 && pts.length > 2 && inside(p, line)) found = i;
+      if (found < 0 && line.length > 1) {
+        for (var k = 0, m = line.length - 1; k < line.length; m = k++) {
+          var s = segDist(p, line[m], line[k]);
+          if (s.d * view.s <= EDGE && (!best || s.d < best.d)) {
+            best = { d: s.d, i: i };
+          }
+        }
+      }
+    }
+    hotNode = null;
+    return found >= 0 ? found : (best ? best.i : -1);
+  }
+
+  cv.addEventListener("pointerdown", function (ev) {
+    try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* headless */ }
+    var p = toSheet(ev);
+    // Space and the middle button pan. Shift is left alone: it constrains a
+    // rectangle to a square and an ellipse to a circle.
+    if (spacing || ev.button === 1) {
+      panning = { x: ev.clientX, y: ev.clientY };
+      cv.className = "pan";
+      return;
+    }
+    if (ev.button !== 0) return;
+
+    if (measuring) {                        // laying a line across something
+      ruler = { a: snapped(p), b: snapped(p), live: true };
+      draw();
+      return;
+    }
+
+    if (tool === "lay") {
+      // a press starts a size; a press that never moves is a plain click and
+      // lays it at the size in the boxes
+      if (laying) { layBox = { a: snapped(p), b: snapped(p) }; draw(); }
+      else elHint.innerHTML = "Pick a shape from <b>Shapes kept</b> first";
+      return;
+    }
+
+    if (tool === "rect" || tool === "ellipse") {
+      box2 = { a: snapped(p), b: snapped(p), square: ev.shiftKey };
+      draw();
+      return;
+    }
+
+    if (tool === "adjust") {
+      var showing = hover;                  // whose box is up before this press
+      var onGuide = guideAt(p);             // guides are rearranged in Adjust
+      if (onGuide >= 0 && findHandle(showing, p) < 0) {
+        mark();
+        railing = onGuide;
+        cv.className = "grab";
+        return;
+      }
+
+      /* The piece's own outline is asked first, and the box round it second.
+         On a piece with a deep bay — the big coast on sheet 3 — the corners
+         of the bounding box sit over the artwork, so a box handle would
+         otherwise swallow every attempt to put a node on the coastline
+         underneath it. Where the two overlap, the outline is what was meant:
+         the box can still be caught anywhere along its sides, and the
+         coastline cannot be reached any other way. */
+      hover = findHover(p);
+      if (hover >= 0) setCurrent(hover);    // this is the piece being worked on
+      if (hotNode) {
+        /* A held modifier means "add this to the run", not "drag it".
+           Ctrl is taken by the context menu on a Mac, so Cmd is the one
+           that counts and Ctrl is only there for anyone else. */
+        if (ev.shiftKey || ev.metaKey || ev.ctrlKey) {
+          ev.preventDefault();
+          if (ev.metaKey || ev.ctrlKey) toggleNode(hotNode.piece, hotNode.node);
+          else spanTo(hotNode.piece, hotNode.node);
+          if (sel) hover = sel.piece;
+          refresh();
+          return;
+        }
+        mark();
+        var whole = picked(hotNode.piece, hotNode.node);
+        if (!whole) sel = null;
+        grabbed = {
+          piece: hotNode.piece, node: hotNode.node, group: whole,
+          from: p,
+          orig: whole ? pieces[hotNode.piece].pts.map(function (q) {
+            return [q[0], q[1]];
+          }) : null
+        };
+        cv.className = "grab";
+        list();
+        draw();
+        return;
+      }
+      if (hover >= 0) {                     // add a node on the line clicked
+        // on the line as drawn, and the new node lands where the pointer is
+        // rather than out on the chord the curve was arching away from
+        var line0 = outline(pieces[hover]), at0 = -1, best0 = null;
+        for (var k0 = 0, m0 = line0.length - 1; k0 < line0.length; m0 = k0++) {
+          var s0 = segDist(p, line0[m0], line0[k0]);
+          if (s0.d * view.s <= EDGE && (!best0 || s0.d < best0.d)) {
+            best0 = s0; at0 = line0[m0][2] + 1;
+          }
+        }
+        if (best0) {
+          mark();
+          pieces[hover].pts.splice(at0, 0, best0.at);
+          grabbed = { piece: hover, node: at0 };
+          hotNode = { piece: hover, node: at0 };
+          cv.className = "grab";
+          list();
+          draw();
+          return;
+        }
+      }
+
+      var grip = findHandle(showing >= 0 ? showing : hover, p);
+      if (grip >= 0) {
+        hover = showing >= 0 ? showing : hover;
+        setCurrent(hover);
+        mark();
+        var b = extent(pieces[hover]);
+        var hs = handles(b);
+        var g = grip === 8 ? [0.5, 0.5] : GRIP[grip];
+        xform = {
+          piece: hover, grip: grip,
+          orig: pieces[hover].pts.map(function (q) { return [q[0], q[1]]; }),
+          grab: hs[grip],
+          anchor: [b[0] + (b[2] - b[0]) * (1 - g[0]),
+                   b[1] + (b[3] - b[1]) * (1 - g[1])],
+          centre: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]
+        };
+        xform.from = Math.atan2(hs[grip][1] - xform.centre[1],
+                                hs[grip][0] - xform.centre[0]);
+        cv.className = "grab";
+        draw();
+        return;
+      }
+
+      if (hover >= 0) {
+        if (inside(p, outline(pieces[hover]))) {   // well inside: shift it bodily
+          mark();
+          moving = { piece: hover, from: p };
+          cv.className = "grab";
+          draw();
+          return;
+        }
+      }
+      // open water: rubber-band a run of nodes out of whichever outline
+      marquee = { a: p, b: p, add: ev.shiftKey };
+      draw();
+      return;
+    }
+
+    press = { x: ev.clientX, y: ev.clientY, at: snapped(p), moved: false };
+  });
+
+  cv.addEventListener("pointermove", function (ev) {
+    cursor = snapped(toSheet(ev));
+
+    if (railing !== null) {
+      var g = guides[railing];
+      g.at = g.axis === "x" ? toSheet(ev)[0] : toSheet(ev)[1];
+      draw();
+      return;
+    }
+
+    if (panning) {
+      view.x += ev.clientX - panning.x;
+      view.y += ev.clientY - panning.y;
+      panning.x = ev.clientX;
+      panning.y = ev.clientY;
+      draw();
+      return;
+    }
+
+    if (ruler && ruler.live) {
+      ruler.b = cursor;
+      draw();
+      return;
+    }
+
+    if (box2) {
+      box2.b = cursor;      // already snapped
+      box2.square = ev.shiftKey;
+      draw();
+      return;
+    }
+
+    if (xform) {
+      applyXform(cursor, ev.shiftKey);
+      list();
+      draw();
+      return;
+    }
+
+    if (marquee) {
+      marquee.b = toSheet(ev);
+      draw();
+      return;
+    }
+
+    if (grabbed) {
+      if (grabbed.group) {
+        var dx = cursor[0] - grabbed.from[0], dy = cursor[1] - grabbed.from[1];
+        var pts = pieces[grabbed.piece].pts;
+        sel.nodes.forEach(function (n) {
+          pts[n] = [grabbed.orig[n][0] + dx, grabbed.orig[n][1] + dy];
+        });
+      } else {
+        pieces[grabbed.piece].pts[grabbed.node] = cursor;
+      }
+      draw();
+      return;
+    }
+
+    if (moving) {
+      var dx = cursor[0] - moving.from[0], dy = cursor[1] - moving.from[1];
+      pieces[moving.piece].pts = pieces[moving.piece].pts.map(function (q) {
+        return [q[0] + dx, q[1] + dy];
+      });
+      moving.from = cursor;
+      draw();
+      return;
+    }
+
+    if (tool === "lay") {
+      if (layBox) { layBox.b = cursor; hintFor(); }
+      if (laying) draw();       // the shape it is carrying follows the hand
+      return;
+    }
+
+    if (tool === "adjust") {
+      var was = hover, wasNode = hotNode && hotNode.node;
+      var found = findHover(cursor);
+      if (found < 0 && hover >= 0 && pieces[hover]) {
+        // still within reach of the hovered piece's box: hold on to it, or
+        // its handles would vanish the moment you went to grab one
+        var b = extent(pieces[hover]);
+        var reach = (TURNARM + HANDLE + 6) / view.s;
+        if (cursor[0] >= b[0] - reach && cursor[0] <= b[2] + reach &&
+            cursor[1] >= b[1] - reach && cursor[1] <= b[3] + reach) {
+          found = hover;
+        }
+      }
+      hover = found;
+      if (hover !== was || (hotNode && hotNode.node) !== wasNode) {
+        hot(hover);
+        draw();
+      }
+      return;
+    }
+
+    if (press) {
+      if (!press.moved &&
+          Math.hypot(ev.clientX - press.x, ev.clientY - press.y) > DRAGGED) {
+        press.moved = true;                 // a drag: sketch freehand
+        mark();
+        if (!draft) draft = { pts: [press.at] };
+      }
+      if (press.moved) {
+        var last = draft.pts[draft.pts.length - 1];
+        if (dist(cursor, last) * view.s >= 2.5) {
+          draft.pts.push(cursor);
+          hintFor();
+        }
+      }
+    }
+    if (draft) draw();
+  });
+
+  function release(ev) {
+    if (layBox) {
+      var b = layBox;
+      layBox = null;
+      var moved = Math.max(Math.abs(b.a[0] - b.b[0]),
+                           Math.abs(b.a[1] - b.b[1])) * view.s;
+      if (moved <= 6) {
+        lay(b.a);                       // a click: the size in the boxes
+      } else {
+        var fit = layInBox(laying, b);  // a drag: the size drawn out
+        if (fit) {
+          // ⭐️ and it STAYS that size: draw one out to fit, then click for
+          // the rest of them without measuring again
+          setLaySize(fit.w);
+          lay(fit.at, fit);
+        }
+      }
+      hintFor();
+      draw();
+      return;
+    }
+    if (railing !== null) {
+      railing = null;
+      cv.className = tool === "adjust" ? "adjust" : "trace";
+      save();
+      return;
+    }
+    if (panning) {
+      panning = null;
+      cv.className = spacing ? "pan" : (tool === "adjust" ? "adjust" : "trace");
+      return;
+    }
+    if (ruler && ruler.live) {
+      ruler.live = false;
+      if (dist(ruler.a, ruler.b) * view.s < 8) ruler = null;   // a stray click
+      askScale();
+      draw();
+      return;
+    }
+    if (box2) {
+      var d = bounds([box2.a, box2.b]);
+      if (Math.max(d[0], d[1]) * view.s > 6) {     // not just a stray click
+        mark();
+        var made = tool === "rect" ? rectPts(box2.a, box2.b, box2.square)
+                                   : ellipsePts(box2.a, box2.b, box2.square);
+        pieces.push({ ink: nextInk(made), curve: tool !== "rect", pts: made });
+        setCurrent(pieces.length - 1);
+        refresh();
+        save();
+      }
+      box2 = null;
+      draw();
+      return;
+    }
+    if (marquee) {
+      var band = marquee;
+      marquee = null;
+      var moved = Math.max(Math.abs(band.a[0] - band.b[0]),
+                           Math.abs(band.a[1] - band.b[1])) * view.s;
+      sel = moved > 4 ? pickIn(band, band.add) : null;
+      if (sel) hover = sel.piece;
+      list();
+      draw();
+      return;
+    }
+    if (grabbed || moving || xform) {
+      grabbed = null;
+      moving = null;
+      xform = null;
+      cv.className = tool === "adjust" ? "adjust" : "trace";
+      list();
+      save();
+      draw();
+      return;
+    }
+    if (!press) return;
+    if (!press.moved) {                      // a click: place one node
+      if (draft && draft.pts.length >= 3 &&
+          dist(press.at, draft.pts[0]) * view.s <= GRAB * 1.6) {
+        press = null;
+        closeDraft();
+        return;
+      }
+      mark();
+      if (!draft) draft = { pts: [] };
+      draft.pts.push(press.at);
+    } else {
+      save();
+    }
+    press = null;
+    hintFor();
+    says();
+    save();
+    draw();
+  }
+  cv.addEventListener("pointerup", release);
+  cv.addEventListener("pointercancel", release);
+
+  cv.addEventListener("dblclick", function (ev) {
+    var p = toSheet(ev);
+    if (tool === "trace") { closeDraft(); return; }
+    var g = guideAt(p);
+    if (g >= 0) { mark(); guides.splice(g, 1); save(); draw(); return; }
+    var h = findHover(p);
+    if (hotNode && pieces[hotNode.piece].pts.length > 3) {
+      mark();
+      pieces[hotNode.piece].pts.splice(hotNode.node, 1);
+      hotNode = null;
+      hover = h;
+      list();
+      save();
+      draw();
+    }
+  });
+
+  cv.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    var r = box();
+    if (ev.ctrlKey || ev.metaKey) {
+      zoomBy(Math.pow(0.995, ev.deltaY), ev.clientX - r.left, ev.clientY - r.top);
+    } else {
+      view.x -= ev.deltaX;
+      view.y -= ev.deltaY;
+      draw();
+    }
+  }, { passive: false });
+
+  /* ⌨️⚠️⚠️ TYPING IS NOT A SHORTCUT. Frank, 21 August 2026: "given the large
+     number of keyboard shortcuts, it can be difficult sometimes to type a file
+     name or description without triggering a bunch of shortcuts."
+
+     He is right and it was plainly broken: this handler is on the WINDOW, and
+     the rail has a name box and a note box on it. Typing "Treasure chest" put
+     the tool into Rectangle (r), Ellipse (e), Adjust (a) and Outline (t) on
+     the way past, and a Backspace in the box deleted a NODE.
+
+     So: while the pointer is in a text field, the only keys this handler still
+     answers are Escape (which lets go of the field) and the ⌘/Ctrl chords,
+     which no text field wants either. Everything else belongs to whoever is
+     typing. */
+  function typing(ev) {
+    var el = ev.target;
+    if (!el || el === window || el === document) return false;
+    var tag = (el.tagName || "").toUpperCase();
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT"
+        || el.isContentEditable === true;
+  }
+
+  window.addEventListener("keydown", function (ev) {
+    var k = ev.key.toLowerCase();
+    if (typing(ev)) {
+      if (k === "escape") { ev.target.blur(); }
+      return;
+    }
+    if (ev.code === "Space" && !spacing) {
+      spacing = true;
+      cv.className = "pan";
+      ev.preventDefault();
+      return;
+    }
+    if ((ev.metaKey || ev.ctrlKey) && k === "z") { ev.preventDefault(); undo(); return; }
+    if ((ev.metaKey || ev.ctrlKey) && k === "d") {
+      ev.preventDefault();
+      duplicate();
+      return;
+    }
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    if (k === "enter") { ev.preventDefault(); closeDraft(); return; }
+    if (k === "escape") {
+      if (measuring || ruler) { stopMeasuring(); return; }
+      if (layBox) { layBox = null; hintFor(); draw(); return; }
+      if (tool === "lay" && laying) {
+        laying = null;
+        setLaySize(0);
+        showShelf();
+        hintFor();
+        draw();
+        return;
+      }
+      if (box2) { box2 = null; draw(); return; }
+      if (sel) { sel = null; draw(); return; }
+      if (draft) { mark(); draft = null; refresh(); save(); }
+      return;
+    }
+    if (k === "backspace" || k === "delete") {
+      if (draft && draft.pts.length) {
+        ev.preventDefault();
+        mark();
+        draft.pts.pop();
+        if (!draft.pts.length) draft = null;
+        refresh();
+        save();
+        return;
+      }
+      if (sel && sel.nodes.length) {
+        ev.preventDefault();
+        dropPicked();
+      }
+      return;
+    }
+    if (sel && k.slice(0, 5) === "arrow") {
+      ev.preventDefault();
+      var step = ev.shiftKey ? 10 : 1;
+      nudge(k === "arrowleft" ? -step : k === "arrowright" ? step : 0,
+            k === "arrowup" ? -step : k === "arrowdown" ? step : 0);
+      return;
+    }
+    if (k === "g") { addGuides(true); return; }
+    if (k === "v") {
+      var order = ["sheet", "cut", "shapes"];
+      setLook(order[(order.indexOf(look) + 1) % 3]);
+      return;
+    }
+    if (k === "]") { spin(1); return; }
+    if (k === "[") { spin(-1); return; }
+    if (k === "t") setTool("trace");
+    if (k === "a") setTool("adjust");
+    if (k === "r") setTool("rect");
+    if (k === "e") setTool("ellipse");
+    if (k === "s") setTool("lay");
+  });
+
+  window.addEventListener("keyup", function (ev) {
+    if (typing(ev)) return;
+    if (ev.code === "Space") {
+      spacing = false;
+      if (!panning) cv.className = tool === "adjust" ? "adjust" : "trace";
+    }
+  });
+
+  /* -------------------------------------------------------------- the rail */
+
+  /* ⚠️ THE HOVERED ROW HAS TO SURVIVE A REBUILD. The piece list is put
+     together on the frame now rather than on the spot, so a rebuild can
+     land after the pointer has already lit a row up. The new rows would
+     come up unlit, and nothing would light them again until the pointer
+     crossed onto a different piece — so the end of `relist()` puts the
+     hover back. */
+  function hot(i) {
+    var rows = elPieces.querySelectorAll(".piece");
+    for (var k = 0; k < rows.length; k++) rows[k].classList.toggle("hot", k === i);
+  }
+
+  function relist() {
+    elPieces.textContent = "";
+    if (!pieces.length) {
+      var e = document.createElement("p");
+      e.className = "empty";
+      e.textContent = "Nothing outlined yet.";
+      elPieces.appendChild(e);
+      return;
+    }
+    pieces.forEach(function (pc, i) {
+      var d = bounds(outline(pc));
+      var row = document.createElement("div");
+      row.className = "piece";
+
+      var sw = document.createElement("span");
+      sw.className = "swatch";
+      sw.style.background = INKS[pc.ink % INKS.length];
+
+      var lab = document.createElement("span");
+      lab.className = "lab";
+      lab.textContent = String(i + 1).padStart(2, "0");
+
+      var nm = document.createElement("span");
+      nm.className = pc.name ? "nm" : "nm none";
+      nm.textContent = pc.name || "unnamed";
+      nm.title = pc.name || "";
+
+      var dim = document.createElement("span");
+      dim.className = "dim";
+      dim.textContent = pc.pts.length + "n · " + (d[0] / dpi()).toFixed(2) +
+                        " × " + (d[1] / dpi()).toFixed(2) + " in";
+
+      var kill = document.createElement("button");
+      kill.className = "kill";
+      kill.type = "button";
+      kill.innerHTML = "&times;";
+      kill.title = "Remove this one";
+      kill.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        mark();
+        pieces.splice(i, 1);
+        hover = -1;
+        sel = null;
+        if (current === i) current = -1;
+        else if (current > i) current -= 1;
+        refresh();
+        save();
+      });
+
+      if (i === current) row.classList.add("current");
+      if (!visible(i)) row.classList.add("hidden");
+      row.addEventListener("mouseenter", function () {
+        if (tool === "adjust") { hover = i; draw(); }
+      });
+      row.addEventListener("click", function () { setCurrent(i); });
+      row.append(sw, lab, nm, dim, kill);
+      elPieces.appendChild(row);
+    });
+    if (hover >= 0) hot(hover);
+  }
+
+  function counts(id) {
+    if (sheet && id === sheet.id) return pieces.length;
+    try {
+      var raw = localStorage.getItem(STORE + id);
+      return raw ? (JSON.parse(raw).pieces || []).length : 0;
+    } catch (e) { return 0; }
+  }
+
+  /* ---------------------------------------------------- sheets of your own */
+
+  /* The baked page carries whatever sheets it was built with, and that is
+     usually the whole job. But a sheet turns up late — a scan somebody
+     missed, a page from another box — and rebuilding the file is not
+     always possible on the machine that has the scan.
+
+     So a sheet can be added here. The picture goes in IndexedDB, not in
+     localStorage: a sheet is megabytes and localStorage is a few, and
+     losing a scan to a full store would be a poor trade. The outlines
+     drawn on it are kept exactly like any other sheet's, under its own id,
+     so nothing else in the page has to know the difference. */
+
+  var VAULT = "cuttingtable.sheets";
+  var MINE = STORE + "mine";     // the fallback list of added sheets
+  var KEEP_MAX = 2.4e6;          // how much of one picture we will try to keep
+
+  /* Opened from a file:// page — which is how this is meant to be used —
+     Chrome's IndexedDB never answers at all: no result, no error, nothing.
+     So every call is raced against a short wait, and anything that does not
+     answer counts as no store. What is left is localStorage, which does
+     work from a file, but holds a few megabytes in total; a picture kept
+     there is shrunk until it fits. Outlines are in the sheet's own pixels
+     and everything downstream scales them, so a smaller working copy costs
+     accuracy but nothing else. */
+
+  function vault(then) {
+    var done = false;
+    function fin(db) { if (!done) { done = true; then(db); } }
+    var rq;
+    try { rq = indexedDB.open(VAULT, 1); }
+    catch (e) { return fin(null); }
+    rq.onupgradeneeded = function () {
+      rq.result.createObjectStore("sheets", { keyPath: "id" });
+    };
+    rq.onsuccess = function () { fin(rq.result); };
+    rq.onerror = function () { fin(null); };
+    setTimeout(function () { fin(null); }, 1200);
+  }
+
+  /* --------------------------------------- the fallback, in localStorage */
+
+  function mineList() {
+    try { return JSON.parse(localStorage.getItem(MINE) || "[]"); }
+    catch (e) { return []; }
+  }
+
+  function mineSave(list) {
+    try { localStorage.setItem(MINE, JSON.stringify(list)); return true; }
+    catch (e) { return false; }
+  }
+
+  /* A picture small enough to keep, and the size it ended up. */
+  function shrunk(file, then) {
+    var url = URL.createObjectURL(file);
+    var im = new Image();
+    im.onload = function () {
+      var steps = [1, 0.8, 0.62, 0.48, 0.36, 0.26];
+      for (var i = 0; i < steps.length; i++) {
+        var c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(im.naturalWidth * steps[i]));
+        c.height = Math.max(1, Math.round(im.naturalHeight * steps[i]));
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        var data = c.toDataURL("image/jpeg", 0.8);
+        if (data.length <= KEEP_MAX || i === steps.length - 1) {
+          URL.revokeObjectURL(url);
+          return then(data, c.width, c.height, im.naturalWidth);
+        }
+      }
+    };
+    im.onerror = function () { URL.revokeObjectURL(url); then(null); };
+    im.src = url;
+  }
+
+  function vaultAll(then) {
+    vault(function (db) {
+      var spare = mineList();
+      if (!db) return then(spare);
+      try {
+        var rq = db.transaction("sheets", "readonly")
+                   .objectStore("sheets").getAll();
+        rq.onsuccess = function () {
+          var got = rq.result || [];
+          var seen = {};
+          got.forEach(function (r) { seen[r.id] = true; });
+          then(got.concat(spare.filter(function (r) { return !seen[r.id]; })));
+        };
+        rq.onerror = function () { then(spare); };
+      } catch (e) { then(spare); }
+    });
+  }
+
+  /* Keep a sheet: in IndexedDB whole if there is one, otherwise a shrunken
+     copy in localStorage. `then` is told which happened, because a sheet
+     kept at half size is something the person who added it should know. */
+  function vaultPut(file, rec, then) {
+    vault(function (db) {
+      if (db) {
+        try {
+          var tx = db.transaction("sheets", "readwrite");
+          rec.blob = file;
+          tx.objectStore("sheets").put(rec);
+          tx.oncomplete = function () { then("whole"); };
+          tx.onerror = function () { then(null); };
+          return;
+        } catch (e) { /* fall through to the smaller store */ }
+      }
+      shrunk(file, function (data, w, h, was) {
+        if (!data) return then(null);
+        delete rec.blob;
+        rec.src = data;
+        rec.w = w;
+        rec.h = h;
+        var list = mineList().filter(function (r) { return r.id !== rec.id; });
+        list.push(rec);
+        then(mineSave(list) ? (w < was ? "shrunk" : "whole") : "session");
+      });
+    });
+  }
+
+  function vaultDrop(id, then) {
+    mineSave(mineList().filter(function (r) { return r.id !== id; }));
+    vault(function (db) {
+      if (!db) return then(true);
+      try {
+        var tx = db.transaction("sheets", "readwrite");
+        tx.objectStore("sheets").delete(id);
+        tx.oncomplete = function () { then(true); };
+        tx.onerror = function () { then(true); };
+      } catch (e) { then(true); }
+    });
+  }
+
+  function slug(s) {
+    return String(s).toLowerCase().replace(/\.[a-z0-9]+$/, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40)
+      || "sheet";
+  }
+
+  /* Turn a stored record into a sheet the rest of the page can use —
+     whichever of the two stores it came out of. */
+  function asSheet(rec) {
+    return { id: rec.id, label: rec.label, name: rec.name,
+             w: rec.w, h: rec.h,
+             src: rec.blob ? URL.createObjectURL(rec.blob) : rec.src,
+             suggested: [], mine: true };
+  }
+
+  function takeFiles(files, then) {
+    var list = Array.prototype.slice.call(files).filter(function (f) {
+      return /^image\//.test(f.type);
+    });
+    if (!list.length) {
+      window.alert("Add a picture of the sheet — a PNG or a JPEG. A PDF has " +
+                   "to be turned into pictures first.");
+      return then([]);
+    }
+    var made = [], left = list.length, how = {};
+    list.forEach(function (f) {
+      var url = URL.createObjectURL(f);
+      var probe = new Image();
+      probe.onload = function () {
+        var taken = {};
+        SHEETS.forEach(function (s) { taken[s.id] = true; });
+        var id = "mine-" + slug(f.name), n = 1;
+        while (taken[id]) { n += 1; id = "mine-" + slug(f.name) + "-" + n; }
+        var rec = { id: id, label: f.name.replace(/\.[a-z0-9]+$/i, ""),
+                    name: "added by hand", w: probe.naturalWidth,
+                    h: probe.naturalHeight };
+        URL.revokeObjectURL(url);
+        vaultPut(f, rec, function (kept) {
+          how[kept || "session"] = true;
+          if (!kept) {
+            // nowhere to keep it, but it can still be worked on today
+            rec.src = URL.createObjectURL(f);
+          }
+          made.push(armSheet(asSheet(rec)));
+          if (!--left) {
+            if (how.session) {
+              window.alert("There is no room to keep that picture in this " +
+                "browser, so it will be here until the page is reloaded. " +
+                "The outlines you draw on it are kept either way.");
+            } else if (how.shrunk) {
+              window.alert("Kept, but at a smaller size — a whole scan will " +
+                "not fit in what a page opened from a file is allowed to " +
+                "store. Outlines are measured against the sheet, so this " +
+                "costs a little accuracy and nothing else.");
+            }
+            then(made);
+          }
+        });
+      };
+      probe.onerror = function () {
+        URL.revokeObjectURL(url);
+        if (!--left) then(made);
+      };
+      probe.src = url;
+    });
+  }
+
+  document.getElementById("addSheet").addEventListener("click", function () {
+    document.getElementById("sheetFile").click();
+  });
+  document.getElementById("sheetFile").addEventListener("change", function () {
+    var input = this;
+    takeFiles(input.files, function (made) {
+      input.value = "";
+      if (!made.length) return;
+      made.forEach(function (s) { SHEETS.push(s); });
+      load(made[0]);
+      tabs();
+    });
+  });
+
+  /* Only a sheet somebody added can be taken away again; the baked ones are
+     the file itself. */
+  var elDropSheet = document.getElementById("dropSheet");
+  elDropSheet.addEventListener("click", function () {
+    if (!sheet || !sheet.mine) return;
+    if (!window.confirm("Take " + sheet.label + " out of the table? The " +
+                        "outlines drawn on it go too.")) return;
+    var gone = sheet;
+    vaultDrop(gone.id, function () {
+      try {
+        localStorage.removeItem(STORE + gone.id);
+        localStorage.removeItem(STORE + "rot." + gone.id);
+        localStorage.removeItem(STORE + "done." + gone.id);
+      } catch (e) { /* nothing to be done */ }
+      var at = SHEETS.indexOf(gone);
+      if (at >= 0) SHEETS.splice(at, 1);
+      URL.revokeObjectURL(gone.src);
+      load(SHEETS[Math.max(0, at - 1)] || SHEETS[0]);
+      tabs();
+    });
+  });
+
+  /* ------------------------------------------------------ finished with it */
+
+  /* Whether a sheet is done is a judgement, and only the person cutting it
+     can make it. The tool will not guess from how many outlines are on a
+     sheet: ten outlines may be a finished sheet or half of one. So the
+     tick is set by hand and kept beside the outlines. */
+
+  function isDone(id) {
+    try { return localStorage.getItem(STORE + "done." + id) === "1"; }
+    catch (e) { return false; }
+  }
+
+  function setDone(id, on) {
+    try {
+      if (on) localStorage.setItem(STORE + "done." + id, "1");
+      else localStorage.removeItem(STORE + "done." + id);
+    } catch (e) { /* a private window; the tick just will not last */ }
+  }
+
+  var elSheetDone = document.getElementById("sheetDone");
+  elSheetDone.addEventListener("change", function () {
+    if (!sheet) return;
+    setDone(sheet.id, elSheetDone.checked);
+    tabs();
+  });
+
+  /* ⚠️ THE RAIL IS BUILT ONCE AND THEN PUT RIGHT, NOT MADE AGAIN.
+     It used to be thrown away and rebuilt on every edit: a hundred and
+     sixty buttons, their listeners, and a reading of the store for each
+     one, for the sake of a single changed number. Now the buttons are kept
+     and only what they say is changed. */
+  var tabOf = {};        // sheet id -> its button
+  var railIds = null;    // the rail is only rebuilt when the sheets change
+  var tallied = {};      // outlines per sheet, remembered
+  var shown = null;      // which tab was last brought into view
+
+  function tally(s) {
+    // the sheet on the table is counted afresh; the rest cannot change
+    // while somebody is working on this one
+    if (sheet && s.id === sheet.id) tallied[s.id] = pieces.length;
+    else if (!(s.id in tallied)) tallied[s.id] = counts(s.id);
+    return tallied[s.id];
+  }
+
+  function makeTab(s, short) {
+    var b = document.createElement("button");
+    b.className = "tab";
+    b.type = "button";
+    b.setAttribute("role", "tab");
+    b.title = s.label + (s.name ? " — " + s.name : "");
+
+    var n = document.createElement("b");
+    n.textContent = short;
+    b.nm = document.createElement("span");
+    b.nm.className = "nm";
+    b.count = document.createElement("span");
+    b.count.className = "n";
+    b.tick = document.createElement("span");
+    b.tick.className = "tick";
+    b.tick.textContent = "✓";
+    b.tick.title = "finished with";
+    b.append(n, b.nm, b.count, b.tick);
+
+    // looked up by id at the click, so a sheet re-imported under the same
+    // name still opens the sheet the rail is showing
+    b.addEventListener("click", function () {
+      for (var i = 0; i < SHEETS.length; i++) {
+        if (SHEETS[i].id === s.id) return load(SHEETS[i]);
+      }
+    });
+    return b;
+  }
+
+  /* Whether the rail can share the header's line is a question of whether
+     the tabs fit on it, not of how many there are — so it is measured, not
+     guessed. Squeezed in beside the buttons there was room for four of a
+     game's sheets, and the buttons were wrapping anyway. */
+  function railRoom() {
+    elTabs.classList.remove("many");
+    if (elTabs.scrollWidth > elTabs.clientWidth + 1) elTabs.classList.add("many");
+  }
+
+  function tabs() {
+    if (sheet) elSheetDone.checked = isDone(sheet.id);
+    if (elDropSheet) elDropSheet.hidden = !(sheet && sheet.mine);
+
+    var ids = SHEETS.map(function (s) { return s.id; }).join("\u0000");
+    if (ids !== railIds) {
+      railIds = ids;
+      tabOf = {};
+      elTabs.textContent = "";
+      // A game's sheets arrive in runs out of the same book: eleven pages
+      // of core-box-card-components, then thirty-nine of a supplement's.
+      // Saying the book once at the head of its run and numbering the tabs
+      // inside it is the difference between six tabs on the rail and
+      // thirty — the same rail, but you can find a sheet on it.
+      var runs = [];
+      SHEETS.forEach(function (s) {
+        var full = String(s.label || s.id);
+        var cut = full.lastIndexOf(" ");
+        var head = cut > 0 ? full.slice(0, cut) : "";
+        var tail = cut > 0 ? full.slice(cut + 1) : full;
+        var run = runs[runs.length - 1];
+        if (run && head && run.head === head) run.on.push({ s: s, tail: tail });
+        else runs.push({ head: head, on: [{ s: s, tail: tail }] });
+      });
+      runs.forEach(function (run) {
+        var named = !!run.head && run.on.length > 1;
+        if (named) {
+          var g = document.createElement("span");
+          g.className = "grp";
+          g.textContent = run.head;
+          elTabs.appendChild(g);
+        }
+        run.on.forEach(function (it) {
+          var b = makeTab(it.s, named ? it.tail : String(it.s.label || it.s.id));
+          tabOf[it.s.id] = b;
+          elTabs.appendChild(b);
+        });
+      });
+      shown = null;
+    }
+
+    SHEETS.forEach(function (s) {
+      var b = tabOf[s.id];
+      if (!b) return;
+      b.setAttribute("aria-selected", s === sheet ? "true" : "false");
+      b.nm.textContent = s.name || "";
+      var c = tally(s);
+      b.count.textContent = c ? String(c) : "";
+      b.count.hidden = !c;
+      b.tick.hidden = !isDone(s.id);
+    });
+
+    // The rail scrolls, so the sheet being worked on has to be brought to
+    // where it can be seen — but only when it changes, or it would fight
+    // anyone scrolling the rail by hand.
+    railRoom();
+    if (sheet && shown !== sheet.id && tabOf[sheet.id]) {
+      shown = sheet.id;
+      tabOf[sheet.id].scrollIntoView({ block: "nearest", inline: "center" });
+    }
+  }
+
+  /* ---------------------------------------------------------------- scale */
+
+  var elScaleNow = document.getElementById("scaleNow");
+  var elScaleAsk = document.getElementById("scaleAsk");
+  var elScaleLen = document.getElementById("scaleLen");
+  var elScaleOff = document.getElementById("scaleOff");
+
+  function scaleSays() {
+    var own = sheet && scales[sheet.id];
+    elScaleNow.innerHTML = own
+      ? "<b>" + Math.round(own) + " dpi</b> — measured on this sheet. " +
+        "It is " + (sheet.w / own).toFixed(2) + " &times; " +
+        (sheet.h / own).toFixed(2) + " in."
+      : "<b>300 dpi</b> — right for a PDF rendered at true size. Measure " +
+        "something on a scan or a photograph, whose scale nobody knows.";
+    elScaleOff.disabled = !own;
+  }
+
+  function startMeasuring() {
+    measuring = true;
+    ruler = null;
+    elScaleAsk.hidden = true;
+    cv.className = "trace";
+    hintFor();
+    draw();
+  }
+
+  function stopMeasuring() {
+    measuring = false;
+    ruler = null;
+    elScaleAsk.hidden = true;
+    cv.className = tool === "adjust" ? "adjust" : "trace";
+    hintFor();
+    draw();
+  }
+
+  /* The field opens filled in with what the sheet would say the line is at
+     the scale it is on now. Frank types what it really is, and the
+     difference between the two is the whole correction. */
+  function askScale() {
+    if (!ruler) { elScaleAsk.hidden = true; return; }
+    elScaleAsk.hidden = false;
+    elScaleLen.value = (dist(ruler.a, ruler.b) / dpi()).toFixed(2);
+    elScaleLen.focus();
+    elScaleLen.select();
+  }
+
+  function takeScale() {
+    if (!ruler) return;
+    var inches = parseFloat(elScaleLen.value);
+    var px = dist(ruler.a, ruler.b);
+    if (!(inches > 0) || !(px > 0)) return;
+    var found = px / inches;
+    // a sheet outside this is a typo, not a scan: 6 inches of A4 or 8000
+    if (found < 20 || found > 2400) {
+      window.alert("That would make the sheet " + (sheet.w / found).toFixed(1) +
+                   " inches across, which cannot be right. Check the length.");
+      return;
+    }
+    scales[sheet.id] = found;
+    stopMeasuring();
+    refresh();
+    save();
+  }
+
+  document.getElementById("scaleSet").addEventListener("click", startMeasuring);
+  document.getElementById("scaleGo").addEventListener("click", takeScale);
+  elScaleLen.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") { ev.preventDefault(); takeScale(); }
+  });
+  elScaleOff.addEventListener("click", function () {
+    if (!sheet || !scales[sheet.id]) return;
+    delete scales[sheet.id];
+    stopMeasuring();
+    refresh();
+    save();
+  });
+
+  /* --------------------------------------------------------------- export */
+
+  /* The cut file. The mask PNG says which pixels belong to which piece, for
+     cutting the artwork out of the scan; this says where to run the laser,
+     as one closed path per piece at its true size. Millimetres, with the
+     unit written on the width and the height, because a laser is set up in
+     millimetres and an SVG without units gets guessed at. Each piece keeps
+     its colour: LightBurn sorts a cut into layers by colour, so the pieces
+     arrive already sorted. */
+
+  function cutPath(pc) {
+    var pts = pc.pts, n = pts.length, mm = 25.4 / dpi();
+    function at(p) {
+      return (p[0] * mm).toFixed(3) + " " + (p[1] * mm).toFixed(3);
+    }
+    var d = ["M " + at(pts[0])];
+    if (!pc.curve || smooth <= 0 || n < 3) {
+      for (var i = 1; i < n; i++) d.push("L " + at(pts[i]));
+    } else {
+      for (var k = 0; k < n; k++) {      // the same Béziers that are on screen
+        var c = arc(pts, k, true);
+        d.push("C " + at(c[0]) + " " + at(c[1]) + " " + at(c[2]));
+      }
+    }
+    d.push("Z");
+    return d.join(" ");
+  }
+
+  function plain(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
+  }
+
+  document.getElementById("exportSvg").addEventListener("click", function () {
+    var ready = pieces.filter(function (p) { return p.pts.length >= 3; });
+    if (!ready.length) {
+      window.alert("Nothing to cut yet — outline a piece first.");
+      return;
+    }
+    var mm = 25.4 / dpi();
+    var w = (sheet.w * mm).toFixed(3), h = (sheet.h * mm).toFixed(3);
+    var body = ready.map(function (pc, i) {
+      return '  <path id="piece-' + ("0" + (i + 1)).slice(-2) +
+             '" fill="none" stroke="' + INKS[pc.ink % INKS.length] +
+             '" stroke-width="0.1" d="' + cutPath(pc) + '"/>';
+    }).join("\n");
+    var svg = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"\n' +
+      '     width="' + w + 'mm" height="' + h + 'mm"\n' +
+      '     viewBox="0 0 ' + w + ' ' + h + '">\n' +
+      '  <title>' + plain(SUBJECT) + " — " + plain(sheet.label) + '</title>\n' +
+      '  <desc>' + ready.length + ' pieces at ' + Math.round(dpi()) +
+      ' dpi. Cut on the line.</desc>\n' + body + '\n</svg>\n';
+    var a = document.createElement("a");
+    a.download = sheet.id + ".svg";
+    a.href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  document.getElementById("export").addEventListener("click", function () {
+    var ready = pieces.filter(function (p) { return p.pts.length >= 3; });
+    if (!ready.length) return;
+    var off = document.createElement("canvas");
+    off.width = sheet.w;
+    off.height = sheet.h;
+    var p = off.getContext("2d");
+    ready.forEach(function (pc) {
+      trace(p, pc.pts, true, pc.curve);
+      p.fillStyle = INKS[pc.ink % INKS.length];
+      p.fill();
+    });
+
+    /* Canvas smooths the edge of a fill, and a half-transparent edge pixel
+       comes back out a slightly different colour. The cutter reads colour
+       as identity, so a ring of not-quite-right pixels round every piece
+       would read as another piece. Snap every pixel to the nearest ink at
+       full strength, or to nothing at all. */
+    var rgb = INKS.map(function (h) {
+      return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16),
+              parseInt(h.slice(5, 7), 16)];
+    });
+    var frame = p.getImageData(0, 0, off.width, off.height);
+    var d = frame.data;
+    var cache = new Map();
+    for (var i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 128) { d[i] = d[i + 1] = d[i + 2] = d[i + 3] = 0; continue; }
+      var key = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2];
+      var hit = cache.get(key);
+      if (hit === undefined) {
+        var best = 0, far = Infinity;
+        for (var k = 0; k < rgb.length; k++) {
+          var dr = d[i] - rgb[k][0], dg = d[i + 1] - rgb[k][1],
+              db = d[i + 2] - rgb[k][2];
+          var q = dr * dr + dg * dg + db * db;
+          if (q < far) { far = q; best = k; }
+        }
+        hit = best;
+        cache.set(key, hit);
+      }
+      d[i] = rgb[hit][0];
+      d[i + 1] = rgb[hit][1];
+      d[i + 2] = rgb[hit][2];
+      d[i + 3] = 255;
+    }
+    p.putImageData(frame, 0, 0);
+
+    var a = document.createElement("a");
+    a.download = sheet.id + ".png";
+    a.href = off.toDataURL("image/png");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!pieces.length && !draft) return;
+    if (!window.confirm("Throw away all " + pieces.length +
+                        " outlines on " + sheet.label.toLowerCase() + "?")) return;
+    mark();
+    pieces = [];
+    draft = null;
+    refresh();
+    save();
+  });
+
+  document.getElementById("suggest").addEventListener("click", function () {
+    mark();
+    var n = addSuggested(false);
+    if (!n) {
+      undoStack.pop();
+      window.alert("Every piece the machine can find is already outlined.");
+    }
+  });
+
+  /* Local storage is the safety net, but it belongs to this browser on this
+     machine. A saved copy is the thing you can carry, or come back to after
+     clearing the browser out. */
+
+  document.getElementById("saveWork").addEventListener("click", function () {
+    var work = { tool: "cutting-table", version: 2, sheets: {} };
+    SHEETS.forEach(function (s) {
+      if (s === sheet) {
+        work.sheets[s.id] = { pieces: pieces, draft: draft, guides: guides,
+                              dpi: scales[s.id] || 0 };
+      } else {
+        try {
+          var raw = localStorage.getItem(STORE + s.id);
+          if (raw) work.sheets[s.id] = JSON.parse(raw);
+        } catch (e) { /* skip a sheet we cannot read */ }
+      }
+      // The outlines are in the sheet's own pixels, so the file has to say
+      // how big that sheet is or the numbers mean nothing on their own.
+      if (work.sheets[s.id]) {
+        work.sheets[s.id].w = s.w;
+        work.sheets[s.id].h = s.h;
+        work.sheets[s.id].label = s.label;
+        if (s.mine) work.sheets[s.id].added = true;
+      }
+    });
+    var a = document.createElement("a");
+    a.download = "cutting-table-outlines.json";
+    a.href = "data:application/json;charset=utf-8," +
+             encodeURIComponent(JSON.stringify(work));
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  var workFile = document.getElementById("workFile");
+  document.getElementById("openWork").addEventListener("click", function () {
+    workFile.click();
+  });
+  workFile.addEventListener("change", function () {
+    var f = workFile.files && workFile.files[0];
+    if (!f) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      var work;
+      try { work = JSON.parse(fr.result); } catch (e) { work = null; }
+      if (!work || !work.sheets) {
+        window.alert("That is not a Cutting Table save file.");
+        return;
+      }
+      var names = Object.keys(work.sheets);
+      if (!window.confirm("Replace the outlines on " + names.length +
+                          " sheet(s) with the ones in this file?")) return;
+      names.forEach(function (id) {
+        try {
+          localStorage.setItem(STORE + id, JSON.stringify(work.sheets[id]));
+        } catch (e) { /* nothing to be done */ }
+      });
+      var here = work.sheets[sheet.id];
+      if (here) {
+        pieces = here.pieces || [];
+        draft = here.draft || null;
+        guides = here.guides || [];
+        if (here.dpi > 0) scales[sheet.id] = here.dpi;
+        else delete scales[sheet.id];
+      }
+      undoStack = [];
+      refresh();
+    };
+    fr.readAsText(f);
+    workFile.value = "";
+  });
+
+  var elWhich = document.getElementById("aWhich");
+  var elDup = document.getElementById("aDup");
+  var elDel = document.getElementById("aDel");
+  var elTidy = document.getElementById("aTidy");
+  var elUndo = document.getElementById("aUndo");
+  var elClose = document.getElementById("aClose");
+
+  document.getElementById("aUndo").addEventListener("click", undo);
+  document.getElementById("aClose").addEventListener("click", closeDraft);
+  document.getElementById("aDel").addEventListener("click", function () {
+    if (current < 0 || !pieces[current]) return;
+    mark();
+    pieces.splice(current, 1);
+    hover = -1;
+    sel = null;
+    current = pieces.length ? Math.min(current, pieces.length - 1) : -1;
+    refresh();
+    save();
+  });
+  document.getElementById("aGuide").addEventListener("click", function () {
+    if (!cursor) cursor = [sheet.w / 2, sheet.h / 2];
+    addGuides(true);
+  });
+  document.getElementById("aTurn").addEventListener("click", function (ev) {
+    spin(ev.shiftKey ? -1 : 1);
+  });
+
+  var elRepeat = document.getElementById("repeatBox");
+  var elRepeatOf = document.getElementById("repeatOf");
+  // opened when it is wanted and shut again after, so the list of pieces
+  // gets the room back
+  elRepeat.addEventListener("toggle", function () { showRepeat(); draw(); });
+  var elAcross = document.getElementById("acrossN");
+  var elDown = document.getElementById("downN");
+  var elStepX = document.getElementById("stepX");
+  var elStepY = document.getElementById("stepY");
+
+  [elAcross, elDown, elStepX, elStepY].forEach(function (f) {
+    f.addEventListener("input", function () { showRepeat(); draw(); });
+  });
+
+  document.getElementById("doRepeat").addEventListener("click", function () {
+    var plan = repeatPlan();
+    if (!plan || !plan.length) return;
+    mark();
+    var curve = pieces[current].curve;
+    plan.forEach(function (pts) {
+      pieces.push({ ink: nextInk(pts), curve: curve, pts: pts });
+    });
+    elAcross.value = "1";
+    elDown.value = "1";
+    ghosts = null;
+    refresh();
+    save();
+  });
+
+  /* The same outline again, put down beside the original to be dragged
+     where it belongs. For a piece that repeats without repeating on any
+     regular pitch, which no amount of arithmetic in a step box will do. */
+  function duplicate() {
+    if (current < 0 || !pieces[current]) return;
+    mark();
+    var from = pieces[current];
+    var step = 0.2 * dpi();
+    var copy = from.pts.map(function (q) { return [q[0] + step, q[1] + step]; });
+    pieces.push({ ink: nextInk(copy), curve: from.curve, pts: copy });
+    setCurrent(pieces.length - 1);
+    setTool("adjust");                  // ready to be dragged into place
+    hover = current;
+    refresh();
+    save();
+  }
+
+  document.getElementById("aDup").addEventListener("click", duplicate);
+
+  /* ---------------------------------------------------------- shapes kept
+
+     ⭐️ Frank, 23 August 2026, on a game printed on one die: "I will need to cut a
+     number of pieces that are different, but also EXACTLY the same shape —
+     I only want to create that shape mask ONCE." Whole games are printed on
+     one die: every door the same rectangle, every room tile the same square,
+     every card the same card. Drawing that shape once and laying it down
+     wherever it belongs is the difference between an evening and a minute.
+
+     ⭐️ A shape is kept in INCHES, not in the pixels of the sheet it was
+     drawn on. That is the whole reason it can cross to a sheet scanned at
+     another resolution, and to another game altogether — a door from one
+     dungeon game and a door from another are the same piece of card,
+     and the shelf does not care which box they came out of.
+
+     What is kept is the NODES and the curve flag, not the flattened line,
+     so a shape comes back exactly as it was drawn and can be adjusted after
+     it lands like anything else. */
+
+  var elShelf = document.getElementById("shelf");
+  var SHELF_KEY = STORE + "shelf";
+  var HERE = (typeof ROOM !== "undefined" && ROOM) ? ROOM.project : "";
+
+  /* ⭐️ ONE DOOR TO THE SHELF, and the only thing in this file that cares
+     whether there is a room behind the page. Offline the shelf is this
+     browser's own, because there is nowhere else for it to go; served by
+     the room it is a file beside the projects, shared by every game and
+     outliving anything done to the browser.
+
+     ⚠️ Deliberately a branch here rather than an entry in TABLE_PATCHES: a
+     patch is a Python string spliced into JavaScript and that is where
+     fault 13 lives, whereas a branch is parsed by `node --check` in both
+     documents. One door, so there is one place to change — fault 14.
+
+     `what` is "list", "keep" or "forget", and the answer is always the
+     whole shelf, newest first. */
+  function shelfAsk(what, data, then) {
+    if (typeof ROOM !== "undefined" && ROOM && ROOM.api) {
+      fetch("/api/shapes", { method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ what: what, shape: data || null,
+                                 project: ROOM.project, game: ROOM.name }) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { then(j.shapes || []); })
+        .catch(function () { then(shelf); });   // the room has gone: hold what we have
+      return;
+    }
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem(SHELF_KEY) || "[]") || []; }
+    catch (e) { list = []; }
+    if (what === "keep") {
+      data.id = "s" + Date.now().toString(36) +
+                Math.floor(Math.random() * 1000000).toString(36);
+      list.unshift(data);
+    } else if (what === "forget") {
+      list = list.filter(function (s) { return s.id !== (data || {}).id; });
+    }
+    if (what !== "list") {
+      try { localStorage.setItem(SHELF_KEY, JSON.stringify(list)); }
+      catch (e) { /* the browser's store is full; the room's copy is the real one */ }
+    }
+    then(list);
+  }
+
+  /* ⚠️ MEASURED ON THE LINE AS DRAWN, not on the nodes. A curved piece runs
+     outside its own nodes, and the size a person reads off a piece is the
+     size of the line — fault 15's neighbour, and the same reason the
+     transform box is drawn round the line. */
+  function shapeOf(pc, name) {
+    var line = outline(pc);
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    line.forEach(function (p) {
+      if (p[0] < x0) x0 = p[0];
+      if (p[0] > x1) x1 = p[0];
+      if (p[1] < y0) y0 = p[1];
+      if (p[1] > y1) y1 = p[1];
+    });
+    var d = dpi();
+    return { name: name, curve: !!pc.curve,
+             w: (x1 - x0) / d, h: (y1 - y0) / d,
+             pts: pc.pts.map(function (q) {
+               return [(q[0] - x0) / d, (q[1] - y0) / d];
+             }) };
+  }
+
+  /* Centred on the pointer, at whatever size is being laid — worked back
+     into this sheet's own pixels, which is what makes it survive the
+     crossing from one sheet, or one game, to another. */
+  function layPts(sh, at, size) {
+    var d = dpi(), k = (size ? size.w : sh.w) / sh.w;
+    return sh.pts.map(function (q) {
+      return [at[0] + (q[0] - sh.w / 2) * k * d,
+              at[1] + (q[1] - sh.h / 2) * k * d];
+    });
+  }
+
+  /* Dragged out rather than clicked: the shape scaled to fit the box, its
+     proportions kept, sitting in the corner the drag started from. */
+  function layInBox(sh, b) {
+    var d = dpi();
+    var x0 = Math.min(b.a[0], b.b[0]), x1 = Math.max(b.a[0], b.b[0]);
+    var y0 = Math.min(b.a[1], b.b[1]), y1 = Math.max(b.a[1], b.b[1]);
+    var k = Math.min((x1 - x0) / (sh.w * d), (y1 - y0) / (sh.h * d));
+    if (!(k > 0)) return null;
+    return { w: sh.w * k, h: sh.h * k,
+             at: [x0 + sh.w * k * d / 2, y0 + sh.h * k * d / 2] };
+  }
+
+  function lay(at, size) {
+    if (!laying) return;
+    mark();
+    var made = layPts(laying, at, size || laySize);
+    pieces.push({ ink: nextInk(made), curve: !!laying.curve, pts: made });
+    setCurrent(pieces.length - 1);
+    refresh();
+    save();
+  }
+
+  /* One place decides what the next one will measure, so the two boxes, the
+     ghost under the pointer and the piece that lands can never disagree. */
+  function setLaySize(w, h) {
+    if (!laying) { laySize = null; showLaySize(); return; }
+    var ratio = laying.h / laying.w;
+    w = Math.max(0.02, Math.min(60, w || laying.w));
+    laySize = { w: w, h: h && !w ? h : w * ratio };
+    showLaySize();
+  }
+
+  function showLaySize() {
+    var on = !!(laying && laySize);
+    elLayBox.hidden = !on;
+    if (!on) return;
+    // ⚠️ never write over a box being typed in, or the third digit lands
+    // after the value has been rounded out from under the cursor
+    if (document.activeElement !== elLayW) elLayW.value = laySize.w.toFixed(2);
+    if (document.activeElement !== elLayH) elLayH.value = laySize.h.toFixed(2);
+  }
+
+  /* A small drawing of the shape itself. A name alone is not enough to pick
+     the right one out of a shelf of doors. */
+  function shapeThumb(sh) {
+    var c = document.createElement("canvas");
+    c.width = c.height = 68;                  // drawn at twice the size shown
+    var g = c.getContext("2d");
+    var k = Math.min(58 / Math.max(sh.w, 0.01), 58 / Math.max(sh.h, 0.01));
+    var flat = sh.pts.map(function (q) {
+      return [34 + (q[0] - sh.w / 2) * k, 34 + (q[1] - sh.h / 2) * k];
+    });
+    if (flat.length < 2) return c;
+    trace(g, flat, true, sh.curve);
+    g.fillStyle = "#202A36";
+    g.fill();
+    g.strokeStyle = "#C8A24A";
+    g.lineWidth = 2;
+    g.stroke();
+    return c;
+  }
+
+  var elFind = document.getElementById("shapeFind");
+  var elShelfSays = document.getElementById("shelfSays");
+  var elLayBox = document.getElementById("layBox");
+  var elLayW = document.getElementById("layW");
+  var elLayH = document.getElementById("layH");
+
+  /* Either box may be typed in and the other follows, because the scaling is
+     uniform: a shape squashed is a different shape. ⌨️ The tools stand down
+     inside a field, so these can be typed in — fault 2. */
+  elLayW.addEventListener("input", function () {
+    var v = parseFloat(elLayW.value);
+    if (laying && v > 0) { setLaySize(v); draw(); }
+  });
+  elLayH.addEventListener("input", function () {
+    var v = parseFloat(elLayH.value);
+    if (laying && v > 0) { setLaySize(v * laying.w / laying.h); draw(); }
+  });
+  /* ⭐️⭐️ THE SHAPE AS THE SOURCE OF TRUTH FOR A WHOLE GAME. Frank, 23
+     August 2026: "Say I cut a corridor shape from [a game's] core box, that
+     should become the ultimate source of truth for the exact dimensions of all
+     [that game's] corridor pieces, regardless of where they come from. So when
+     I come to cut corridor pieces from [an] expansion or random magazine
+     articles, I can somehow ensure that they will all match the
+     source of truth's size exactly?"
+
+     He is right that this is the real prize, and it is NOT the same as
+     scaling a shape. A scan from a magazine is at whatever scale the scanner
+     and the page gave it; laying a 4-inch corridor on it in the sheet's
+     assumed 300dpi would put a 4-inch outline over artwork that is printed
+     3.7 inches wide, and the piece would come out with the wrong artwork
+     inside a right-sized box. The size has to be fixed at the SHEET, not at
+     the piece.
+
+     So a kept shape is a ruler. The room can already work a sheet's scale
+     back from something whose true length is known — that is what *Measure
+     something* does — and a shape kept off the core box is exactly that. Say
+     "this piece is that shape" and the sheet's dots per inch are worked back
+     from the two sizes; from then on every measurement on the sheet, every
+     piece cut from it, and every shape laid on it is in the game's own
+     units. Lay the shape for the rest of the corridors afterwards and they
+     are not merely close, they are the same outline. */
+  document.getElementById("layScale").addEventListener("click", function () {
+    if (!laying) return;
+    if (current < 0 || !pieces[current] || pieces[current].pts.length < 3) {
+      elHint.innerHTML = "Outline the piece that <b>is</b> this shape first, " +
+        "or lay one down and drag it over the printed piece &mdash; then this " +
+        "can work the sheet's scale back from it";
+      return;
+    }
+    var line = outline(pieces[current]);
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    line.forEach(function (p) {
+      if (p[0] < x0) x0 = p[0];
+      if (p[0] > x1) x1 = p[0];
+      if (p[1] < y0) y0 = p[1];
+      if (p[1] > y1) y1 = p[1];
+    });
+    var pw = x1 - x0, ph = y1 - y0;
+    if (!(pw > 0 && ph > 0)) return;
+    // both sides have a say, so a piece outlined a shade wide in one
+    // direction does not drag the whole sheet with it
+    var found = Math.sqrt((pw / laying.w) * (ph / laying.h));
+    var was = dpi();
+    if (found < 20 || found > 2400) {
+      window.alert("That would make this sheet " + (sheet.w / found).toFixed(1) +
+        " inches across, which cannot be right. Is the piece on the table " +
+        "really " + laying.name + "?");
+      return;
+    }
+    if (!window.confirm(
+        "The piece on the table measures " + (pw / was).toFixed(2) + " × " +
+        (ph / was).toFixed(2) + " in on this sheet, and " + laying.name +
+        " is " + laying.w.toFixed(2) + " × " + laying.h.toFixed(2) + " in.\n\n" +
+        "Setting this sheet to " + Math.round(found) + " dpi, from " +
+        Math.round(was) + ", makes them the same. EVERY size on this sheet is " +
+        "measured from that, so every piece cut from it will be in the same " +
+        "units as the box that shape came out of.\n\n" +
+        "Lay the shape over each piece afterwards and they will not merely be " +
+        "close, they will be the same outline. The Scale panel puts this back.")) return;
+    scales[sheet.id] = found;
+    refresh();
+    save();
+    showLaySize();
+    draw();
+    elHint.innerHTML = "This sheet is <b>" + Math.round(found) + " dpi</b>, " +
+      "measured against <b>" + plain(laying.name) + "</b> &middot; every size " +
+      "here now matches the game";
+  });
+
+  document.getElementById("layTrue").addEventListener("click", function () {
+    if (!laying) return;
+    setLaySize(laying.w);
+    elHint.innerHTML = "Back to the size it was drawn at &middot; <b>" +
+      laying.w.toFixed(2) + " × " + laying.h.toFixed(2) + " in</b>";
+    draw();
+  });
+
+  /* ⭐️ WHAT THIS GAME USES, WITHOUT LOSING WHAT EVERY OTHER GAME HAS.
+     Frank, 23 August 2026: "I'd like to be able to favourite specific shapes
+     on a per project basis but have that library searchable between projects
+     (eg in one game I can review shapes I favourited in another)."
+
+     So there are two lists and they are the same list. What is normally shown
+     is the handful starred for THIS game, which is short enough to work down;
+     the search box goes through the whole shelf, every game's, and a star
+     adds one to this game without taking it away from the other. A shape has
+     no owner — only a list of the games that have marked it. */
+  function starredHere(sh) {
+    return !!HERE && (sh.stars || []).indexOf(HERE) >= 0;
+  }
+
+  function shelfShown() {
+    var q = (elFind.value || "").toLowerCase().replace(/^\s+|\s+$/g, "");
+    if (q) {
+      return { how: "found", q: q, rows: shelf.filter(function (sh) {
+        return ((sh.name || "") + " " + (sh.game || "")).toLowerCase()
+               .indexOf(q) >= 0;
+      }) };
+    }
+    if (!HERE) return { how: "all", rows: shelf };
+    var mine = shelf.filter(starredHere);
+    return mine.length ? { how: "mine", rows: mine } : { how: "all", rows: shelf };
+  }
+
+  function showShelf() {
+    elShelf.textContent = "";
+    var shown = shelfShown();
+    var all = shelf.length;
+
+    if (!all) {
+      elShelfSays.textContent = "";
+      var e = document.createElement("p");
+      e.className = "note";
+      e.textContent = "Nothing kept yet. Outline a piece, choose it, and " +
+                      "press Keep this shape.";
+      elShelf.appendChild(e);
+      return;
+    }
+    // ⭐️ Say which list is on the screen. A search that finds nothing and a
+    // game with nothing starred yet look identical otherwise, and one of
+    // them is a dead end while the other is the whole shelf waiting.
+    elShelfSays.textContent =
+      shown.how === "found"
+        ? (shown.rows.length
+             ? shown.rows.length + " of " + all + " shapes match. A star keeps one beside this game's."
+             : "Nothing on the shelf matches that. " + all + " shapes are kept in all.")
+      : shown.how === "mine"
+        ? shown.rows.length + " kept for this game, of " + all + " on the shelf. Search to reach the rest."
+      : HERE
+        ? "Nothing starred for this game yet, so all " + all + " are shown. A star picks out the ones you use here."
+        : all + " on the shelf.";
+
+    shown.rows.forEach(function (sh) {
+      var row = document.createElement("div");
+      row.className = "kept" + (laying && laying.id === sh.id ? " on" : "");
+
+      var pick = document.createElement("button");
+      pick.type = "button";
+      pick.className = "pick";
+      pick.title = "Pick this shape up and lay it down where you click";
+      pick.appendChild(shapeThumb(sh));
+
+      var text = document.createElement("span");
+      var nm = document.createElement("b");
+      nm.textContent = sh.name;
+      var dim = document.createElement("span");
+      dim.className = "dim";
+      // where it came from, but only when that is somewhere else: a shelf
+      // shared between games is the point of it, and a shape from another
+      // box should say so before it is laid down in this one
+      dim.textContent = sh.w.toFixed(2) + " × " + sh.h.toFixed(2) + " in" +
+        (sh.project && HERE && sh.project !== HERE && sh.game
+           ? " · " + sh.game : "");
+      text.appendChild(nm);
+      text.appendChild(dim);
+      pick.appendChild(text);
+      pick.addEventListener("click", function () {
+        laying = (laying && laying.id === sh.id) ? null : sh;
+        setLaySize(laying ? laying.w : 0);
+        setTool("lay");
+        showShelf();
+        hintFor();
+        draw();
+      });
+      row.appendChild(pick);
+
+      // the star belongs to the project, so an offline page has no use for it
+      if (HERE) {
+        var star = document.createElement("button");
+        star.type = "button";
+        star.className = "star";
+        var on = starredHere(sh);
+        star.textContent = on ? "★" : "☆";
+        star.setAttribute("aria-pressed", String(on));
+        star.title = on ? "One of this game's shapes — press to drop it from the list"
+                        : "Keep this one beside this game's shapes";
+        star.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          shelfAsk("star", { id: sh.id }, function (list) {
+            shelf = list;
+            showShelf();
+          });
+        });
+        row.appendChild(star);
+      }
+
+      var kill = document.createElement("button");
+      kill.type = "button";
+      kill.className = "kill";
+      kill.textContent = "×";
+      kill.title = "Forget this shape, in every game";
+      kill.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        // ⚠️ Say what goes and what does not. The shelf is shared, so this
+        // takes the shape away from every game — but nothing already
+        // outlined with it is touched: the shelf is a pattern, not the work.
+        if (!window.confirm("Forget the shape " + sh.name + "?\n\n" +
+            "The shelf is shared, so it goes from every game that has it. " +
+            "Every piece already outlined with it stays exactly as it is, " +
+            "and it can be kept again from any piece that has its shape.")) return;
+        if (laying && laying.id === sh.id) { laying = null; setLaySize(0); }
+        shelfAsk("forget", { id: sh.id }, function (list) {
+          shelf = list;
+          showShelf();
+          hintFor();
+          draw();
+        });
+      });
+      row.appendChild(kill);
+      elShelf.appendChild(row);
+    });
+  }
+
+  /* ⌨️ The tools stand down inside any field, so this box can be typed in —
+     see the guard on the key handler. Fault 2. */
+  elFind.addEventListener("input", function () { showShelf(); });
+
+  document.getElementById("shapeKeep").addEventListener("click", function () {
+    if (current < 0 || !pieces[current] || pieces[current].pts.length < 3) {
+      elHint.innerHTML = "Choose a piece on this sheet first &mdash; its " +
+        "shape is what would be kept";
+      return;
+    }
+    var pc = pieces[current];
+    var name = window.prompt("What would you call this shape?\n\n" +
+      "It is the shape that is kept, not the piece: a name like " +
+      "\"door\" or \"round counter\" will find it again.",
+      pc.name || "");
+    if (name === null) return;                 // thought better of it
+    name = String(name).replace(/^\s+|\s+$/g, "").slice(0, 80) || "a shape";
+    /* ⚠️ Kept, and NOT picked up. Putting it straight into the hand would
+       arm a tool nobody asked for, and the shelf row would come up already
+       lit — so the first press on it, which everybody makes, would put the
+       shape DOWN again. One plain click picks it up instead. */
+    shelfAsk("keep", shapeOf(pc, name), function (list) {
+      shelf = list;
+      elFind.value = "";          // or the new shape could land outside a search
+      showShelf();
+      elHint.innerHTML = "<b>" + plain(name) + "</b> is on the shelf &middot; " +
+        "press it there to lay it down wherever you click";
+    });
+  });
+
+  shelfAsk("list", null, function (list) { shelf = list; showShelf(); });
+
+  document.getElementById("aTidy").addEventListener("click", function () {
+    var n = tidy();
+    elHint.innerHTML = n
+      ? "<b>" + n + "</b> node" + (n === 1 ? "" : "s") + " standing out of " +
+        "line dropped &middot; <kbd>&#8984;Z</kbd> to put " +
+        (n === 1 ? "it" : "them") + " back"
+      : "Nothing on this piece stands out of line with the rest of it";
+  });
+
+  var elInks = document.getElementById("guideInks");
+  GUIDE_INKS.forEach(function (g) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.title = g.name + " guides";
+    b.setAttribute("aria-label", g.name + " guides");
+    b.style.background = g.line;
+    b.setAttribute("aria-pressed", String(g.line === guideInk));
+    b.addEventListener("click", function () {
+      guideInk = g.line;
+      try { localStorage.setItem(STORE + "guideInk", guideInk); } catch (e) {}
+      Array.prototype.forEach.call(elInks.children, function (o) {
+        o.setAttribute("aria-pressed", String(o === b));
+      });
+      draw();
+    });
+    elInks.appendChild(b);
+  });
+
+  document.getElementById("guideAdd").addEventListener("click", function () {
+    if (!cursor) cursor = [sheet.w / 2, sheet.h / 2];
+    addGuides(true);
+  });
+  document.getElementById("guideClear").addEventListener("click", function () {
+    if (!guides.length) return;
+    mark();
+    guides = [];
+    save();
+    draw();
+  });
+
+  document.getElementById("zin").addEventListener("click", function () { zoomBy(1.3); });
+  document.getElementById("zout").addEventListener("click", function () { zoomBy(1 / 1.3); });
+  document.getElementById("zfit").addEventListener("click", fit);
+  document.getElementById("zspin").addEventListener("click", function (ev) {
+    spin(ev.shiftKey ? -1 : 1);
+  });
+  Object.keys(VIEWS).forEach(function (k) {
+    VIEWS[k].addEventListener("click", function () { setLook(k); });
+  });
+
+  /* ------------------------------------------------------ coming in by link */
+
+  /* Another page — whatever is doing something with the cut pieces — can
+     send someone straight back to the outline that made one of them:
+     #<sheet-id> opens that sheet, and #<sheet-id>/<piece number> opens it
+     with that piece chosen and the view brought round to it. Both the id
+     and the number are what the page shows in its own piece list. */
+
+  function bbox(pts) {
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    pts.forEach(function (p) {
+      if (p[0] < x0) x0 = p[0];
+      if (p[1] < y0) y0 = p[1];
+      if (p[0] > x1) x1 = p[0];
+      if (p[1] > y1) y1 = p[1];
+    });
+    return [x0, y0, x1, y1];
+  }
+
+  function showPiece(i) {
+    var pc = pieces[i];
+    if (!pc) return;
+    var b = bbox(outline(pc));
+    var r = box();
+    var w = (b[2] - b[0]) * 1.8, h = (b[3] - b[1]) * 1.8;
+    var wide = view.rot % 2 ? h : w, tall = view.rot % 2 ? w : h;
+    view.s = Math.min(12, Math.max(0.02,
+      Math.min(r.width / Math.max(1, wide), r.height / Math.max(1, tall))));
+    var c = turn([(b[0] + b[2]) / 2 * view.s, (b[1] + b[3]) / 2 * view.s]);
+    view.x = r.width / 2 - c[0];
+    view.y = r.height / 2 - c[1];
+    setCurrent(i);
+    // Sent here to mend one piece: show that piece and nothing else, so
+    // the first drag cannot take hold of its neighbour.
+    solo = true;
+    naming();
+    list();
+    draw();
+  }
+
+  function fromHash() {
+    var h = decodeURIComponent((location.hash || "").replace(/^#/, ""));
+    if (!h) return false;
+    var bits = h.split("/");
+    var want = null;
+    SHEETS.forEach(function (s) { if (s.id === bits[0]) want = s; });
+    if (!want) return false;
+    if (want !== sheet) load(want);
+    var n = parseInt(bits[1], 10);
+    if (n >= 1 && pieces[n - 1]) showPiece(n - 1);
+    return true;
+  }
+
+  window.addEventListener("hashchange", function () { fromHash(); });
+
+  new ResizeObserver(resize).observe(stage);
+  load(SHEETS[SHEETS.length > 1 ? 1 : 0]);   // a sheet must exist before
+  setLook(look);                             // anything tries to draw one
+  setTool("trace");
+  resize();
+  fromHash();
+
+  /* Sheets added by hand live in IndexedDB, which only answers once the
+     page is already up. They join the end of the tab strip when they
+     arrive; the sheet on screen is left alone. */
+  vaultAll(function (recs) {
+    if (!recs.length) return;
+    recs.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+    recs.forEach(function (r) { SHEETS.push(armSheet(asSheet(r))); });
+    tabs();
+    fromHash();
+  });
+})();
+</script>

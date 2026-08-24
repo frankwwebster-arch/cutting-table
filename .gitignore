@@ -1,0 +1,43 @@
+# Game components are copyrighted. The tool lives here; the sheets never do.
+# The baked HTML has whole sheets inside it, so that is kept out too.
+
+*.pdf
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.webp
+*.png
+!docs/*.png
+# ⭐️ AND THE GUIDE'S PICTURES, which are one level deeper — `!docs/*.png` does
+# not reach them, so eight of them were silently left out of the repository
+# while sitting perfectly happily on the disk. They are photographs of the
+# DEMONSTRATION sheet, drawn by demo/make_demo_sheet.py out of nothing, so no
+# game's artwork is in them. Re-made by docs/make_guide_pictures.sh.
+!docs/guide/*.png
+
+# The baked editor has whole sheets inside it. Everything but the template
+# is kept out — and note git's ignore matching is case-insensitive on macOS,
+# so a rule like "Cutting*.html" would quietly swallow the template too.
+*.html
+!cutting_table.tpl.html
+# The Cutting Room's own pages are the tool, not a baked sheet.
+!room/*.html
+
+# the drafted and corrected outlines, and the cut pieces
+drafts/
+masks/
+cut/
+sheets/
+scans/
+
+__pycache__/
+*.pyc
+.DS_Store
+
+# The Cutting Room's own working folders, wherever they are made. The tool
+# lives here; a game's sheets, its cut pieces and its baked pages do not.
+# A project made by the room keeps its working folders next to its
+# project.json. Wherever one is made inside this repository, its contents
+# are a game's components and must never be committed.
+room-projects/

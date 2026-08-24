@@ -1,0 +1,521 @@
+/* The Cutting Room — the pages round the table. Same dark bench as the
+   editor, so moving between them does not feel like leaving. */
+:root {
+  --bg: #0D1218; --panel: #141B23; --panel-2: #1B242E; --line: #26313D;
+  --ink: #DCE3EB; --dim: #8494A5; --brass: #C9A227; --brass-d: #7A6416;
+  --good: #4FB477; --hold: #B08A4A; --bad: #E0684B; --blue: #0A84FF;
+}
+* { box-sizing: border-box; }
+/* ⚠️ `hidden` MUST WIN. Buttons and .btn are display:inline-block, and a
+   plain `display` rule beats the browser's own [hidden]{display:none}, so a
+   button marked hidden in the markup sat there in plain sight. Anything given
+   a display of its own needs this. */
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 "Iowan Old Style", Palatino, Georgia, serif;
+}
+a { color: var(--brass); }
+header.bar {
+  display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  padding: 12px 22px; border-bottom: 1px solid var(--line); background: var(--panel);
+  position: sticky; top: 0; z-index: 5;
+}
+header.bar h1 { font-size: 19px; margin: 0; font-weight: 600; letter-spacing: .02em; }
+header.bar .sub { color: var(--dim); font-size: 13px; }
+header.bar .spacer { flex: 1; }
+header.bar nav a { margin-left: 14px; font-size: 13px; text-decoration: none; color: var(--dim); }
+header.bar nav a:hover { color: var(--ink); }
+main { padding: 20px 22px 60px; max-width: 1400px; margin: 0 auto; }
+h2 { font-size: 16px; margin: 26px 0 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+h2:first-child { margin-top: 0; }
+p.note { color: var(--dim); font-size: 13px; max-width: 70ch; }
+button, .btn {
+  font: inherit; font-size: 13px; color: var(--ink); cursor: pointer;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px;
+  padding: 6px 12px; text-decoration: none; display: inline-block; line-height: 1.3;
+}
+button:hover, .btn:hover { border-color: var(--brass-d); }
+button.primary, .btn.primary { background: var(--brass-d); border-color: var(--brass); }
+button.quiet, .btn.quiet { background: transparent; }
+button.danger { border-color: #5a2a22; color: #ffb09c; }
+button:disabled { opacity: .5; cursor: default; }
+input, select, textarea {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brass-d); }
+textarea { min-height: 80px; resize: vertical; line-height: 1.4; width: 100%; }
+label.f { display: block; margin: 12px 0 4px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.muted { color: var(--dim); }
+.good { color: var(--good); } .bad { color: var(--bad); } .hold { color: var(--hold); }
+.tag { display: inline-block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--line); color: var(--dim); }
+.tag.cut { border-color: var(--good); color: var(--good); }
+.tag.probably { border-color: var(--hold); color: var(--hold); }
+.tag.missing { border-color: #4a2a25; color: #c9776a; }
+/* a deck with some of its cards cut, but not all of them — neither done nor
+   untouched, and it must not be rounded into either */
+.tag.part { border-color: var(--hold); color: var(--hold); }
+/* the two-state control that says whether a quantity is one design printed
+   many times, or many different pieces of card */
+.wanted .each {
+  display: block; margin-top: 3px; font-size: 11px; padding: 1px 6px;
+  white-space: nowrap;
+}
+.flash { position: fixed; right: 18px; bottom: 18px; background: var(--panel-2); border: 1px solid var(--line); padding: 8px 14px; border-radius: 6px; font-size: 13px; opacity: 0; transition: opacity .25s; pointer-events: none; }
+.flash.on { opacity: 1; }
+
+/* ---- home: the projects */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+.card h3 { margin: 0 0 2px; font-size: 17px; font-weight: 600; }
+.card .game { color: var(--dim); font-size: 13px; }
+.card .stats { display: flex; gap: 14px; margin: 10px 0 12px; font-size: 13px; color: var(--dim); flex-wrap: wrap; }
+.card .stats b { color: var(--ink); font-weight: 600; }
+.meter { height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; margin: 6px 0 10px; }
+.meter i { display: block; height: 100%; background: var(--good); }
+.newp { background: var(--panel); border: 1px dashed var(--line); border-radius: 6px; padding: 14px 16px; }
+
+/* ---- project page */
+/* wraps, so that an explanation written under a tab pushes the next tab
+   onto a new line rather than squeezing it into a column an inch wide */
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin: 0 0 18px; }
+.tabs button { border: 1px solid transparent; border-bottom: 0; background: transparent; color: var(--dim); padding: 8px 14px; border-radius: 4px 4px 0 0; }
+.tabs button[aria-selected="true"] { color: var(--ink); background: var(--panel); border-color: var(--line); }
+.tabs button b { color: var(--brass); font-weight: 600; margin-left: 5px; }
+section[hidden] { display: none; }
+.drop {
+  border: 2px dashed var(--line); border-radius: 8px; padding: 18px; text-align: center;
+  color: var(--dim); font-size: 14px; background: var(--panel); margin-bottom: 18px;
+}
+.drop.over { border-color: var(--brass); color: var(--ink); }
+/* ⚠️ the FILE input is the hidden one; the link box lives in here too and
+   must not be swept up by a blanket rule. */
+.drop input[type="file"] { display: none; }
+.progress { font-size: 13px; color: var(--dim); margin: 6px 0 0; min-height: 1.4em; }
+
+.sheets { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
+/* ⚠️ THE WHOLE PAGE, MARGINS AND ALL. A percentage max-height against a
+   height that comes from `aspect-ratio` is not always resolvable, so the
+   picture was being sized by WIDTH alone and every portrait sheet had its
+   foot cut off — you cannot tell one counter page from another that way.
+   object-fit: contain sizes it by whichever edge runs out first. */
+.sheet .pic { background: #0A0F14; aspect-ratio: 1 / 1.3; display: block; overflow: hidden; position: relative; padding: 6px; }
+.sheet .pic img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.sheet .pic .done { position: absolute; top: 8px; right: 8px; background: var(--good); color: #08110b; font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+.sheet .body { padding: 9px 11px 11px; font-size: 13px; }
+.sheet .body b { display: block; font-size: 14px; font-weight: 600; }
+.sheet .body input { width: 100%; margin-top: 4px; font-size: 13px; padding: 4px 6px; }
+.sheet .counts { color: var(--dim); margin: 6px 0 8px; }
+.sheet .counts .cut.some { color: var(--good); }
+.sheet .pic .none { position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); background: rgba(10,15,20,.86); border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px; white-space: nowrap; }
+.sheet .counts span { margin-right: 10px; }
+.sheet .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.sheet .acts button, .sheet .acts a { padding: 4px 9px; font-size: 12px; }
+.sheet.stale .counts .cut { color: var(--hold); }
+.group-head { grid-column: 1 / -1; margin: 8px 0 -4px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+
+/* ---- pieces */
+.pieces-wrap { display: grid; grid-template-columns: 270px 1fr 340px; gap: 0; min-height: 70vh; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+#plist { overflow-y: auto; max-height: 78vh; border-right: 1px solid var(--line); }
+.sheet-head { position: sticky; top: 0; background: var(--panel); z-index: 1; padding: 8px 14px 4px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--line); }
+.prow { display: flex; align-items: center; gap: 9px; padding: 6px 14px; cursor: pointer; border-left: 3px solid transparent; }
+.prow:hover { background: var(--panel-2); }
+.prow.on { background: var(--panel-2); border-left-color: var(--brass); }
+.prow .pic { width: 34px; height: 34px; flex: none; background: #0A0F14; border-radius: 3px; display: grid; place-items: center; overflow: hidden; }
+.prow .pic img { max-width: 34px; max-height: 34px; }
+.prow .who { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.prow .nm, .prow .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .nm { font-size: 13px; } .prow .sub { font-size: 11px; color: var(--dim); }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--line); }
+.dot.named { background: var(--good); } .dot.held { background: var(--hold); }
+#pstage { overflow: auto; padding: 22px 26px; min-width: 0; }
+.plate {
+  background-color: #101821;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,.16) 1px, transparent 1px),
+    linear-gradient(to right, rgba(255,255,255,.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,.055) 1px, transparent 1px);
+  background-size: var(--six) var(--six), var(--six) var(--six), var(--inch) var(--inch), var(--inch) var(--inch);
+  border: 1px solid var(--line); border-radius: 4px; padding: var(--inch); display: inline-block; line-height: 0;
+}
+.plate .frame { position: relative; }
+.plate img { display: block; position: absolute; left: 50%; top: 50%; transform-origin: 50% 50%; }
+.measure { font-size: 13px; color: var(--dim); margin: 10px 0 0; line-height: 1.5; }
+.measure b { color: var(--brass); font-weight: 600; }
+#pform { overflow-y: auto; max-height: 78vh; border-left: 1px solid var(--line); padding: 16px 18px 40px; }
+#pform input, #pform select, #pform textarea { width: 100%; }
+.turn { display: flex; gap: 5px; align-items: center; }
+.turn button { padding: 5px 8px; flex: none; } .turn input { text-align: center; }
+.tiny { font-size: 12px; color: var(--dim); }
+
+/* ---- wanted */
+.wsum { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.wsum .big { font-size: 28px; font-weight: 600; color: var(--brass); }
+table.wanted { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.wanted th { text-align: left; font-weight: 600; color: var(--dim); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--line); position: sticky; top: 58px; background: var(--bg); }
+table.wanted td { padding: 5px 8px; border-bottom: 1px solid #1c2530; vertical-align: top; }
+table.wanted tr.missing td.nm { color: var(--ink); }
+table.wanted tr.cut td.nm { color: var(--dim); }
+table.wanted td.st { white-space: nowrap; }
+table.wanted input { width: 100%; font-size: 13px; padding: 3px 6px; background: transparent; border-color: transparent; }
+table.wanted input:focus { background: var(--panel-2); border-color: var(--brass-d); }
+table.wanted input.qty { width: 4.5em; }
+table.wanted tr.ghead td { background: var(--panel); color: var(--dim); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding-top: 10px; }
+table.wanted tr.ghead .fold { text-transform: inherit; letter-spacing: inherit; }
+.wfilters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 10px; font-size: 13px; }
+.wfilters label { color: var(--dim); }
+.pieces-links a { font-size: 12px; margin-right: 8px; }
+.hookout { white-space: pre-wrap; font: 12px/1.4 ui-monospace, Menlo, monospace; background: #0A0F14; border: 1px solid var(--line); border-radius: 4px; padding: 10px; max-height: 300px; overflow: auto; margin-top: 8px; }
+@media (max-width: 980px) {
+  .pieces-wrap { grid-template-columns: 1fr; }
+  #plist, #pform { max-height: none; border: 0; }
+}
+
+/* ---- match: drag a component's name onto the piece it is */
+.matchwrap { display: grid; grid-template-columns: 340px 1fr; gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); min-height: 74vh; }
+.mcol { display: flex; flex-direction: column; min-width: 0; }
+.mcol.wide { border-left: 1px solid var(--line); }
+.mhead { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 9px 12px; border-bottom: 1px solid var(--line); background: var(--panel-2); font-size: 13px; }
+.mhead input[type=text], .mhead input:not([type]), .mhead select { font-size: 13px; padding: 4px 7px; }
+.mhead #mFind { flex: 1; min-width: 120px; }
+#mList { overflow-y: auto; max-height: 72vh; padding-bottom: 30px; }
+#mList.over { background: #1a2330; box-shadow: inset 0 0 0 2px var(--brass-d); }
+/* ⭐️ EVERY LIST IN THE ROOM FOLDS, AND THEY ALL LOOK THE SAME DOING IT.
+   Frank, 23 August 2026: "I want the same ability to collapse and expand
+   core/expansions/extras etc throughout the platform (eg in Checklist,
+   sheets, match, pieces etc)". One class, one arrow, one count — a heading
+   is a button, so it has to shed the look every other button here has. */
+.fold {
+  display: flex; align-items: baseline; gap: 8px; width: 100%;
+  background: none; border: 0; border-radius: 0; padding: 0;
+  text-align: left; cursor: pointer; font: inherit; color: inherit;
+}
+.fold:hover { color: var(--ink); }
+.fold .arrow { font-size: 10px; width: 9px; color: var(--brass-d); flex: none; }
+.fold .what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fold .n {
+  margin-left: auto; letter-spacing: 0; color: var(--brass-d);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; flex: none;
+}
+/* the four lists, each keeping the spacing it already had */
+.mgroup {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+  padding: 7px 12px 5px;
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim);
+}
+.mgroup:hover { background: var(--panel-2); }
+.mitem { display: flex; flex-direction: column; gap: 1px; padding: 7px 12px; cursor: grab; border-left: 3px solid transparent; border-bottom: 1px solid #1a222c; }
+.mitem:hover { background: var(--panel-2); border-left-color: var(--brass-d); }
+.mitem.dragging { opacity: .45; }
+.mitem b { font-size: 13px; font-weight: 600; }
+.mitem .tag { align-self: flex-start; margin-top: 3px; }
+.mitem.probably { border-left-color: var(--hold); }
+.mitem.cut b { color: var(--dim); font-weight: 400; }
+/* ⚠️ grid-auto-rows: max-content, and it is not decoration. The grid has a
+   max-height and scrolls, so with rows left at `auto` the browser SIZED THE
+   ROWS TO FIT THAT HEIGHT — 70px rows for 193px cells — and every piece was
+   clipped to a coloured band with its caption cut off below. Measured in the
+   browser, 21 Aug 2026, after guessing wrong at it twice. */
+.mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); grid-auto-rows: max-content; gap: 10px; padding: 12px; overflow-y: auto; max-height: 72vh; align-content: start; }
+/* ⚠️ BLOCK LAYOUT, NOT FLEX, and that is the whole of the fix. A cell was a
+   flex column inside a grid row, so one of its two children was always the
+   shrinkable one: the picture collapsed to a coloured hairline, and when the
+   picture was pinned the caption vanished instead. Photographing the page is
+   what found it, twice. Block flow cannot shrink either of them. */
+.mcell { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; cursor: grab; display: block; }
+.mcell .pic { background: #0A0F14; height: 118px; display: grid; place-items: center; overflow: hidden; }
+.mcell .pic img { max-width: 92%; max-height: 92%; }
+/* ⚠️ A quarter turn swaps a picture's width and height. This box is 148
+   wide and 118 tall, so a wide piece at 92% (136px) became 136px TALL when
+   turned and had its ends clipped off by the box. Held to the shorter side,
+   it fits whichever way up it is. */
+.mcell .pic img.turned { max-width: 108px; max-height: 108px; }
+.mcell .cap { display: block; padding: 6px 8px 8px; min-width: 0; }
+.mcell .cap b, .mcell .cap span, .mcell .cap .tag { display: block; }
+.mcell .cap b { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mcell .cap .tag { margin-top: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcell.linked { border-color: #2f4a39; }
+.mcell.over { border-color: var(--brass); box-shadow: 0 0 0 2px var(--brass-d) inset; }
+@media (max-width: 980px) { .matchwrap { grid-template-columns: 1fr; } #mList, .mgrid { max-height: 40vh; } }
+
+.linkrow { display: flex; gap: 8px; justify-content: center; margin: 12px auto 0; max-width: 560px; }
+.linkrow input { flex: 1; font-size: 13px; padding: 5px 9px; }
+.linkrow button { flex: none; }
+
+/* ---- the five steps: where am I, and what do I do next */
+.steps { list-style: none; display: flex; gap: 6px; margin: 0 0 12px; padding: 0; flex-wrap: wrap; }
+.steps li {
+  display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1 1 150px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px;
+}
+.steps li:hover { border-color: var(--brass-d); }
+.steps li b {
+  width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--dim);
+}
+.steps li span { font-size: 14px; }
+.steps li i { font-style: normal; font-size: 11px; color: var(--dim); margin-left: auto; white-space: nowrap; }
+.steps li.done b { background: #1d3325; border-color: var(--good); color: var(--good); }
+.steps li.done span { color: var(--dim); }
+.steps li.on { border-color: var(--brass); background: var(--panel-2); }
+.steps li.on b { background: var(--brass-d); border-color: var(--brass); color: var(--ink); }
+.nextup { margin: 0 0 16px; font-size: 13px; color: var(--dim); }
+.nextup b { color: var(--ink); font-weight: 600; }
+
+/* ---- filter chips */
+.chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.chips button { padding: 4px 11px; font-size: 12px; border-radius: 14px; background: transparent; }
+.chips button.on { background: var(--panel-2); border-color: var(--brass-d); color: var(--ink); }
+
+/* ---- pieces: the review */
+.flags { display: flex; gap: 3px; flex-wrap: wrap; }
+.flag { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; padding: 0 5px; border-radius: 8px; border: 1px solid var(--line); color: var(--dim); }
+.flag.dup { border-color: var(--hold); color: var(--hold); }
+.flag.edge, .flag.tiny, .flag.wisp { border-color: #4a3a25; color: #c9a06a; }
+.dupbar {
+  background: #221c10; border: 1px solid var(--hold); border-radius: 6px; padding: 10px 12px; margin: 0 0 14px;
+  font-size: 13px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
+.dupbar .pics { display: flex; gap: 6px; flex-wrap: wrap; max-width: 60%; }
+/* ⭐️ 46px was not enough to answer the question the bar is asking — whether
+   two pieces really are the same design. Twice the size, and a preview under
+   the pointer for the real look. Frank, 23 August 2026. */
+.dupbar .pics img {
+  width: 92px; height: 92px; object-fit: contain; background: #0A0F14;
+  border-radius: 3px; padding: 2px; cursor: zoom-in;
+}
+.dupbar .pics img:hover { outline: 1px solid var(--brass); }
+.dupbar .spacer { flex: 1; }
+/* ⭐️ a run of look-alikes kept ON PURPOSE — several designs of one component
+   — is not a warning, so it does not wear the warning's colours */
+/* ⭐️ a piece SET ASIDE is still listed, in its own place, so nothing is ever
+   out of sight — it is only dimmed and labelled. Frank's call: "binning a
+   piece shouldn't be destructive". */
+.prow.aside .pic, .prow.aside .who { opacity: 0.45; }
+.prow.aside { background: repeating-linear-gradient(135deg,
+  transparent 0 7px, rgba(255,255,255,.017) 7px 14px); }
+.flag.aside { border-color: var(--dim); color: var(--dim); }
+.mcell.aside .pic, .mcell.aside .cap { opacity: 0.45; }
+
+/* ⭐️ the room's worries about one piece, each with an answer beside it —
+   see WORRIES in project.html for why every flag must have one */
+.dupbar.worries { display: block; }
+.dupbar .worry { display: flex; gap: 10px; align-items: center; padding: 3px 0; }
+.dupbar .worry + .worry { border-top: 1px solid rgba(255,255,255,.06); margin-top: 4px; padding-top: 7px; }
+.dupbar .worry .spacer { flex: 1; }
+.dupbar .worry.said { opacity: .75; }
+
+/* ⭐️ the check against the contents list, on the way out — see the note in
+   project.html for why its words live in Python and not here */
+.review { background: var(--panel-2); border: 1px solid var(--line);
+          border-left: 3px solid var(--brass-d); border-radius: 6px;
+          padding: 14px 16px; margin: 0 0 16px; }
+.review > b { display: block; font-size: 15px; color: var(--ink); margin-bottom: 4px; }
+.review ul.found { margin: 8px 0 0; padding-left: 18px; }
+.review ul.found li { margin: 2px 0; }
+.review ul.found b { color: var(--ink); }
+.review .ok { color: var(--good); }
+
+.dupbar.kept { background: #10201a; border-color: #2f4a39; }
+.dupbar.kept b { color: var(--good); }
+.pnav { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+.pnav .tiny { margin-left: auto; }
+
+/* ---- first run */
+.welcome { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 22px 26px; margin-bottom: 22px; }
+.welcome h2 { color: var(--ink); text-transform: none; letter-spacing: 0; font-size: 22px; }
+.welcome > p { max-width: 66ch; color: var(--dim); }
+.welcome > p b { color: var(--ink); }
+ol.how { list-style: none; counter-reset: h; padding: 0; margin: 18px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+ol.how li { counter-increment: h; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+ol.how li b { display: block; font-size: 15px; margin-bottom: 4px; }
+ol.how li b::before { content: counter(h); display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--brass-d); color: var(--ink); font-size: 11px; margin-right: 8px; vertical-align: 2px; }
+ol.how li span { font-size: 12.5px; color: var(--dim); line-height: 1.45; }
+
+.dropmini {
+  margin-top: 12px; border: 2px dashed var(--line); border-radius: 6px; padding: 14px;
+  text-align: center; color: var(--dim); font-size: 13.5px; cursor: pointer;
+}
+.dropmini:hover, .dropmini.over { border-color: var(--brass); color: var(--ink); }
+.dropmini input { display: none; }
+.dropmini b { color: var(--ink); }
+.dropmini .tiny { display: block; margin-top: 4px; }
+
+/* ---- the curtain that comes down while something is dragged over the page */
+#dropCurtain {
+  position: fixed; inset: 0; z-index: 900; display: none;
+  background: rgba(6, 10, 14, .86); backdrop-filter: blur(2px);
+  align-items: center; justify-content: center; pointer-events: none;
+}
+#dropCurtain.on { display: flex; }
+#dropCurtain .inner {
+  border: 3px dashed var(--brass); border-radius: 14px; padding: 40px 60px;
+  text-align: center; background: rgba(20, 27, 35, .9);
+}
+#dropCurtain b { display: block; font-size: 26px; color: var(--ink); font-weight: 600; }
+#dropCurtain span { display: block; margin-top: 8px; font-size: 14px; color: var(--dim); }
+
+/* ---- the import queue */
+.queue { margin-top: 10px; text-align: left; max-width: 640px; margin-left: auto; margin-right: auto; }
+.queue .q {
+  display: flex; gap: 10px; align-items: center; font-size: 12.5px;
+  padding: 3px 0; border-bottom: 1px solid #1a222c; color: var(--dim);
+}
+.queue .q:last-child { border-bottom: 0; }
+.queue .q .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.queue .q .s { flex: none; font-size: 11px; }
+.queue .q.done .s { color: var(--good); }
+.queue .q.busy .s { color: var(--brass); }
+.queue .q.failed .s { color: var(--bad); }
+.queue .q.wait { opacity: .6; }
+.linkdetail { margin-top: 10px; }
+.linkdetail summary { cursor: pointer; }
+
+/* ---- closing the room, and the sign left on the door
+   ⭐️ Frank does not want to touch a terminal to stop the room, so the room
+   stops itself. The link is deliberately last in the bar and quieter than
+   the rest: it is not something to hit by accident, but nothing is lost if
+   you do — everything cut and named is on the disk. */
+header.bar nav a.closelink { color: var(--dim); opacity: .75; }
+header.bar nav a.closelink:hover { color: var(--bad); opacity: 1; }
+.closedroom {
+  max-width: 46ch; margin: 16vh auto 0; padding: 0 24px; text-align: center;
+}
+.closedroom h1 { font-size: 22px; font-weight: 600; margin: 0 0 18px; letter-spacing: .02em; }
+.closedroom p { color: var(--dim); font-size: 14px; line-height: 1.7; }
+.closedroom p.how {
+  color: var(--ink); border: 1px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 12px 16px; margin: 22px 0;
+}
+
+/* ---- take it away: the way out of the room
+   ⚠️ The copyright notice is not small print. What leaves this room is
+   somebody else's artwork, and the export is the moment it becomes a tidy,
+   portable set that is easy to put somewhere public without thinking. So it
+   is stated plainly, above the button, and it goes into the folder too. */
+.rights {
+  border: 1px solid #5a3a22; background: #1E1710; border-radius: 6px;
+  padding: 12px 16px; margin: 16px 0; max-width: 78ch;
+}
+.rights b { color: var(--ink); }
+.rights p { margin: 8px 0 0; color: var(--dim); font-size: 13.5px; line-height: 1.6; }
+.rights p.tiny { font-size: 12px; }
+.whatout { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-top: 16px; }
+.whatout .w {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 12px; min-width: 0;
+}
+.whatout .w b { display: block; font-size: 14px; font-weight: 600; }
+.whatout .w span { display: block; color: var(--dim); font-size: 12.5px; line-height: 1.5; margin-top: 3px; }
+#tab-export code { background: var(--panel-2); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+
+/* ---- guessing the kind from the size
+   ⭐️ Naming is the expensive part, not cutting — Frank, 22 August 2026 — so
+   the room offers a kind rather than asking for one. It is an OFFER and wears
+   the offer's colours, not the warning's: nothing has gone wrong here, and
+   ignoring the whole bar must be a perfectly ordinary thing to do. */
+.guessbar { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 12px 4px; margin: 0 0 14px; font-size: 13px; }
+.guessbar > .head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; }
+.guessbar > .head .spacer { flex: 1; }
+.guessbar .grp { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  padding: 7px 0; border-top: 1px solid var(--line); }
+.guessbar .grp .pics { display: flex; gap: 5px; }
+.guessbar .grp .pics img { cursor: zoom-in; width: 34px; height: 34px; object-fit: contain;
+  background: var(--panel); border-radius: 3px; padding: 2px; }
+.guessbar .grp .said { flex: 1; min-width: 12em; }
+.guessbar .grp .said b { color: var(--ink); }
+.guessbar .grp.maybe .said b { color: var(--dim); }
+/* the same offer, for the one piece being named */
+.kguess { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px;
+  padding: 7px 9px; margin: 6px 0 2px; font-size: 12.5px; color: var(--dim);
+  display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+.kguess b { color: var(--ink); }
+.kguess .spacer { flex: 1; }
+
+/* ---------------------------------------------------------------- tips
+   ⭐️ Frank, 23 August 2026: "I don't, for example, have any idea what
+   'straight to the table' means on the project selection screen." Every
+   control carries a plain sentence in `data-tip` (or in a plain `title`);
+   see room/tips.js, which brings its own look with it because the cutting
+   table does not load this file at all. What is left here is only what
+   belongs to THESE pages: room for an explanation to sit on its own line. */
+.tabs, .row, .chips, .pnav, .wfilters { flex-wrap: wrap; }
+
+/* ⚠️ The room is running older code than the page you are looking at — see
+   room/close.js. Loud on purpose: until it is closed and opened again, a
+   button built since it started will answer "no such call". */
+.staleroom {
+  background: #3a2a12;
+  border-bottom: 1px solid var(--hold);
+  color: #f0dcb4;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 9px 22px;
+}
+.staleroom b { color: #fff; }
+
+/* ⭐️ The piece under the pointer, at a size worth looking at, without
+   leaving the page — see `Peek` in project.html. Frank, 23 August 2026:
+   "incredibly difficult to see them in the tiny viewport it provides". */
+.bigpeek {
+  position: fixed;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel-2);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .1s;
+}
+.bigpeek.on { opacity: 1; }
+/* the transparency check behind it, so a piece's own edge is the edge */
+.bigpeek img {
+  max-width: 360px;
+  max-height: 60vh;
+  display: block;
+  background:
+    repeating-conic-gradient(#151C25 0% 25%, #0D1218 0% 50%) 50% / 18px 18px;
+  border-radius: 3px;
+}
+/* a quarter turn swaps width and height, so it must be held to the shorter
+   side or the preview is clipped — the same trap as the piece list */
+.bigpeek img.turned { max-width: 60vh; max-height: 360px; }
+.bigpeek span {
+  font-size: 12px;
+  color: var(--dim);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* the tick box that appears while several pieces are being chosen at once */
+.prow.picking { position: relative; }
+.prow .tick { margin-right: 6px; align-self: center; cursor: pointer; }
+/* the green CUT pill is now worth pointing at — say so */
+table.wanted .tag.cut, table.wanted .tag.part { cursor: zoom-in; }
+
+/* the row just added, marked for a moment so it can be found in a list of
+   two hundred — see `showWantedRow` */
+table.wanted tr.justadded td { background: #2a2410; transition: background 1.2s; }
+
+/* the copies the room keeps of the three files that cannot be rebuilt */
+.histset { margin: 12px 0; }
+.histrows { margin-top: 6px; border: 1px solid var(--line); border-radius: 4px; }
+.histrow {
+  display: grid; grid-template-columns: 11em minmax(0, 1fr) auto;
+  gap: 10px; align-items: center; padding: 5px 9px;
+  border-bottom: 1px solid #1a222c;
+}
+.histrow:last-child { border-bottom: 0; }
+.histrow:hover { background: var(--panel-2); }

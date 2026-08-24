@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Cutting Room</title>
+<link rel="stylesheet" href="/room/room.css">
+<script src="/room/drop.js"></script>
+<script src="/room/close.js"></script>
+<script src="/room/tips.js"></script>
+</head>
+<body>
+<header class="bar">
+  <h1>The Cutting Room</h1>
+  <span class="sub">Cut the components out of a game's scanned sheets, and know what is still to cut.</span>
+  <span class="spacer"></span>
+  <nav><a href="#" id="openHome">Open the projects folder</a></nav>
+</header>
+<main>
+  <section id="welcome" hidden>
+    <div class="welcome">
+      <h2 style="margin-top:0">Cut the cardboard out of a game, once</h2>
+      <p>Scans of a board game's component sheets go in. Out come the counters,
+      cards, tiles and terrain as separate pictures <b>at their real printed
+      size</b>, named, and checked off against what the box should contain.</p>
+      <ol class="how">
+        <li><b>Import</b><span>Drop a PDF, a scan, a Word file with pictures in it, or a ZIP. Every page becomes a sheet.</span></li>
+        <li><b>Outline</b><span>Draw round each piece once — or take the outlines the tool suggests, which on cards and counters is usually all of them.</span></li>
+        <li><b>Cut</b><span>One press a sheet. Each piece comes out at full resolution, edge smoothed, measured in inches.</span></li>
+        <li><b>Name</b><span>Say what each piece is, by dragging its name from your checklist onto it.</span></li>
+        <li><b>Check</b><span>See what is still to cut — by set, by kind, by how far you have got.</span></li>
+      </ol>
+      <p class="note">Everything stays on this machine. The room listens on 127.0.0.1 only and fetches nothing from anywhere.</p>
+    </div>
+  </section>
+
+  <h2 id="projectsHead">Projects — one per game</h2>
+  <div class="cards" id="cards"></div>
+
+  <div class="newp" id="newp">
+    <h2 style="margin-top:0">Start a game</h2>
+    <div class="row">
+      <input id="newName" placeholder="What is the game called?" style="min-width:300px" data-tip="The name of the boxed game these scans come from — whatever is on the lid. It names the folder the room keeps everything in, and can be changed later.">
+      <button class="primary" id="newBtn" data-tip="Makes an empty project: a folder of its own for this game's scans, outlines and cut pieces. Nothing is imported yet — you drop the scans in next.">Start it</button>
+      <span class="tiny muted">That is all it takes. Everything else can wait.</span>
+    </div>
+    <div class="dropmini" id="homeDrop">
+      <input type="file" id="homeFiles" multiple accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.docx,.doc,.zip">
+      …or <b>drop this game's scans anywhere on this page</b> — a folder will do — and the project is made for you.
+      <span class="tiny muted" id="homeProgress"></span>
+    </div>
+    <div class="queue" id="homeQueue"></div>
+    <details style="margin-top:10px">
+      <summary class="muted" style="cursor:pointer;font-size:13px">Where do the files come from?</summary>
+      <div class="tiny muted" style="margin-top:8px;line-height:1.6;max-width:70ch">
+        <b>A PDF</b> of component sheets — every page becomes a sheet.
+        <b>A picture</b> of a scan — PNG, JPEG or TIFF.
+        <b>A Word file</b> with the pictures inside it, which is how a good many fan-made card sets are shared.
+        <b>A ZIP</b> of any of those, opened and imported in one go.<br>
+        ⚠️ <b>A whole folder in Google Drive or Dropbox:</b> use their own <i>Download</i> — it hands you a ZIP — and drop that here. A single file can be pasted in as a link instead, once it is inside a project, if it is shared.<br>
+        A project is a folder in <span id="homePath" class="muted"></span>.
+        <a href="#" id="regToggle">A project that already exists elsewhere can be registered.</a>
+      </div>
+      <div class="row" style="margin-top:8px" id="regRow" hidden>
+        <input id="regPath" placeholder="/path/to/folder/with/project.json" style="min-width:420px" data-tip="The full path to a folder that already has a project.json in it.">
+        <button id="regBtn" data-tip="Adds a project that already exists somewhere else on this machine — one whose folder you moved, or one that writes into a game's own repository. The room only needs the folder that has project.json in it.">Register it</button>
+      </div>
+    </details>
+  </div>
+
+</main>
+<div class="flash" id="flash"></div>
+<script>
+(function () {
+  var api = "/api/projects";
+  function flash(t) { var f = document.getElementById("flash"); f.textContent = t; f.classList.add("on"); setTimeout(function () { f.classList.remove("on"); }, 1800); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  function render(d) {
+    document.getElementById("homePath").textContent = d.home;
+    var cards = document.getElementById("cards");
+    cards.innerHTML = "";
+    // ⭐️ A FIRST RUN SHOULD EXPLAIN ITSELF. Somebody opening this for the
+    // first time has no projects and no idea what the five steps are; the
+    // welcome panel says so and gets out of the way for ever afterwards.
+    document.getElementById("welcome").hidden = d.projects.length > 0;
+    document.getElementById("projectsHead").hidden = !d.projects.length;
+    if (!d.projects.length) {
+      cards.innerHTML = "";
+      return;
+    }
+    d.projects.forEach(function (p) {
+      var outlined = p.sheets.filter(function (s) { return s.outlines > 0; }).length;
+      var done = p.sheets.filter(function (s) { return s.done; }).length;
+      var w = p.wanted || { total: 0, done: 0, pct: 0 };
+      var c = document.createElement("div");
+      c.className = "card";
+      c.innerHTML =
+        "<h3>" + esc(p.name) + "</h3>" +
+        '<div class="game">' + esc(p.game || "") + "</div>" +
+        '<div class="stats">' +
+          "<span><b>" + p.sheets.length + "</b> sheet" + (p.sheets.length === 1 ? "" : "s") + "</span>" +
+          "<span><b>" + outlined + "</b> outlined</span>" +
+          "<span><b>" + done + "</b> finished</span>" +
+          "<span><b>" + p.pieces + "</b> cut</span>" +
+          "<span><b>" + p.named + "</b> named</span>" +
+        "</div>" +
+        (w.total ? '<div class="tiny muted">Checklist: <b style="color:var(--ink)">' + w.done + "</b> of " + w.total + " components accounted for (" + w.pct + "%)</div>" +
+                   '<div class="meter"><i style="width:' + w.pct + '%"></i></div>' : '<div class="tiny muted">No checklist yet — paste the box\'s contents list into one.</div><div class="meter"></div>') +
+        '<div class="row"><a class="btn primary" data-tip="Open this game: its sheets, the pieces cut so far, '
+        + 'what each one is called, and what is still to do." href="/p/' + encodeURIComponent(p.id) + '/">Open</a>' +
+        (p.sheets.length ? '<a class="btn" data-tip="Skip the project page and go straight to drawing outlines '
+        + 'on this game\'s sheets. The same place as Open, then Outline — this just saves the step." '
+        + 'href="/p/' + encodeURIComponent(p.id) + '/table">Straight to the table</a>' : "") +
+        '<span class="tiny muted" style="margin-left:auto">' + esc(p.path) + "</span></div>";
+      cards.appendChild(c);
+    });
+  }
+
+  function load() {
+    fetch(api).then(function (r) { return r.json(); }).then(render)
+      .catch(function (e) { document.getElementById("cards").textContent = "The room did not answer: " + e; });
+  }
+
+  document.getElementById("newBtn").addEventListener("click", function () {
+    var name = document.getElementById("newName").value.trim();
+    if (!name) { flash("Give it a name first."); return; }
+    fetch(api, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j.error) { flash(j.error); return; }
+        location.href = "/p/" + encodeURIComponent(j.project.id) + "/";
+      });
+  });
+  document.getElementById("newName").addEventListener("keydown", function (e) { if (e.key === "Enter") document.getElementById("newBtn").click(); });
+
+  /* ⭐️ DROP THE SCANS AND THE PROJECT MAKES ITSELF. Frank, 21 August 2026:
+     "setting one up needs to be simple, and shouldn't require an immediate
+     upload of a full contents listing." The shortest honest path from a
+     folder of scans to a cut piece is: drop them, and be at the table. The
+     game takes its name from what was dropped; it can be renamed in one
+     field afterwards. */
+  var homeDrop = document.getElementById("homeDrop");
+  var homeFiles = document.getElementById("homeFiles");
+  homeDrop.addEventListener("click", function () { homeFiles.click(); });
+  ["dragenter", "dragover"].forEach(function (ev) {
+    homeDrop.addEventListener(ev, function (e) { e.preventDefault(); homeDrop.classList.add("over"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    homeDrop.addEventListener(ev, function (e) { e.preventDefault(); homeDrop.classList.remove("over"); });
+  });
+  homeFiles.addEventListener("change", function () { start(homeFiles.files); homeFiles.value = ""; });
+
+  /* The whole window, and a folder walked to the bottom. Dropping the folder
+     you just downloaded out of Drive is the shortest path there is from a pile
+     of scans to a cut piece, and it should not require finding a small box. */
+  if (window.RoomDrop) {
+    window.RoomDrop.install({
+      title: "Drop them here to start a game",
+      onFiles: function (files, ignored) {
+        if (ignored) flash(ignored + " file(s) were not a kind the room reads.");
+        start(files);
+      }
+    });
+  }
+
+  function clean(t) {
+    return String(t).replace(/\.[a-z0-9]+$/i, "")
+      .replace(/[_-]+/g, " ")
+      .replace(/\b(scan|scans|components?|sheets?|pdf|cards?|tiles?|v\d+)\b/gi, " ")
+      .replace(/\s{2,}/g, " ").trim();
+  }
+  /* ⭐️ A DROPPED FOLDER NAMES THE GAME. "Some Boxed Game/tiles/p01.pdf"
+     says what this is far better than "p01" does, so the top folder wins and
+     the file name is only the fallback. */
+  function titleFrom(files) {
+    var f = files[0];
+    var path = f._path || "";
+    var bits = path.split("/").filter(Boolean);
+    if (bits.length > 1) {
+      var top = clean(bits[0]);
+      if (top && top.length > 2) return top;
+    }
+    return clean(f.name) || "A new game";
+  }
+
+  function start(files) {
+    var arr = Array.prototype.slice.call(files || []);
+    if (!arr.length) return;
+    var prog = document.getElementById("homeProgress");
+    var typed = document.getElementById("newName").value.trim();
+    var name = typed || titleFrom(arr);
+    var q = document.getElementById("homeQueue");
+    q.innerHTML = "";
+    var rows = arr.map(function (f) {
+      var r = document.createElement("div");
+      r.className = "q wait";
+      r.innerHTML = '<span class="n"></span><span class="s">waiting</span>';
+      r.querySelector(".n").textContent = f._path || f.name;
+      q.appendChild(r);
+      return r;
+    });
+    prog.textContent = "making “" + name + "”…";
+    fetch(api, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name }) })
+      .then(function (r) { return r.json(); })
+      .then(function (jj) {
+        if (jj.error) throw new Error(jj.error);
+        var pid = jj.project.id, chain = Promise.resolve(), n = 0, bad = 0;
+        arr.forEach(function (f, i) {
+          chain = chain.then(function () {
+            rows[i].className = "q busy";
+            rows[i].querySelector(".s").textContent = "reading…";
+            prog.textContent = "importing " + (i + 1) + " of " + arr.length + "…";
+            return fetch("/api/p/" + encodeURIComponent(pid) + "/import", {
+              method: "POST", headers: { "X-Filename": encodeURIComponent(f.name), "X-Wait": "1" }, body: f })
+              .then(function (r) { return r.json(); })
+              .then(function (res) {
+                if (res.error) throw new Error(res.error);
+                var got = (res.sheets || []).length;
+                n += got;
+                rows[i].className = "q done";
+                rows[i].querySelector(".s").textContent = got + (got === 1 ? " sheet" : " sheets");
+              })
+              .catch(function (e) {
+                bad++;
+                rows[i].className = "q failed";
+                rows[i].querySelector(".s").textContent = e.message.slice(0, 50);
+              });
+          });
+        });
+        return chain.then(function () { location.href = "/p/" + encodeURIComponent(pid) + "/"; });
+      })
+      .catch(function (e) { prog.textContent = "⚠ " + e.message; flash(e.message); });
+  }
+
+  var rt = document.getElementById("regToggle");
+  if (rt) rt.addEventListener("click", function (e) { e.preventDefault(); document.getElementById("regRow").hidden = false; });
+  document.getElementById("regBtn").addEventListener("click", function () {
+    var path = document.getElementById("regPath").value.trim();
+    if (!path) return;
+    fetch(api, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registered", path: path }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (j.error) { flash(j.error); return; } load(); flash("Registered."); });
+  });
+  document.getElementById("openHome").addEventListener("click", function (e) {
+    e.preventDefault();
+    fetch(api).then(function (r) { return r.json(); }).then(function (d) {
+      // the first project's reveal endpoint opens Finder on the folder; the
+      // home folder itself is the parent of any default project
+      flash("Projects live in " + d.home);
+    });
+  });
+  load();
+})();
+</script>
+</body>
+</html>

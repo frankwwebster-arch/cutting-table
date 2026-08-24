@@ -1,0 +1,2733 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Cutting Room</title>
+<link rel="stylesheet" href="/room/room.css">
+<script src="/room/drop.js"></script>
+<script src="/room/close.js"></script>
+<script src="/room/tips.js"></script>
+</head>
+<body>
+<header class="bar">
+  <h1 id="title">…</h1>
+  <span class="sub" id="subtitle"></span>
+  <span class="spacer"></span>
+  <nav>
+    <a href="/" data-tip="Back to the list of games.">All projects</a>
+    <a href="#" id="tableLink" data-tip="The cutting table: where you draw round each piece on a sheet. That drawing is the work; everything else the room does is automatic.">The table</a>
+    <a href="#" id="revealLink" data-tip="Show this project's folder on your desktop — the scans, the outlines, and every piece cut so far, as ordinary files.">Open the folder</a>
+  </nav>
+</header>
+<main>
+  <ol class="steps" id="steps">
+    <li data-tab="sheets" data-step="import" data-tip="Get the game's scans into the room — a PDF, a photograph, a folder. Every page becomes a sheet."><b>1</b><span>Import</span><i></i></li>
+    <li data-tab="sheets" data-step="outline" data-tip="Draw round each piece on a sheet, at the cutting table. This is the only part that takes real time, and the only part the room cannot do for you."><b>2</b><span>Outline</span><i></i></li>
+    <li data-tab="sheets" data-step="cut" data-tip="Turn the outlines into pieces: one picture per piece, on a transparent background, at its true printed size. One press per sheet."><b>3</b><span>Cut</span><i></i></li>
+    <li data-tab="match" data-step="name" data-tip="Say what each piece IS. A picture of a counter is no use later if nothing says which counter it is."><b>4</b><span>Name</span><i></i></li>
+    <li data-tab="wanted" data-step="check" data-tip="Optional. Type the box's contents list in once, and the room tells you how much of the game you have cut and what is missing."><b>5</b><span>Checklist</span><i></i></li>
+    <li data-tab="export" data-step="take" data-tip="Write everything out as a plain folder anybody can use: named pictures, a spreadsheet of them, a contact sheet and cutting files."><b>6</b><span>Take it away</span><i></i></li>
+  </ol>
+  <div class="tabs" role="tablist">
+    <button data-tab="sheets" aria-selected="true" data-tip="Every scanned page in this game, and what has been done to each: outlined, cut, finished with.">Sheets <b id="nSheets"></b></button>
+    <button data-tab="pieces" data-tip="Every piece cut out so far, one at a time, to be named and described. This is where the naming is done.">Pieces <b id="nPieces"></b></button>
+    <button data-tab="match" data-tip="A board of every cut piece beside the checklist. Drag a component's name onto the piece it is — faster than typing when you have a contents list.">Match <b id="nMatch"></b></button>
+    <button data-tab="wanted" data-tip="What the box should contain, and how much of it you have. Optional — a game with no contents list can be cut perfectly well without one.">Checklist <b id="nWanted"></b></button>
+    <button data-tab="export" data-tip="Write the finished pieces out as a plain folder: named pictures at true size, an inventory, a contact sheet, cutting files.">Take it away</button>
+    <button data-tab="about" data-tip="This project's name, where its files are kept, and any hand-over commands set up for it.">Settings</button>
+  </div>
+  <p class="nextup" id="nextup"></p>
+
+  <!-- ============================================================ SHEETS -->
+  <section id="tab-sheets">
+    <div class="drop" id="drop">
+      <input type="file" id="files" multiple accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.docx,.doc,.zip">
+      <div><b>Drop scans anywhere on this page</b> — a PDF (every page becomes a sheet), a scan, a Word file with pictures in it, a ZIP, or <b>a whole folder</b>. Or <a href="#" id="pick">choose files</a>.</div>
+      <div class="progress" id="progress"></div>
+      <div class="queue" id="queue"></div>
+      <details class="linkdetail"><summary class="tiny muted">…or fetch one file from a link</summary>
+        <div class="linkrow" id="linkrow">
+          <input id="fetchUrl" placeholder="a Google Drive share link, or any URL">
+          <button id="fetchGo" data-tip="Download one file from that link and import it. Only works for a file shared &quot;anyone with the link&quot; — dragging a downloaded folder onto the page is better in every other case.">Fetch it</button>
+        </div>
+        <p class="tiny muted" style="margin:6px 0 0">Only works for a file shared “anyone with the link”. A whole Drive folder cannot be fetched — download it (Drive hands you a ZIP) and drop that instead.</p>
+      </details>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <div class="chips" id="sFilter" data-tip="Show only the sheets at one stage, so a game of a hundred and sixty sheets can be worked through in order.">
+        <button data-f="" title="Every sheet in this game.">All</button>
+        <button data-f="todo" title="Sheets nothing has been outlined on yet — the work still in front of you. A sheet you have ticked as finished with is left out, even if nothing was ever outlined on it. This is where a game opens until you choose otherwise, and your choice is remembered.">To outline</button>
+        <button data-f="uncut" title="Sheets you have drawn round but not yet turned into pieces. Usually the next press.">Outlined, not cut</button>
+        <button data-f="cut" title="Sheets whose pieces have been cut out.">Cut</button>
+        <button data-f="done" title="Sheets you have ticked as done with. The tick is set by hand — only you can know when a sheet is finished.">Finished</button>
+      </div>
+      <input id="sFind" placeholder="find a sheet…" style="min-width:170px" data-tip="Find a sheet by its name or its page number.">
+      <span class="spacer" style="flex:1"></span>
+      <button id="cutAll" data-tip="Cut every sheet that has outlines on it and has not been cut yet, one after another. Safe to press again later: cutting a sheet a second time keeps the names you have already given its pieces.">Cut every outlined sheet</button>
+      <span class="tiny muted" id="cutAllNote"></span>
+    </div>
+    <div class="sheets" id="sheets"></div>
+    <p class="note" id="noSheets" hidden>No sheets yet. Drop a scan above.</p>
+  </section>
+
+  <!-- ============================================================ PIECES -->
+  <section id="tab-pieces" hidden>
+    <div class="row" style="margin-bottom:10px">
+      <label class="tiny muted" data-tip="Show only the pieces from one box — the core game, or one supplement — or from a single sheet. A game is usually worked through a box at a time; the sheet numbers underneath are there when you want one.">Show <select id="pSheet"><option value="">everything in this game</option></select></label>
+      <div class="chips" id="pFilter">
+        <button data-f="" class="on" data-tip="Every piece cut off this game so far.">All</button>
+        <button data-f="unnamed" data-tip="Only the pieces nothing has been called yet — the work still to do.">No name</button>
+        <button data-f="dup" data-tip="Pieces that look the same as each other. Usually the same counter printed twice, in which case you only need one — but sometimes two real components that differ by a flag in the corner, so the room asks rather than deciding.">Look-alikes</button>
+        <button data-f="odd" data-tip="Pieces the room thinks are worth your eye: ones that run off the edge of the sheet, ones that came out very small, ones that are mostly empty space. Usually an outline that needs redrawing — and where it is not, open the piece and say so, and it leaves this list for good.">Worth a look</button>
+      </div>
+      <label class="tiny muted" data-tip="How the pieces are gathered into sets. By box keeps a game and each of its supplements together, which is how a game is usually worked through; by size gathers all the counters, which makes naming a run of them quick.">Order <select id="pOrder">
+        <option value="book">by box</option>
+        <option value="sheet">by sheet</option>
+        <option value="size">by size</option>
+        <option value="name">by name</option>
+      </select></label>
+      <span class="tiny muted" id="pCount"></span>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <label class="tiny muted" data-tip="Tick pieces and give them all the same component in one go — a deck of thirty-two cards is one component and thirty-two pieces, and dragging its name onto each of them is the same work thirty-two times."><input type="checkbox" id="pChooseOn"> choose several at once</label>
+      <span id="pChooseBar" hidden>
+        <button class="quiet" id="pAllShown" title="Tick every piece the filters above are showing.">all shown</button>
+        <button class="quiet" id="pNoneChosen" title="Untick everything.">none</button>
+        <b id="pChosenN" class="tiny"></b>
+        <select id="pChooseWanted" title="The component to give every ticked piece."></select>
+        <select id="pChooseBack" title="The piece that is the back of every ticked piece. Cut the back once and point the whole deck at it — a deck with its own back is one extra piece, not a special case."><option value="">— leave the backs alone —</option></select>
+        <button class="primary" id="pApply" title="Give every ticked piece the component and the back chosen here. A piece that already has a name of its own keeps it; only blanks are filled.">Apply to the ticked pieces</button>
+      </span>
+    </div>
+    <div id="pGuess"></div>
+    <div id="pReview"></div>
+    <div class="pieces-wrap">
+      <div id="plist"></div>
+      <div id="pstage"><p class="note">Choose a piece on the left.</p></div>
+      <div id="pform"><p class="note">—</p></div>
+    </div>
+  </section>
+
+  <!-- ============================================================= MATCH -->
+  <section id="tab-match" hidden>
+    <p class="note">The quickest way to say what a piece is: <b>drag a component's name from the left onto the piece it is</b>. The piece takes that name, and the Wanted list ticks it off. Drag a piece back onto the list to unlink it. ⚠️ A counter only needs cutting <b>once</b> — the game repeats it — so one cut piece is a whole component, however many are printed on the sheet.</p>
+    <div class="matchwrap">
+      <div class="mcol">
+        <div class="mhead">
+          <b>Still wanted</b>
+          <input id="mFind" placeholder="find a component…">
+          <label class="tiny muted"><input type="checkbox" id="mAll"> show everything, including matched</label>
+        </div>
+        <div id="mList"></div>
+      </div>
+      <div class="mcol wide">
+        <div class="mhead">
+          <b>Cut pieces</b>
+          <select id="mSheet" title="Hold the board to one box — everything cut from the core game, or from one supplement — or to a single sheet. A supplement is thirty sheets, and it is usually the box you are working through."><option value="">every sheet in the game</option></select>
+          <label class="tiny muted"><input type="checkbox" id="mUn" checked> only pieces with no component yet</label>
+          <span class="spacer" style="flex:1"></span>
+          <span class="tiny muted" id="mCount"></span>
+        </div>
+        <div id="mGrid" class="mgrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ WANTED -->
+  <section id="tab-wanted" hidden>
+    <div id="wEmpty" hidden>
+      <div class="welcome" style="margin-bottom:18px">
+        <h2 style="margin-top:0">Keep score of what is still to cut — if you want to</h2>
+        <p>A checklist is the game's own contents list: every counter, card, tile and template the box should have. The room then tells you which ones you have cut and which you have not, and how far through you are.</p>
+        <p class="note"><b>It is optional and it can wait.</b> Cutting works perfectly well without one.</p>
+        <div class="row" style="margin-top:14px">
+          <button class="primary" id="wStart" data-tip="Type or paste the box's own contents list — one component a line. The room then keeps score of how much of the game you have cut.">Paste the contents list</button>
+          <button id="wStartOne" data-tip="Start the checklist with a single line, rather than pasting a whole list.">Add one component</button>
+        </div>
+        <p class="note" style="margin-top:12px">A line each. A number at either end becomes the quantity:<br>
+        <code>26 Wound counters</code> · <code>Turning template x2</code> · <code>Elf Range Ruler</code> · <code>9 | Sea Monster Templates | template</code></p>
+      </div>
+    </div>
+    <div id="wBody2">
+    <div class="wsum">
+      <span class="big" id="wPct">—</span>
+      <span><span id="wDone">0</span> of <span id="wTotal">0</span> components accounted for — <span class="good" id="wCut">0</span> cut and linked, <span class="hold" id="wProb">0</span> probably cut (a piece's name matches), <span class="hold" id="wPart">0</span> part of a deck, <span class="bad" id="wMiss">0</span> not yet.
+      <span class="tiny muted" id="wCards"></span></span>
+    </div>
+    <div class="meter"><i id="wBar" style="width:0"></i></div>
+    <div class="wfilters">
+      <label>Show <select id="wState"><option value="">everything</option><option value="missing">not yet cut</option><option value="probably">probably cut</option><option value="cut">cut</option></select></label>
+      <label>Kind <select id="wKind"><option value="">any</option></select></label>
+      <label>Group <select id="wGroup"><option value="">any</option></select></label>
+      <input id="wFind" placeholder="find…" style="min-width:200px">
+      <span class="spacer" style="flex:1"></span>
+      <button id="wConfirm" data-tip="Where exactly one cut piece's name matches a component on this list, tie the two together. It only acts where there is no doubt — anything ambiguous is left for you.">Confirm the likely links</button>
+      <button id="wAdd" data-tip="Add one line to the checklist by hand.">+ Add a component</button>
+      <button id="wImportBtn" data-tip="Paste several components at once, one a line. A number at either end is read as the quantity.">Paste a list</button>
+    </div>
+    <div id="wSplit" hidden style="margin:0 0 12px">
+      <p class="note" style="margin:0 0 6px" id="wSplitSays"></p>
+      <textarea id="wSplitText" placeholder="One name a line — what each of them is really called:&#10;The first component&#10;The second component&#10;The third component"></textarea>
+      <div class="row" style="margin-top:6px">
+        <button class="primary" id="wSplitGo" title="Replace the one line with these, one component each, and move any piece already linked to it onto the first.">Split it</button>
+        <button class="quiet" id="wSplitCancel" title="Leave the list as it is.">Cancel</button>
+      </div>
+    </div>
+    <div id="wImport" hidden style="margin:0 0 12px">
+      <textarea id="wText" placeholder="Paste the box&#39;s own contents list — one component a line:&#10;26 Wound counters&#10;Turning template x2&#10;9 | Sea Monster Templates | template"></textarea>
+      <div class="row" style="margin-top:6px"><label class="tiny muted">into group <select id="wImportGroup"></select></label><button class="primary" id="wImportGo" title="Add every line above to the checklist.">Add them</button><button class="quiet" id="wImportCancel" title="Leave the list as it was; nothing above is added.">Cancel</button></div>
+    </div>
+    <table class="wanted"><thead><tr><th>Component</th><th>Set</th><th>Kind</th><th>Qty</th><th>Where</th><th>Status</th><th>Pieces</th><th></th></tr></thead><tbody id="wBody"></tbody></table>
+    </div>
+    <p class="note" style="margin-top:10px" id="wFoot">Status is worked out from the pieces: a piece <b>linked</b> to a component (on Match, or on the Pieces page) counts as cut; otherwise a piece whose name matches the component's pattern counts as <i>probably</i> cut. Edit a name or quantity in place; it is saved when you leave the box.<br>
+    ⭐️ <b>One is enough</b> under the quantity means what the room has always assumed: a sheet printing twenty-six identical wound counters wants <b>one</b> cut, because the game repeats it. Press it to say <b>all different</b> — a deck of twenty-four damage cards is twenty-four different pieces of card, and the line then reads <i>3 of 24</i> until every one is cut. Nothing in a printed contents list can tell those two apart, so it is yours to say.</p>
+  </section>
+
+  <!-- ============================================================= ABOUT -->
+  <!-- ======================================================= TAKE IT AWAY -->
+  <section id="tab-export" hidden>
+    <h2>Take the pieces out of the room</h2>
+    <p class="note">The room writes a plain folder that anything can read: every
+    piece as an ordinary picture named by what it is, at its true printed size,
+    with a list beside it as a spreadsheet and as data. Nothing in it is shaped
+    for any particular program.</p>
+
+    <!-- ⭐️⭐️ THE LAST LOOK BEFORE THE PIECES LEAVE THE ROOM. Frank, 24
+         August 2026: "I want (once I've done my cutting work) to be able to
+         run a verification check against the original component index - a
+         secondary check to ensure we have every piece cut."
+
+         ⚠️ THE WORDS LIVE IN ONE PLACE. The report itself is written by
+         review_page() in Python, because it also goes into the exported
+         folder — so this panel gives the COUNTS and opens that report rather
+         than saying the same things again in different words. Two accounts of
+         the same findings would disagree inside a fortnight (fault 24). -->
+    <div class="review" id="reviewPanel">
+      <b>Check the cut against the contents list</b>
+      <p class="tiny muted">Read this before the pieces leave the room. It says
+      what is missing, what is half-done, and — the part nothing else can tell
+      you — <b>which cut pieces answer to nothing on the list</b>. It only
+      reports: nothing here changes a piece or a component.</p>
+      <div id="reviewSum" class="tiny muted">Working it out…</div>
+      <div class="row" style="margin-top:10px">
+        <button id="reviewOpen" data-tip="Open the whole check as a page you can read and print — a list to work through with the box open in front of you. It changes nothing.">Read the whole check</button>
+        <button class="quiet" id="reviewAgain" data-tip="Work the check out again from what is on disk now, after you have fixed something.">Check again</button>
+        <span class="tiny muted">It goes into the folder too, as
+        <code>check-against-the-list.html</code> and <code>.json</code></span>
+      </div>
+    </div>
+
+    <div class="rights" id="exportRights">
+      <b>⚠️ Before you take anything out of here — this is somebody else's work.</b>
+      <p>Copyright in a game's artwork, its design and its words belongs to its
+      publisher and the artists who made it. Scanning it, cutting it up and
+      giving the pieces tidy names changes none of that. <b>What comes out of
+      this room is not yours to give away.</b></p>
+      <p>It is for your own use, with a copy of the game you own — replacing a
+      piece you have lost, playing a game you already have, keeping a record of
+      what is on your own shelf. <b>Do not put these pieces on the internet</b>,
+      share them, sell them, or build them into anything you release.</p>
+      <p class="tiny">The Cutting Room is a tool, like a scalpel is a tool. It
+      gives you no rights over anything you cut with it, and its authors are not
+      lawyers: what counts as personal or fair use differs from one country to
+      the next, and where you stand is yours to know. This notice goes into the
+      folder with the pieces, so it travels with them.</p>
+    </div>
+
+    <div class="whatout" id="whatOut"></div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="primary" id="exportGo" data-tip="Write everything out as an ordinary folder: each piece as a picture named by what it is, at true printed size, plus a spreadsheet, a contact sheet, the checklist and cutting files. Read the notice above first — it goes in the folder with them.">Write the folder</button>
+      <button id="exportOpen" hidden data-tip="Show the folder that was just written on your desktop.">Open the folder</button>
+      <span class="tiny muted" id="exportNote"></span>
+    </div>
+    <p class="tiny muted" style="margin-top:10px">It is written to
+    <code id="exportWhere"></code>, and <b>replaced whole</b> every time — so
+    keep nothing of your own in it. Everything in it can be made again from the
+    sheets and the outlines.</p>
+  </section>
+
+  <section id="tab-about" hidden>
+    <h2>The project</h2>
+    <label class="f">Name</label><input id="aName" style="max-width:420px">
+    <label class="f">Game</label><input id="aGame" style="max-width:420px">
+    <label class="f">Notes</label><textarea id="aNotes"></textarea>
+    <div class="row" style="margin-top:10px"><button class="primary" id="aSave" data-tip="Save the name, the game and the notes above. Nothing else on this page needs saving — everything else is written the moment you change it.">Save</button><span class="tiny muted" id="aPath"></span></div>
+    <div id="hooks"></div>
+    <h2 style="margin-top:28px">If something goes wrong</h2>
+    <p class="note">Three things in a project cannot be rebuilt from the scans:
+    the <b>outlines</b> you drew, the <b>names</b> you gave the pieces, and the
+    <b>checklist</b>. So the room keeps the last <b id="hKeep">60</b> copies of
+    each of them, by itself, every time one is saved. You do not have to do
+    anything for this to happen.</p>
+    <div id="history"></div>
+    <p class="tiny muted">Kept in <code id="hWhere"></code>. Putting a copy back
+    also keeps the one it replaces, so it is not a one-way door either.
+    ⚠️ Close the cutting table first if you are putting outlines back — a table
+    left open will save what is on its screen over the top.</p>
+
+    <h2 style="margin-top:28px">Where things are</h2>
+    <p class="note">The room keeps this project's sheets, outlines, masks, cut pieces, names and wanted list in the folder above (or wherever its <code>project.json</code> points). Everything can be rebuilt from the outlines and the sheets.</p>
+  </section>
+</main>
+<div class="flash" id="flash"></div>
+
+<script>
+(function () {
+  "use strict";
+  var PID = decodeURIComponent(location.pathname.split("/")[2] || "");
+  var API = "/api/p/" + encodeURIComponent(PID);
+  var BASE = "/p/" + encodeURIComponent(PID);
+  var project = null, piecesData = null, wantedData = null;
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function flash(t, bad) { var f = document.getElementById("flash"); f.textContent = t; f.style.borderColor = bad ? "var(--bad)" : "var(--line)"; f.classList.add("on"); setTimeout(function () { f.classList.remove("on"); }, bad ? 4000 : 1600); }
+  function j(url, opts) { return fetch(url, opts).then(function (r) { return r.json(); }); }
+  function post(url, body) { return j(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) }); }
+  function put(url, body) { return j(url, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) }); }
+  function debounce(fn, ms) { var t; return function () { var a = arguments, s = this; clearTimeout(t); t = setTimeout(function () { fn.apply(s, a); }, ms || 500); }; }
+
+  /* ------------------------------------------------------------- tabs */
+  var TABS = ["sheets", "pieces", "match", "wanted", "export", "about"];
+  function showTab(name) {
+    document.querySelectorAll(".tabs button").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+    TABS.forEach(function (t) {
+      document.getElementById("tab-" + t).hidden = t !== name;
+    });
+    if (name === "pieces" && !piecesData) loadPieces();
+    if (name === "wanted" && !wantedData) loadWanted();
+    if (name === "about") loadHistory();
+    if (name === "match") loadMatch();
+    if (name === "export") renderExport();
+  }
+  document.querySelectorAll(".tabs button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; showTab(b.dataset.tab); });
+  });
+  document.querySelectorAll("#steps li").forEach(function (li) {
+    li.addEventListener("click", function () {
+      if (li.dataset.step === "cut" || li.dataset.step === "outline") {
+        // pressing a step chooses the filter that step is about, and that
+        // counts as choosing it — it is what you will want next time too
+        pickFilter(li.dataset.step === "cut" ? "uncut" : "todo");
+      }
+      location.hash = li.dataset.tab; showTab(li.dataset.tab);
+      if (li.dataset.tab === "sheets") renderSheets();
+    });
+  });
+
+  /* ⭐️ WHERE AM I, AND WHAT DO I DO NEXT? Five steps, each showing its own
+     count, and the one you are on lit. Somebody opening this for the first
+     time should not have to be told the order of the work — the page should
+     say it. The line underneath names the single next action. */
+  function steps() {
+    if (!project) return;
+    var sh = project.sheets;
+    var toOutline = sh.filter(function (x) { return !x.outlines; }).length;
+    var toCut = sh.filter(function (x) { return x.outlines && !x.cut; }).length;
+    var cut = project.pieces, named = project.named;
+    var w = project.wanted || { total: 0, done: 0, pct: 0 };
+    var counts = { import: sh.length + (sh.length === 1 ? " sheet" : " sheets"),
+                   outline: (sh.length - toOutline) + " of " + sh.length + " outlined",
+                   cut: cut + (cut === 1 ? " piece" : " pieces"),
+                   name: named + " of " + cut + " named",
+                   check: w.total ? (w.done + " of " + w.total) : "no list yet",
+                   take: cut ? (cut + " ready") : "nothing cut yet" };
+    // ⚠️ THE CHECKLIST IS NEVER THE NEXT THING TO DO UNTIL THERE IS ONE.
+    // Frank, 21 August 2026: setting a project up "shouldn't require an
+    // immediate upload of a full contents listing". It is a way of keeping
+    // score, offered when the score is worth keeping — not a gate at the door.
+    // ⭐️ The sixth step is a real step, so it can be the next one. When every
+    // piece is cut and named and the checklist (if there is one) is
+    // accounted for, the work IS done and the thing to do is take it away.
+    var settled = cut && named >= cut && !toOutline && !toCut
+                  && (!w.total || w.done >= w.total);
+    var at = !sh.length ? "import"
+           : (toOutline === sh.length ? "outline"
+           : (toCut ? "cut"
+           : (cut && named < cut ? "name"
+           : (toOutline ? "outline"
+           : (settled ? "take" : (w.total ? "check" : "name"))))));
+    document.querySelectorAll("#steps li").forEach(function (li) {
+      var k = li.dataset.step;
+      li.querySelector("i").textContent = counts[k];
+      li.classList.toggle("on", k === at);
+      var order = ["import", "outline", "cut", "name", "check", "take"];
+      li.classList.toggle("done", order.indexOf(k) < order.indexOf(at));
+    });
+    var say = ({
+      import: "Start by dropping this game's scans below — a PDF, a picture, a Word file with pictures in it, or a ZIP.",
+      outline: "Open a sheet and outline the pieces. On cards and counters, <b>Add the suggested outlines</b> usually does the whole sheet.",
+      cut: toCut + (toCut === 1 ? " sheet is" : " sheets are") + " outlined and not cut yet — <b>Cut every outlined sheet</b> does them all.",
+      name: (cut - named) + " cut " + (cut - named === 1 ? "piece has" : "pieces have") + " no name. <b>Match</b> is the quick way: drag a component's name onto the piece.",
+      check: "The checklist knows what this game should have. " + (w.total - w.done) + " components are not accounted for yet.",
+      take: "Everything is cut and named. <b>Take it away</b> writes a plain folder of the pieces, a list, a page of every piece at true size, and cut files for a laser."
+    })[at];
+    if (at === "name" && !w.total && named >= cut && cut) {
+      say = "Every piece is named. If you want to keep score of what is still to cut, <b>Checklist</b> takes the box's own contents list — but it is entirely optional.";
+    }
+    document.getElementById("nextup").innerHTML = "<b>Next:</b> " + say;
+  }
+  /* ---------------------------------------------------- take it away */
+  /* ⭐️ THE WAY OUT HAS TO BE PLAIN. Frank, 22 August 2026: "the cutting tool
+     should remain relatively generic - not every user is going to be building
+     their own version of [a game] to play on a computer! Output format is
+     important." So what this writes is a folder of ordinary pictures and an
+     ordinary spreadsheet, and the panel says so in those words rather than
+     naming formats. */
+  var exportJob = null;
+  /* ⭐️ The counts only — see the note in the markup for why the words are not
+     repeated here. A count with no findings behind it is the good answer and
+     must READ as the good answer, or a green report looks like a broken one. */
+  function renderReview() {
+    var box = document.getElementById("reviewSum");
+    box.textContent = "Working it out…";
+    j(API + "/review").then(function (rv) {
+      if (!rv || rv.error) { box.textContent = "⚠️ " + ((rv || {}).error || "could not work it out"); return; }
+      var s = rv.summary || {};
+      if (!rv.has_list) {
+        box.innerHTML = "<b>There is no contents list for this game</b>, so " +
+          "there is nothing to check the cut against. Type the box\'s contents " +
+          "into the Checklist once and this becomes a real report.";
+        return;
+      }
+      // ⚠️ one of a thing is not "1 pieces". A count read out in the wrong
+      // number is the sort of thing that makes a careful report look careless.
+      var found = [
+        [s.missing, "component with nothing cut", "components with nothing cut"],
+        [s.part, "component not fully cut yet", "components not fully cut yet"],
+        [s.probably, "component counted only because a name looks right",
+                     "components counted only because a name looks right"],
+        [s.loose_decks, "deck the list counts as a single card",
+                        "decks the list counts as a single card"],
+        [s.orphans, "cut piece that answers to nothing on the list",
+                    "cut pieces that answer to nothing on the list"],
+        [s.unnamed, "piece with no name", "pieces with no name"],
+        [s.held, "piece held back", "pieces held back"],
+        [s.aside, "piece set aside", "pieces set aside"]
+      ].filter(function (x) { return x[0]; });
+      var head = "<b>" + s.accounted + " of " + s.components +
+        " components accounted for (" + s.pct + "%)</b>, out of " +
+        s.pieces + " piece" + (s.pieces === 1 ? "" : "s") + " cut.";
+      box.innerHTML = head + (found.length
+        ? "<ul class=\"found\">" + found.map(function (x) {
+            return "<li><b>" + x[0] + "</b> " + esc(x[0] === 1 ? x[1] : x[2]) + "</li>";
+          }).join("") + "</ul>"
+        : " <span class=\"ok\">Nothing outstanding. \u2713</span>");
+    });
+  }
+  document.getElementById("reviewOpen").addEventListener("click", function () {
+    window.open(API + "/review/print", "_blank");
+  });
+  document.getElementById("reviewAgain").addEventListener("click", renderReview);
+
+  function renderExport() {
+    if (!project) return;
+    renderReview();
+    document.getElementById("exportWhere").textContent = project.path + "/export";
+    var cut = project.pieces, named = project.named;
+    var sheets = project.sheets.filter(function (x) { return x.outlines > 0; }).length;
+    var w = project.wanted || { total: 0 };
+    var bits = [
+      ["pieces", cut + (cut === 1 ? " piece" : " pieces"),
+       "one picture each, transparent background, at full resolution and named by what it is"],
+      ["a list", "inventory.csv and .json",
+       "every piece with its size in inches and millimetres — the CSV opens in Numbers or Excel"],
+      ["one page", "contact-sheet.html",
+       "every piece at its true printed size, to look at or to print"]
+    ];
+    if (w.total) bits.push(["the checklist", "still-to-cut.html",
+      "what is still to cut, to print and take to the table with a scalpel"]);
+    if (sheets) bits.push(["cut files", sheets + (sheets === 1 ? " sheet" : " sheets"),
+      "for a laser or a craft cutter — true size in millimetres, with the printable sheet beside it"]);
+    document.getElementById("whatOut").innerHTML = bits.map(function (b) {
+      return '<div class="w"><b>' + esc(b[1]) + "</b><span>" + esc(b[2]) + "</span></div>";
+    }).join("");
+    var note = document.getElementById("exportNote");
+    if (!cut) note.textContent = "Nothing has been cut yet — there is nothing to take away.";
+    else if (named < cut) note.innerHTML = "⚠️ " + (cut - named) + " of " + cut +
+      " pieces have no name, so they will come out filed under the number they were cut as.";
+    else note.textContent = "";
+    document.getElementById("exportGo").disabled = !cut;
+  }
+
+  document.getElementById("exportGo").addEventListener("click", function () {
+    var b = this, note = document.getElementById("exportNote");
+    b.disabled = true; b.textContent = "Writing…";
+    post(API + "/export").then(function (job) {
+      exportJob = job.id;
+      (function watch() {
+        j("/api/jobs/" + exportJob).then(function (s) {
+          if (s.state === "running") {
+            note.textContent = (s.message || "working") +
+              (s.total ? "  (" + s.done + " of " + s.total + ")" : "");
+            setTimeout(watch, 350);
+            return;
+          }
+          b.disabled = false; b.textContent = "Write the folder again";
+          if (s.state === "failed") { note.textContent = "⚠️ " + s.error; return; }
+          var r = s.result || {};
+          note.innerHTML = "<b>Done.</b> " + r.pieces + " piece" + (r.pieces === 1 ? "" : "s") +
+            (r.spare ? ", and " + r.spare + " set aside" : "") +
+            (r.laser ? ", and cut files for " + r.laser + " sheet" + (r.laser === 1 ? "" : "s") : "") +
+            ". " + (r.unnamed ? r.unnamed + " had no name. " : "");
+          document.getElementById("exportOpen").hidden = false;
+        });
+      })();
+    });
+  });
+  document.getElementById("exportOpen").addEventListener("click", function () {
+    post(API + "/reveal", { what: "export" }).then(function (r) {
+      if (!r.ok) flash("The folder is at " + r.path);
+    });
+  });
+
+  function fromHash() {
+    var h = decodeURIComponent(location.hash.replace(/^#/, ""));
+    if (!h) {
+      // ?tab=match is the same thing said in the query, for a link that has
+      // to survive being handed to something that strips the fragment.
+      var q = (location.search.match(/[?&]tab=([^&]+)/) || [])[1];
+      if (q) h = decodeURIComponent(q);
+    }
+    var bits = h.split("/");
+    // ⚠️ ONE LIST OF TABS, NOT TWO. This was a chain of ifs naming each tab,
+    // and adding a sixth tab to the page left it out — the tab existed, its
+    // button worked, but a link straight to it quietly landed on Sheets
+    // instead. A set of names that has to be repeated in a second place is a
+    // set of names that will disagree with itself. Fault 14's shape again.
+    var want = TABS.indexOf(bits[0]) >= 0 ? bits[0] : "sheets";
+    showTab(want);
+    if (want === "pieces") wantSheet = bits[1] || null;
+  }
+  var wantSheet = null;
+  window.addEventListener("hashchange", fromHash);
+
+  /* ---------------------------------------------------------- project */
+  function load() {
+    return j(API).then(function (p) {
+      if (p.error) { document.getElementById("title").textContent = p.error; return; }
+      project = p;
+      if (!document.getElementById("tab-export").hidden) renderExport();
+      document.title = p.name + " — the Cutting Room";
+      document.getElementById("title").textContent = p.name;
+      document.getElementById("subtitle").textContent = (p.game && p.game !== p.name ? p.game + " · " : "") + p.sheets.length + " sheets · " + p.pieces + " pieces cut · " + p.named + " named";
+      document.getElementById("nSheets").textContent = p.sheets.length || "";
+      document.getElementById("nPieces").textContent = p.pieces || "";
+      document.getElementById("nWanted").textContent = p.wanted && p.wanted.total ? (p.wanted.pct + "%") : "";
+      document.getElementById("tableLink").href = BASE + "/table";
+      document.getElementById("aName").value = p.name || "";
+      document.getElementById("aGame").value = p.game || "";
+      document.getElementById("aNotes").value = p.notes || "";
+      document.getElementById("aPath").textContent = p.path;
+      setChips();          // the remembered filter, shown as chosen
+      renderSheets();
+      renderHooks();
+      steps();
+    });
+  }
+
+  /* ⚠️ The five steps across the top, and the counts beside them, are worked
+     out by the server and only ever read at load. So naming a piece left
+     "6 of 7 named" and "Checklist 0 of 4" sitting there unchanged — the same
+     complaint as the thumbnail that would not turn: the screen does not show
+     what you just did, so you doubt that it took and do it again. Refreshed
+     a moment after any save, once, however fast the typing. */
+  var refreshCounts = debounce(function () { load(); }, 900);
+
+  /* ---------------------------------------------------------- folding
+
+     ⭐️ FRANK, 23 August 2026: "I want the same ability to collapse and expand
+     core/expansions/extras etc throughout the platform (eg in Checklist,
+     sheets, match, pieces etc) - it's super helpful."
+
+     A game and its supplements are one long list on every page of this room,
+     and the box being worked through is somewhere down the middle of it. So
+     every list folds, and they all fold the same way.
+
+     ⚠️ ONE MECHANISM, NOT FOUR. Four lists that each grew their own folding
+     would drift apart — one would remember and another would not, one would
+     have an arrow the wrong way round. That is fault 24, which has already
+     bitten this codebase three times. So there is one `Fold` here and each
+     list only says what its own headings and members are.
+
+     How a list uses it: put `data-fold="<group>"` on every row of a group and
+     ask for a heading with `Fold.head(...)`. The rows are hidden where they
+     stand, whatever they are — a card in a grid, a row in a table, a line in
+     a column — so no list has to be rebuilt around a wrapper. */
+  /* ⚠️⚠️ A SET IS NOT "THE ROWS THAT HAPPEN TO SIT TOGETHER".
+     Frank, 23 August 2026: "on #pieces the collapse/expand mechanic is going
+     awry, just not working correctly, seems to be segmenting the core box
+     over and over."
+
+     He was right and it was bad. Every list here used to start a new heading
+     whenever the group of the row it was on differed from the row before —
+     which is only the same thing as grouping if every set's rows are already
+     together. On the Pieces page they are not: pieces are sorted by their
+     own name, and a piece FILE the index knows nothing about (anything else
+     living in the pieces folder — and a project whose store points into a
+     game's own repository) has no sheet at all, so it lands in the middle of a sheet's
+     run and cuts it in two. One such file, and "core p.1" appears twice; a
+     handful, and the core box is shredded.
+
+     ⚠️ And it does not merely look wrong. Two headings then carry the SAME
+     fold id, so each claims all the rows: the count is wrong on both, and
+     folding one hides rows sitting under the other.
+
+     So gather first, render second. Sets come out in the order they are first
+     met, each with all of its rows, however they were sorted. */
+  function gather(rows, keyOf) {
+    var order = [], by = {};
+    rows.forEach(function (r) {
+      var k = keyOf(r);
+      if (!by[k]) { by[k] = []; order.push(k); }
+      by[k].push(r);
+    });
+    return order.map(function (k) { return { key: k, rows: by[k] }; });
+  }
+
+  var Fold = (function () {
+    function key(list) { return "cuttingroom.fold." + PID + "." + list; }
+    function read(list) {
+      try { return JSON.parse(localStorage.getItem(key(list)) || "{}") || {}; }
+      catch (e) { return {}; }
+    }
+    function write(list, v) {
+      try { localStorage.setItem(key(list), JSON.stringify(v)); }
+      catch (e) { /* a private window: folding simply will not be remembered */ }
+    }
+    // by hand rather than by selector, so a group named "book p.1 — scans"
+    // needs no escaping and cannot quietly match nothing
+    function members(scope, gid) {
+      return Array.prototype.filter.call(scope.querySelectorAll("[data-fold]"),
+        function (e) { return e.dataset.fold === gid; });
+    }
+    function paint(h) {
+      var open = h.getAttribute("aria-expanded") === "true";
+      h.innerHTML = '<span class="arrow">' + (open ? "&#9662;" : "&#9656;") + "</span>" +
+        '<span class="what">' + esc(h.dataset.foldName || "") + "</span>" +
+        '<span class="n">' + esc(h.dataset.foldN || "") + "</span>";
+    }
+    function apply(list, gid, scope, h, ignore) {
+      var isShut = !ignore && !!read(list)[gid];
+      var mine = members(scope, gid);
+      mine.forEach(function (e) { e.hidden = isShut; });
+      h.dataset.foldN = mine.length;
+      h.setAttribute("aria-expanded", String(!isShut));
+      paint(h);
+    }
+    return {
+      apply: apply,
+      /* ⚠️⚠️ ANYTHING THAT ADDS A ROW MUST OPEN THE SET IT LANDS IN.
+         Frank, 24 August 2026: "BUG - adding a new component does not work,
+         so far as I can tell - I just tried to create a new Chaos Experience
+         Reward counter, typed in the name, clicked add, and nothing
+         happened." It had worked perfectly: the component was on the disk and
+         in the table. It landed in a set he had folded away, so the one thing
+         he was watching for — a new row — was hidden the instant it appeared.
+         A fold is a way of not looking at things you are done with, never a
+         way of losing something you just asked for. */
+      open: function (list, gid) {
+        var now = read(list);
+        if (!now[gid]) return;
+        delete now[gid];
+        write(list, now);
+      },
+      head: function (list, gid, name, scope) {
+        var h = document.createElement("button");
+        h.type = "button";
+        h.className = "fold";
+        h.dataset.foldName = name;
+        h.dataset.foldHead = gid;
+        h.title = "Fold this away, or open it again. It stays as you leave it.";
+        h.addEventListener("click", function () {
+          var now = read(list);
+          if (now[gid]) delete now[gid]; else now[gid] = 1;
+          write(list, now);
+          apply(list, gid, scope, h);
+        });
+        return h;
+      }
+    };
+  })();
+
+  /* ----------------------------------------------------------- sheets */
+
+  /* ⭐️ FRANK, 23 August 2026: "the default view should be 'To outline', not
+     'All'. Although best if platform remembers the last view a user selected
+     and goes back to that. Otherwise I waste time wading through lots of cut
+     and filed sheets before I find my next sheet to cut."
+
+     A hundred and sixty sheets, and the ones already dealt with are the ones
+     in the way. So the filter is remembered — per game, because two games are
+     at different stages — and a game whose filter has never been touched
+     opens on the work still to do rather than on everything at once. */
+  var FILTER_KEY = "cuttingroom.sheetfilter." + PID;
+  var sheetFilter = "todo";
+  try {
+    var keptF = localStorage.getItem(FILTER_KEY);
+    if (keptF !== null) sheetFilter = keptF;
+  } catch (e) { /* the default will do */ }
+
+  function setChips() {
+    document.querySelectorAll("#sFilter button").forEach(function (b) {
+      b.classList.toggle("on", (b.dataset.f || "") === sheetFilter);
+    });
+  }
+  function pickFilter(f) {
+    sheetFilter = f;
+    try { localStorage.setItem(FILTER_KEY, f); } catch (e) { /* private window */ }
+    setChips();
+    renderSheets();
+  }
+  document.querySelectorAll("#sFilter button").forEach(function (b) {
+    b.addEventListener("click", function () { pickFilter(b.dataset.f || ""); });
+  });
+  document.getElementById("sFind").addEventListener("input", debounce(function () { renderSheets(); }, 180));
+
+  function renderSheets() {
+    var box = document.getElementById("sheets");
+    box.innerHTML = "";
+    var q = document.getElementById("sFind").value.trim().toLowerCase();
+    var list = project.sheets.filter(function (s) {
+      if (q && ((s.label || "") + " " + (s.name || "") + " " + (s.source || "") + " " + s.id).toLowerCase().indexOf(q) < 0) return false;
+      /* ⚠️ A SHEET YOU HAVE FINISHED WITH IS NOT A SHEET STILL TO OUTLINE,
+         even though nothing was ever outlined on it. Frank, 23 August 2026:
+         "if a sheet is marked as finished even though nothing needed to be
+         cut from it (because it was all duplication), it shouldn't appear in
+         the 'To outline' view." The tick is the only thing that can know
+         that — a sheet with no outlines is otherwise indistinguishable from
+         one nobody has started. */
+      if (sheetFilter === "todo") return !s.outlines && !s.done;
+      if (sheetFilter === "uncut") return s.outlines && !s.cut;
+      if (sheetFilter === "cut") return s.cut > 0;
+      if (sheetFilter === "done") return !!s.done;
+      return true;
+    });
+    document.getElementById("noSheets").hidden = list.length > 0 || !project.sheets.length;
+    if (!list.length && project.sheets.length) {
+      /* ⭐️ The commonest way to see this is now a GOOD one — the room opens
+         on the work still to do, so an empty list means there is none left.
+         "No sheet matches that" would read like something had gone wrong. */
+      var why = q ? "No sheet matches that."
+        : sheetFilter === "todo" ? "Nothing left to outline in this game."
+        : sheetFilter === "uncut" ? "Nothing outlined is waiting to be cut."
+        : sheetFilter === "cut" ? "Nothing has been cut yet."
+        : sheetFilter === "done" ? "No sheet has been ticked as finished with yet."
+        : "No sheet matches that.";
+      box.innerHTML = '<p class="note" style="grid-column:1/-1">' + why +
+        ' <a href="#" id="clearF">Show them all</a>.</p>';
+      var cf = document.getElementById("clearF");
+      if (cf) cf.addEventListener("click", function (e) {
+        e.preventDefault();
+        document.getElementById("sFind").value = "";
+        pickFilter("");
+      });
+      return;
+    }
+    var uncut = project.sheets.filter(function (s) { return s.outlines > 0 && !s.cut; }).length;
+    document.getElementById("cutAllNote").textContent = uncut ? uncut + " not cut yet" : "";
+    // group by prefix, so a forty-page book stays together
+    var groups = {};
+    list.forEach(function (s) {
+      var g = bookOf(s.id);
+      (groups[g] = groups[g] || []).push(s);
+    });
+    var many = Object.keys(groups).length > 1;
+    Object.keys(groups).forEach(function (g) {
+      var gs = groups[g];
+      var gh = null;
+      if (many) {
+        var src = gs[0].source ? " — " + gs[0].source : "";
+        gh = Fold.head("sheets", g, g + src, box);
+        gh.classList.add("group-head");
+        box.appendChild(gh);
+      }
+      gs.forEach(function (s) {
+        var d = document.createElement("div");
+        d.className = "sheet" + (s.stale ? " stale" : "");
+        d.innerHTML =
+          '<div class="pic"><img loading="lazy" src="' + BASE + "/thumb/" + encodeURIComponent(s.id) + ".jpg?v=" + (s.stamp || s.added || 0) + (s.outlines ? "&marks=1" : "") + '" alt="">' +
+          (s.done ? '<span class="done">✓ finished</span>' : "") +
+          (s.outlines ? "" : '<span class="none">nothing outlined yet</span>') + "</div>" +
+          '<div class="body"><b>' + esc(s.label) + "</b>" +
+          '<input class="nm" value="' + esc(s.name || "") + '" placeholder="what is on this sheet?">' +
+          '<div class="counts"><span>' + s.outlines + " outline" + (s.outlines === 1 ? "" : "s") + "</span>" +
+          '<span class="cut' + (s.cut ? " some" : "") + '">' + s.cut + " cut</span>" + (s.cut ? "<span>" + s.named + " named</span>" : "") + "</div>" +
+          '<div class="acts">' +
+            '<a class="btn primary" data-tip="Open this sheet at the cutting table and draw round its pieces." href="' + BASE + "/table#" + encodeURIComponent(s.id) + '">Outline</a>' +
+            '<button class="cut" data-tip="Cut this sheet\'s outlines into pieces — one picture per piece, background removed, at true printed size. Names already given are kept." ' + (s.outlines ? "" : "disabled") + ">Cut</button>" +
+            (s.cut ? '<a class="btn" data-tip="Go to the pieces cut off this sheet, to name them." href="#pieces/' + encodeURIComponent(s.id) + '">Pieces</a>' : "") +
+            '<button class="quiet done">' + (s.done ? "Unfinish" : "Finished") + "</button>" +
+            '<button class="quiet danger del" title="Take this sheet out of the project">×</button>' +
+          "</div></div>";
+        var nm = d.querySelector("input.nm");
+        nm.addEventListener("change", function () { post(API + "/sheet/" + encodeURIComponent(s.id), { name: nm.value }).then(function () { s.name = nm.value; flash("Saved."); }); });
+        d.querySelector("button.cut").addEventListener("click", function () {
+          var b = this; b.disabled = true; b.textContent = "Cutting…";
+          post(API + "/cut/" + encodeURIComponent(s.id)).then(function (r) {
+            if (r.error) { flash(r.error, true); b.disabled = false; b.textContent = "Cut"; return; }
+            flash(r.made.length + " piece" + (r.made.length === 1 ? "" : "s") + " cut from " + s.label + ".");
+            piecesData = null; wantedData = null;
+            load();
+          });
+        });
+        d.querySelector("button.done").addEventListener("click", function () {
+          post(API + "/sheet/" + encodeURIComponent(s.id), { done: !s.done }).then(function () { s.done = !s.done; renderSheets(); });
+        });
+        d.querySelector("button.del").addEventListener("click", function () {
+          if (!window.confirm("Take " + s.label + " out of the project? Its outlines go too. (The cut pieces stay.)")) return;
+          fetch(API + "/sheet/" + encodeURIComponent(s.id), { method: "DELETE" }).then(function () { load(); });
+        });
+        if (many) d.dataset.fold = g;
+        box.appendChild(d);
+      });
+      if (gh) Fold.apply("sheets", g, box, gh);
+    });
+  }
+
+
+  /* ----------------------------------------------------------- import */
+  var drop = document.getElementById("drop"), files = document.getElementById("files");
+  document.getElementById("pick").addEventListener("click", function (e) { e.preventDefault(); files.click(); });
+  drop.addEventListener("click", function (e) { if (e.target === drop || e.target.tagName === "DIV") files.click(); });
+  ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); }); });
+  ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); }); });
+
+  files.addEventListener("change", function () { takeFiles(files.files); files.value = ""; });
+
+  /* ⭐️ ONE FILE AT A TIME, WITH A LIST YOU CAN WATCH. Dropping a folder of
+     forty scans used to be a single line of text that changed occasionally;
+     you could not tell what had landed, what was next, or what had failed.
+     Each file is a row: waiting, working, done, or failed with the reason —
+     and one bad file no longer stops the other thirty-nine. */
+  function takeFiles(list) {
+    var arr = Array.prototype.slice.call(list || []);
+    if (!arr.length) return;
+    var prog = document.getElementById("progress");
+    var q = document.getElementById("queue");
+    q.innerHTML = "";
+    var rows = arr.map(function (f) {
+      var r = document.createElement("div");
+      r.className = "q wait";
+      r.innerHTML = '<span class="n"></span><span class="s">waiting</span>';
+      r.querySelector(".n").textContent = f._path || f.name;
+      q.appendChild(r);
+      return r;
+    });
+    function mark(i, cls, text) {
+      rows[i].className = "q " + cls;
+      rows[i].querySelector(".s").textContent = text;
+    }
+    var chain = Promise.resolve(), n = 0, bad = 0, done = 0;
+    arr.forEach(function (f, i) {
+      chain = chain.then(function () {
+        mark(i, "busy", "sending…");
+        prog.textContent = "Importing " + (i + 1) + " of " + arr.length + " — " + f.name;
+        return fetch(API + "/import", { method: "POST", headers: { "X-Filename": encodeURIComponent(f.name) }, body: f })
+          .then(function (r) { return r.json(); })
+          .then(function (r) {
+            if (r.error) throw new Error(r.error);
+            return watchJob(r.job, f.name, function (msg) { mark(i, "busy", msg); });
+          })
+          .then(function (res) {
+            var got = (res && res.sheets ? res.sheets.length : 0);
+            n += got; done++;
+            mark(i, "done", got + (got === 1 ? " sheet" : " sheets"));
+          })
+          .catch(function (e) { bad++; mark(i, "failed", e.message.slice(0, 60)); });
+      });
+    });
+    chain.then(function () {
+      prog.textContent = n + " sheet" + (n === 1 ? "" : "s") + " added from " + done +
+        " file" + (done === 1 ? "" : "s") + (bad ? ", " + bad + " could not be read" : "") + ".";
+      load();
+    });
+  }
+
+  /* The whole window takes a drop — and a FOLDER is walked to the bottom,
+     which is how a downloaded Drive or Dropbox folder gets in here in one
+     gesture. room/drop.js does the walking. */
+  if (window.RoomDrop) {
+    window.RoomDrop.install({
+      title: function () {
+        var n = project && project.name;
+        return n ? "Drop them into " + n : "Drop them into this project";
+      },
+      onFiles: function (files, ignored) {
+        if (ignored) flash(ignored + " file" + (ignored === 1 ? " was" : "s were") + " not a kind the room reads.");
+        takeFiles(files);
+      }
+    });
+  }
+
+  function watchJob(id, label, onTick) {
+    var prog = document.getElementById("progress");
+    return new Promise(function (resolve, reject) {
+      (function tick() {
+        j("/api/jobs/" + id).then(function (job) {
+          if (job.state === "running") {
+            var say = job.message + (job.total ? " (" + job.done + "/" + job.total + ")" : "");
+            prog.textContent = label + ": " + say;
+            if (onTick) onTick(say);
+            setTimeout(tick, 700);
+          } else if (job.state === "done") { resolve(job.result); }
+          else { reject(new Error(job.error || "failed")); }
+        }).catch(reject);
+      })();
+    });
+  }
+
+  /* ⭐️ Frank's ask, 21 August 2026: "any chance I can also link directly to
+     g-drive to upload the docs?" A Drive share link is turned into its direct
+     download by the room; a link that is not shared comes back as a sign-in
+     PAGE, and the room says so rather than filing the page as a sheet. */
+  var linkrow = document.getElementById("linkrow");
+  ["click", "dragenter", "dragover", "drop"].forEach(function (ev) {
+    linkrow.addEventListener(ev, function (e) { e.stopPropagation(); });
+  });
+  function fetchLinks() {
+    var box = document.getElementById("fetchUrl");
+    var url = box.value.trim();
+    if (!url) { box.focus(); return; }
+    var b = document.getElementById("fetchGo");
+    b.disabled = true; b.textContent = "Fetching…";
+    var prog = document.getElementById("progress");
+    prog.textContent = "asking for that link…";
+    post(API + "/fetch", { url: url }).then(function (r) {
+      if (r.error) throw new Error(r.error);
+      return watchJob(r.job, "the link");
+    }).then(function (res) {
+      var n = (res && res.sheets ? res.sheets.length : 0);
+      prog.textContent = n + " sheet" + (n === 1 ? "" : "s") + " added.";
+      box.value = ""; b.disabled = false; b.textContent = "Fetch it";
+      load();
+    }).catch(function (e) {
+      prog.textContent = "⚠ " + e.message;
+      b.disabled = false; b.textContent = "Fetch it";
+      window.alert(e.message);
+    });
+  }
+  document.getElementById("fetchGo").addEventListener("click", fetchLinks);
+  document.getElementById("fetchUrl").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") fetchLinks();
+  });
+
+  document.getElementById("cutAll").addEventListener("click", function () {
+    var b = this; b.disabled = true;
+    post(API + "/cut-all").then(function (r) {
+      if (!r.job) { flash(r.error || "nothing to cut", true); b.disabled = false; return; }
+      return watchJob(r.job, "cutting").then(function (res) {
+        var made = 0; Object.keys(res || {}).forEach(function (k) { if (typeof res[k] === "number") made += res[k]; });
+        flash(made + " pieces cut across " + Object.keys(res || {}).length + " sheets.");
+        b.disabled = false; piecesData = null; wantedData = null; load();
+      });
+    }).catch(function (e) { flash(e.message, true); b.disabled = false; });
+  });
+
+  /* ----------------------------------------------------------- pieces */
+  var curPiece = null, pieceSheet = "";
+  function loadPieces() {
+    return j(API + "/pieces").then(function (d) {
+      piecesData = d;
+      /* ⭐️ THE BOX FIRST, ITS SHEETS UNDER IT. "The random sheet numbers are
+         not useful" — a hundred and sixty of them are not a list anybody can
+         choose from, and the thing being worked through is the box. */
+      var sel = document.getElementById("pSheet");
+      var sheets = {}, books = {};
+      d.pieces.forEach(function (p) {
+        if (!p.sheet) return;
+        sheets[p.sheet] = (sheets[p.sheet] || 0) + 1;
+        var b = bookOf(p.sheet);
+        if (!books[b]) books[b] = { n: 0, sheets: {} };
+        books[b].n += 1;
+        books[b].sheets[p.sheet] = 1;
+      });
+      sel.innerHTML = '<option value="">everything in this game (' + d.pieces.length + ")</option>" +
+        Object.keys(books).sort().map(function (b) {
+          var mine = Object.keys(books[b].sheets).sort();
+          return '<optgroup label="' + esc(bookLabel(b)) + '">' +
+            '<option value="book:' + esc(b) + '">everything from ' + esc(b) +
+            " (" + books[b].n + ")</option>" +
+            mine.map(function (sid) {
+              return '<option value="' + esc(sid) + '">' + esc(sheetLabel(sid)) +
+                     " (" + sheets[sid] + ")</option>";
+            }).join("") + "</optgroup>";
+        }).join("");
+      // ⭐️ Arriving from a sheet card shows THAT SHEET and nothing else. Frank,
+      // 21 Aug 2026: pressing Pieces on a sheet and being handed the whole
+      // list to hunt through is the wrong answer to the question he asked.
+      if (wantSheet) { pieceSheet = wantSheet; wantSheet = null; }
+      sel.value = pieceSheet;
+      if (sel.value !== pieceSheet) { pieceSheet = ""; sel.value = ""; }
+      renderPieceList();
+      var mine = shownPieces();
+      if (curPiece && mine.filter(function (p) { return p.stem === curPiece; }).length) showPiece(curPiece);
+      else if (mine.length) showPiece((mine.filter(function (p) { return !(p.data && p.data.name); })[0] || mine[0]).stem);
+      else { document.getElementById("pstage").innerHTML = '<p class="note">Nothing cut from this sheet yet.</p>'; document.getElementById("pform").innerHTML = ""; }
+    });
+  }
+  /* ------------------------------------------------------ post-cut review
+     ⭐️ WHAT A PERSON WANTS TO KNOW AFTER CUTTING A SHEET is not "here are 45
+     files". It is: which of these still have no name, which ones I have now
+     cut twice, and which came out badly. So each piece carries FLAGS, and the
+     look-alikes are grouped so one press keeps one and bins the rest — which
+     is the whole economics of a counter sheet, where twenty are printed and
+     one is wanted.
+     ⚠️ It never bins anything on its own. Two counters can be the same size,
+     the same shape and the same colour and still be different counters; the
+     eye decides, and the page puts them side by side so it can. */
+  function hamming(a, b) {
+    var n = 0;
+    for (var i = 0; i < a.length; i++) {
+      var x = parseInt(a[i], 16) ^ parseInt(b[i], 16);
+      while (x) { n += x & 1; x >>= 1; }
+    }
+    return n;
+  }
+  function alike(p, q) {
+    if (!p.hash || !q.hash || p.hash.length !== q.hash.length) return false;
+    if (Math.abs(p.w_in - q.w_in) > Math.max(0.03, q.w_in * 0.03)) return false;
+    if (Math.abs(p.h_in - q.h_in) > Math.max(0.03, q.h_in * 0.03)) return false;
+    if (hamming(p.hash, q.hash) > Math.round((p.bits || 144) * 0.11)) return false;
+    if (p.rgb && q.rgb) {
+      var d = Math.sqrt(p.rgb.reduce(function (t, v, i) { return t + (v - q.rgb[i]) * (v - q.rgb[i]); }, 0));
+      if (d > 42) return false;
+    }
+    return true;
+  }
+  /* ⭐️⚠️ A FLAG THAT CANNOT BE ANSWERED IS NOT A QUESTION, IT IS A STAIN.
+     Frank, 24 August 2026: "some of the pieces I\'ve cut are flagged as RUNS
+     OFF THE SHEET. That\'s a reasonable thing to flag, but I don\'t see a way
+     to remove that flag (because it doesn\'t matter), and I don\'t mind about
+     the overrun."
+
+     He is right, and the damage is worse than the nuisance: *Worth a look* is
+     a list of things to deal with, and a flag nothing can clear means the list
+     never empties — so after a week it is never opened, and the NEXT flag on
+     it, the one that really is a bad outline, is never seen either. Every
+     worry the room raises about a piece must therefore have an answer, and for
+     these three the answer is a person saying "I have looked; it is fine".
+
+     ⚠️ ONE LIST, because these keys are known in four places — the test that
+     raises them, the words on the chip, the sentence in the bar, and the
+     *Worth a look* filter. Written out four times they would drift apart
+     (fault 24, and it has now happened four times). The look-alike flag is not
+     here: it has answers of its own, and "no name" is answered by naming. */
+  var WORRIES = {
+    edge: { chip: "runs off the sheet",
+            test: function (p) { return !!p.edge; },
+            says: "This piece runs off the edge of the sheet, so part of it may not have been scanned.",
+            fine: "Runs off the sheet — you have looked, and said it does not matter." },
+    tiny: { chip: "very small",
+            test: function (p) { return (p.w_in || 9) < 0.3 && (p.h_in || 9) < 0.3; },
+            says: "This piece prints smaller than a third of an inch either way — usually a speck picked up by an outline rather than a component.",
+            fine: "Very small — you have looked, and said it is meant to be." },
+    wisp: { chip: "mostly empty",
+            test: function (p) { return (p.cover === 0 || p.cover) && p.cover < 0.3; },
+            says: "Less than a third of this piece\'s box has any ink in it — usually an outline drawn wider than the thing it was meant to take.",
+            fine: "Mostly empty — you have looked, and said it is meant to be." }
+  };
+  /* Which of them this piece has already been waved through on. */
+  function waived(p) {
+    return String((p.data || {}).fine || "").split(/\s+/).filter(Boolean);
+  }
+  function analyse() {
+    if (!piecesData || piecesData._done) return;
+    var ps = piecesData.pieces, clusters = [];
+    ps.forEach(function (p) {
+      p.flags = [];
+      for (var i = 0; i < clusters.length; i++) {
+        if (alike(p, clusters[i][0])) { clusters[i].push(p); p._cl = i; return; }
+      }
+      p._cl = clusters.length;
+      clusters.push([p]);
+    });
+    clusters.forEach(function (c) {
+      /* ⭐️ Only pieces still IN PLAY and still unanswered count. A piece kept
+         on purpose as one of several designs of the same component is not a
+         duplicate; nor is one already set aside. Both questions have been
+         answered, and counting them would leave a lone piece wearing
+         "3 ALIKE" with nothing left to compare it to. */
+      var live = c.filter(function (p) {
+        return !(p.data && (p.data.alike || p.data.spare));
+      });
+      if (live.length < 2) return;
+      live.forEach(function (p) { p.flags.push(["dup", live.length + " alike"]); });
+    });
+    ps.forEach(function (p) {
+      if (p.data && p.data.spare) return;      // put away: nothing outstanding
+      if (!(p.data && p.data.name)) p.flags.push(["none", "no name"]);
+      var said = waived(p);
+      Object.keys(WORRIES).forEach(function (k) {
+        if (said.indexOf(k) < 0 && WORRIES[k].test(p)) p.flags.push([k, WORRIES[k].chip]);
+      });
+    });
+    piecesData._clusters = clusters;
+    piecesData._done = true;
+  }
+  /* ⚠️ FRANK, 22 August 2026: "I often have to rotate a piece, which is fine
+     and it saves — but the thumbnail should update also, EVERYWHERE.
+     Otherwise I end up trying to repeat that process." He did: the big
+     picture in the naming view turned and the little one in the list beside
+     it did not, so the turn looked as though it had been refused.
+
+     A rotation is kept in the manifest, not baked into the cut PNG — the
+     file on disk stays exactly as it came off the sheet, which is what a
+     re-cut and the look-alike hash both depend on. So every place that shows
+     a piece has to apply the turn itself, and now every place asks here. */
+  function turnOf(d) { return parseInt((d || {}).rotate || 0, 10) || 0; }
+  /* ⭐️ A LOOK-ALIKE IS NO USE AT FORTY-SIX PIXELS.
+     Frank, 23 August 2026: "if platform is suggesting '[n] pieces look like
+     this one' it's incredibly difficult to see them in the tiny viewport it
+     provides - can you make them appear larger/preview on hover (I don't want
+     to click away to another page) just to make it easier to see if there is
+     any differentiation?"
+
+     He is being asked a question — are these the same piece printed twice, or
+     two designs of one component? — and given a stamp-sized picture to answer
+     it from. The whole point is the difference between them, and the
+     difference is a flag in one corner.
+
+     So: `data-big` on any thumbnail shows the piece at a size worth looking
+     at, under the pointer, without leaving the page. It uses the piece's FULL
+     picture rather than the thumbnail it is standing on, because a thumbnail
+     blown up is exactly as useless as a thumbnail.
+
+     ⚠️ These pictures must not also carry a `title`: room/tips.js takes a
+     title over and would put a text bubble on top of the picture. The
+     caption belongs inside the preview. */
+  var Peek = (function () {
+    var box = null, img = null, cap = null, over = null, timer = null;
+
+    function make() {
+      if (box) return box;
+      box = document.createElement("div");
+      box.className = "bigpeek";
+      img = document.createElement("img");
+      cap = document.createElement("span");
+      box.appendChild(img);
+      box.appendChild(cap);
+      document.body.appendChild(box);
+      return box;
+    }
+
+    function show(el) {
+      var src = el.getAttribute("data-big");
+      if (!src) return;
+      make();
+      img.src = src;
+      img.className = el.getAttribute("data-bigturn") || "";
+      img.style.transform = el.getAttribute("data-bigrot") || "";
+      cap.textContent = el.getAttribute("data-bigcap") || "";
+      box.classList.add("on");
+      var r = el.getBoundingClientRect();
+      var w = box.offsetWidth, h = box.offsetHeight;
+      // beside the thumbnail where there is room, and above or below it
+      // rather than over the row it came from
+      var top = r.bottom + 10;
+      if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 10);
+      var left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2),
+                          window.innerWidth - w - 8);
+      box.style.top = top + "px";
+      box.style.left = left + "px";
+    }
+
+    function hide() {
+      if (box) box.classList.remove("on");
+      over = null;
+    }
+
+    document.addEventListener("mouseover", function (ev) {
+      var el = ev.target.closest ? ev.target.closest("[data-big]") : null;
+      if (!el || el === over) return;
+      over = el;
+      clearTimeout(timer);
+      timer = setTimeout(function () { if (over === el) show(el); }, 90);
+    });
+    document.addEventListener("mouseout", function (ev) {
+      var el = ev.target.closest ? ev.target.closest("[data-big]") : null;
+      if (el && el === over) { clearTimeout(timer); hide(); }
+    });
+    window.addEventListener("scroll", hide, true);
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") hide();
+    });
+    return { hide: hide };
+  })();
+
+  /* ⭐️ THE PIECES ONE PIECE COULD POINT AT — used for choosing a card's
+     back. Frank, 24 August 2026: "when I'm in the process of cutting a deck
+     of cards, how do I set the correct back to them? Note that it's not
+     always the same back within the same set."
+     A back is not a property of a card: it is ANOTHER PIECE. Cut it once and
+     every card in the deck points at it, so a set with three different backs
+     is three pieces and needs no special case anywhere. */
+  /* ⭐️ A CARD BACK SAYS SO, AND THEN IT IS THE ONLY THING IN THE LIST.
+     Frank, 24 August 2026: "helpful if a card back element can be flagged as
+     such, and then ONLY card backs appear in the ITS BACK dropdown, or that
+     really is an exhaustive process." It is: on a real game the list is two
+     hundred and twenty-one pieces long and perhaps six of them are backs.
+
+     A back is not a property of a card, it is another PIECE (fault 46) — so
+     what it needs is not a tick of its own but a way of saying what SORT of
+     piece it is, and that is what `kind` has always been for. Set a piece\'s
+     kind to "card back" and it is one.
+
+     ⚠️ Nothing GUESSES this. A wrong back spread over a deck of thirty-two in
+     one press is exactly the sort of confident wrong answer the room refuses
+     to give (fault 25), and the room cannot see the back of a card anyway.
+     ⚠️ And the narrowing gives up rather than showing an empty list: somebody
+     who has never marked a back would otherwise meet a dropdown with nothing
+     in it and no way of knowing why. */
+  function isBack(p) { return ((p.data || {}).kind || "") === "card back"; }
+  function backCount() {
+    return (piecesData && piecesData.pieces || []).filter(isBack).length;
+  }
+  var backsOnly = true;
+
+  function pieceOptions(chosen, only) {
+    var by = {}, order = [];
+    var all = (piecesData && piecesData.pieces || []);
+    // ⚠️ whatever is already chosen is ALWAYS on the list, or the next save
+    // would quietly write a blank over it — the dropdown that throws away
+    // what it cannot show
+    if (only && backCount()) {
+      all = all.filter(function (p) { return isBack(p) || p.stem === chosen; });
+    }
+    all.forEach(function (p) {
+      var b = p.sheet ? bookOf(p.sheet) : "";
+      if (!by[b]) { by[b] = []; order.push(b); }
+      by[b].push(p);
+    });
+    return '<option value="">— none —</option>' + order.sort().map(function (b) {
+      return '<optgroup label="' + esc(b ? bookLabel(b) : "off no sheet the room knows") + '">' +
+        by[b].sort(function (x, y) {
+          return String((x.data || {}).name || x.stem).localeCompare(
+                 String((y.data || {}).name || y.stem)); }).map(function (p) {
+          var nm = (p.data && p.data.name) || "(unnamed)";
+          return '<option value="' + esc(p.stem) + '"' +
+            (chosen === p.stem ? " selected" : "") + ">" + esc(nm + " · " + p.stem) + "</option>";
+        }).join("") + "</optgroup>";
+    }).join("");
+  }
+
+  /* ⭐️⭐️ THE BOX BEING WORKED THROUGH COMES FIRST, IN EVERY LIST OF
+     COMPONENTS. Frank, 24 August 2026: "I really do think those menus could be
+     better rationalised tbh, if I\'m working with one supplement\'s elements,
+     there doesn\'t seem to be a need to include all the possible choices for
+     the core and the other boxes when I\'m manually using the THIS IS THE
+     COMPONENT dropdown?" That game\'s list is a few hundred components long and he is
+     naming one supplement\'s worth of card at a time. That is fault 42 again —
+     a game is worked through a BOX at a time — arriving at the last place in
+     the room that still treated the whole game as one flat list.
+
+     ⚠️ It ORDERS; it does not hide. A piece cut from a supplement's sheets
+     may perfectly well be a core component that was reprinted, and a dropdown
+     that had quietly dropped it would leave no way of saying so at all. So
+     everything is always in the list, in bands, with the likeliest band open
+     at the top: this box and this shape, then the rest of this box, then the
+     same shape elsewhere, then everything else. Each band says how many it
+     holds, so the length of the list is never a surprise.
+
+     ⚠️ ONE function, used by the piece form and by the bulk bar, because two
+     lists of the same thing drift apart (fault 24). */
+  function groupName(id) {
+    var g = ((piecesData && piecesData.groups) || (wantedData && wantedData.groups) || [])
+      .filter(function (x) { return x.id === id; })[0];
+    return g ? g.name : (id || "");
+  }
+
+  /* ⭐️ WHICH SET A BOX OF SHEETS ANSWERS TO. A component belongs to a `group`
+     the person named in the checklist ("The Second Box"); a piece comes off a
+     sheet whose id begins with a box ("second-07"). Nothing in the room says
+     those two are the same thing, and asking the person to say so would be one
+     more piece of setting up.
+
+     So it is LEARNED from the links already made: of the pieces cut from this
+     box that have been given a component, which set are those components in?
+     A hundred of them saying "The Second Box" is better evidence than any rule
+     about names could be. Where nothing has been linked yet, the plain reading
+     — a box and a set with the same id — does instead.
+     ⚠️ A wrong answer costs nothing, because this only ORDERS the list. */
+  function boxSet(book) {
+    if (!piecesData) return "";
+    if (!piecesData._boxSet) {
+      var byId = {}, tally = {};
+      (piecesData.wanted || []).forEach(function (w) { byId[w.id] = w; });
+      (piecesData.pieces || []).forEach(function (q) {
+        var w = byId[(q.data || {}).wanted];
+        if (!w || !q.sheet) return;
+        var b = bookOf(q.sheet), g = w.group || "";
+        if (!g) return;
+        tally[b] = tally[b] || {};
+        tally[b][g] = (tally[b][g] || 0) + 1;
+      });
+      var out = {};
+      Object.keys(tally).forEach(function (b) {
+        var best = "", n = 0;
+        Object.keys(tally[b]).forEach(function (g) {
+          if (tally[b][g] > n) { best = g; n = tally[b][g]; } });
+        if (best) out[b] = best;
+      });
+      (piecesData.wanted || []).forEach(function (w) {
+        if (w.group && !out[w.group]) out[w.group] = w.group;   // same name, same thing
+      });
+      piecesData._boxSet = out;
+    }
+    return piecesData._boxSet[book] || "";
+  }
+
+  function wantedOptions(o) {
+    o = o || {};
+    var all = (piecesData && piecesData.wanted) || [];
+    var chosen = o.chosen || "", kind = o.kind || "", set = o.set || "";
+    var head = o.head === undefined ? '<option value="">— not linked —</option>' : o.head;
+    function opt(w) {
+      return '<option value="' + esc(w.id) + '"' + (chosen === w.id ? " selected" : "") + ">" +
+             esc(w.name) + (w.group ? " (" + esc(groupName(w.group)) + ")" : "") + "</option>";
+    }
+    var bands = [
+      { id: "both", want: !!(set && kind),
+        lab: groupName(set) + " · what this piece measures like",
+        is: function (w) { return w.group === set && w.kind === kind; } },
+      { id: "set", want: !!set, lab: "the rest of " + groupName(set),
+        is: function (w) { return w.group === set; } },
+      { id: "kind", want: !!kind, lab: kind + "s from the other boxes",
+        is: function (w) { return w.kind === kind; } },
+      { id: "all", want: true, lab: "everything else", is: function () { return true; } }
+    ].filter(function (b) { return b.want; });
+    var held = bands.map(function () { return []; });
+    all.forEach(function (w) {
+      for (var i = 0; i < bands.length; i++) {
+        if (bands[i].is(w)) { held[i].push(w); return; }
+      }
+    });
+    /* ⚠️ THE NAMES ARE DECIDED AFTER THE SORTING, NOT BEFORE IT. "The rest of
+       core" at the TOP of a list, with nothing above it to be the rest OF,
+       reads as a fault — and that is the common case, because a piece has no
+       kind until somebody fills it in, so the band that would have come first
+       is empty or missing altogether. A check caught this twice: the first fix
+       assumed the band it had to rename was the second one, which it is only
+       when the piece already has a kind. Find it by name. */
+    bands.forEach(function (b, i) {
+      if (b.id !== "set") return;
+      if (i === 0 || !held[i - 1].length) b.lab = groupName(set);
+    });
+    if (bands.filter(function (b, i) { return held[i].length; }).length < 2) {
+      return head + all.map(opt).join("");            // nothing to sort into
+    }
+    return head + bands.map(function (b, i) {
+      if (!held[i].length) return "";
+      return '<optgroup label="' + esc(b.lab + "  (" + held[i].length + ")") + '">' +
+             held[i].map(opt).join("") + "</optgroup>";
+    }).join("");
+  }
+
+  /* The same, where a piece is known only by its name — the checklist is a
+     list of components and may never have loaded the pieces at all. */
+  function bigForStem(stem) {
+    var p = (piecesData && piecesData.pieces || []).filter(function (x) {
+      return x.stem === stem; })[0];
+    if (p) return bigAttrs(p);
+    return ' data-big="' + BASE + "/piece/" + encodeURIComponent(stem) + '.png"' +
+           ' data-bigcap="' + esc(stem) + '"';
+  }
+
+  /* What a thumbnail needs on it to be worth hovering over. */
+  function bigAttrs(q) {
+    var r = turnOf(q.data);
+    return ' data-big="' + BASE + "/piece/" + encodeURIComponent(q.stem) + '.png"' +
+      ' data-bigcap="' + esc(q.stem + (q.w_in ? "  ·  " + q.w_in + " × " + q.h_in + " in" : "") +
+                            ((q.data && q.data.name) ? "  ·  " + q.data.name : "")) + '"' +
+      (r ? ' data-bigrot="rotate(' + r + 'deg)" data-bigturn="' + (r % 180 ? "turned" : "") + '"' : "");
+  }
+
+  function turned(d) {
+    var r = turnOf(d);
+    if (!r) return "";
+    // a quarter turn swaps the picture's width and height, so in a box that
+    // is not square it must be held to the SHORTER side or it is clipped
+    return ' class="' + (r % 180 ? "turned" : "") + '" style="transform:rotate(' + r + 'deg)"';
+  }
+  var pieceFilter = "", pieceOrder = "book";
+
+  /* ⭐️ THIRTY-TWO CARDS, ONE COMPONENT, ONE PRESS. Frank, 24 August 2026:
+     "I'd like a bulk apply function - if I can select all 32 cards in a deck,
+     I should be able to apply the correct card deck label to them all in one
+     go." The tick boxes are out of the way until they are asked for, because
+     a list you are naming one at a time should not be a list of tick boxes. */
+  var choosing = false, chosen = {};
+
+  function chosenStems() {
+    return Object.keys(chosen).filter(function (k) { return chosen[k]; });
+  }
+
+  function showChosen() {
+    var n = chosenStems().length;
+    document.getElementById("pChooseBar").hidden = !choosing;
+    document.getElementById("pChosenN").textContent =
+      n ? n + (n === 1 ? " piece ticked" : " pieces ticked") : "nothing ticked yet";
+    /* ⭐️ ordered the same way as the single piece\'s, and by the box the list
+       is being SHOWN as — bulk work is box work almost by definition */
+    var sel = document.getElementById("pChooseWanted");
+    var band = pieceSheet.indexOf("book:") === 0 ? boxSet(pieceSheet.slice(5))
+             : pieceSheet ? boxSet(bookOf(pieceSheet)) : "";
+    if (sel.dataset.band !== band || !sel.options.length) {
+      var wasW = sel.value;
+      sel.dataset.band = band;
+      sel.innerHTML = wantedOptions({ chosen: wasW, set: band,
+        head: '<option value="">— leave the component alone —</option>' +
+              '<option value="__off">— take the component off them —</option>' });
+      sel.value = wasW;
+    }
+    /* ⭐️ the same narrowing as the single piece\'s box — a deck of thirty-two
+       is exactly where hunting through two hundred pieces hurts most */
+    var backs = document.getElementById("pChooseBack");
+    if (piecesData && backs.dataset.only !== String(backsOnly && !!backCount())) {
+      var wasB = backs.value;
+      backs.dataset.only = String(backsOnly && !!backCount());
+      backs.innerHTML = '<option value="">— leave the backs alone —</option>' +
+        pieceOptions(wasB, backsOnly).replace('<option value="">— none —</option>', "");
+      backs.value = wasB;
+    }
+    document.getElementById("pApply").disabled = !n;
+  }
+
+  document.getElementById("pChooseOn").addEventListener("change", function () {
+    choosing = this.checked;
+    if (!choosing) chosen = {};
+    if (!wantedData) loadWanted().then(function () { showChosen(); });
+    renderPieceList();
+    showChosen();
+  });
+  document.getElementById("pAllShown").addEventListener("click", function () {
+    shownPieces().forEach(function (p) { chosen[p.stem] = true; });
+    renderPieceList();
+    showChosen();
+  });
+  document.getElementById("pNoneChosen").addEventListener("click", function () {
+    chosen = {};
+    renderPieceList();
+    showChosen();
+  });
+  document.getElementById("pApply").addEventListener("click", function () {
+    var stems = chosenStems();
+    if (!stems.length) return;
+    var sel = document.getElementById("pChooseWanted");
+    var pick = sel.value;
+    var back = document.getElementById("pChooseBack").value;
+    var wid = pick === "__off" ? "" : pick;
+    var what = (pick && pick !== "__off") ? (sel.options[sel.selectedIndex] || {}).text : "";
+    if (!pick && !back) { flash("Choose a component or a back first.", true); return; }
+    var body = { stems: stems };
+    /* ⚠️ THE DEFAULT MUST DO NOTHING, NOT UNDO SOMETHING. Leaving the
+       component list alone used to mean "take the component off them", so
+       somebody setting a deck's back would have unlinked the whole deck on
+       the way past. `wanted` is only sent when it was actually chosen. */
+    if (pick) body.wanted = wid;
+    if (back) body.back = back;
+    if (!window.confirm(
+        "To " + stems.length + " piece" + (stems.length === 1 ? "" : "s") + ":\n\n" +
+        (pick === "__off" ? "· take the component off them\n"
+         : pick ? "· give them the component “" + what + "”\n" : "") +
+        (back ? "· give them the back " + back + "\n" : "") +
+        "\nA piece that already has a name of its own keeps it — only blanks are filled.")) return;
+    post(API + "/pieces/link", body).then(function (r) {
+      if (r.error) { flash(r.error, true); return; }
+      chosen = {};
+      flash(r.linked + " piece" + (r.linked === 1 ? "" : "s") +
+            (r.component ? " given “" + r.component + "”" : pick === "__off" ? " unlinked" : "") +
+            (r.named ? ", " + r.named + " named" : "") +
+            (r.back ? ", backed with " + r.back : "") + ".");
+      // ⚠️ read the checklist back from the room rather than working it out
+      // here: whether a component is done depends on how many pieces a deck
+      // wants, which only the room knows
+      loadPieces().then(function () { return loadWanted(); }).then(function () {
+        renderPieceList();
+        showChosen();
+        refreshCounts();
+      });
+    });
+  });
+  function shownPieces() {
+    if (!piecesData) return [];
+    analyse();
+    var out = piecesData.pieces.filter(function (p) {
+      if (pieceSheet.indexOf("book:") === 0) {
+        if (bookOf(p.sheet) !== pieceSheet.slice(5)) return false;
+      } else if (pieceSheet && p.sheet !== pieceSheet) return false;
+      if (pieceFilter === "unnamed") return !(p.data && p.data.name);
+      if (pieceFilter === "dup") return p.flags.some(function (f) { return f[0] === "dup"; });
+      if (pieceFilter === "odd") return p.flags.some(function (f) { return !!WORRIES[f[0]]; });
+      return true;
+    });
+    if (pieceOrder === "book") {
+      // ⚠️ within a box, still in the order they were cut: a piece's
+      // neighbours on the sheet are its neighbours here
+      out.sort(function (a, b) {
+        // a piece off no sheet the room knows goes last: it is a loose end,
+        // not a box, and it should not be the first thing in the list
+        var x = bookOf(a.sheet) || "\uffff", y = bookOf(b.sheet) || "\uffff";
+        if (x !== y) return x < y ? -1 : 1;
+        return a.stem < b.stem ? -1 : a.stem > b.stem ? 1 : 0;
+      });
+    } else if (pieceOrder === "size") {
+      out.sort(function (a, b) { return (b.w_in * b.h_in) - (a.w_in * a.h_in); });
+    } else if (pieceOrder === "name") {
+      out.sort(function (a, b) {
+        var x = (a.data && a.data.name || "~").toLowerCase(), y = (b.data && b.data.name || "~").toLowerCase();
+        return x < y ? -1 : x > y ? 1 : 0;
+      });
+    }
+    return out;
+  }
+  document.querySelectorAll("#pFilter button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      pieceFilter = b.dataset.f || "";
+      document.querySelectorAll("#pFilter button").forEach(function (x) { x.classList.toggle("on", x === b); });
+      renderPieceList();
+      var mine = shownPieces();
+      if (mine.length) showPiece(mine[0].stem);
+    });
+  });
+  document.getElementById("pOrder").addEventListener("change", function () {
+    pieceOrder = this.value; renderPieceList();
+  });
+
+  /* Keep one of a set of look-alikes and bin the rest. */
+  /* ⭐️ FRANK, 22 August 2026: "Binning a piece shouldn't be destructive — it
+     should be merely to hide a piece from the main manifest. eg there are two
+     identical ice fields. The game only needs to store one, even though it
+     could be placed twice in an actual game."
+
+     So nothing here deletes any more. A piece set aside is moved into the
+     store's `spare` folder — where the hand-over does not look — and keeps
+     everything the manifest knows about it. It stays in this list, dimmed,
+     and one press puts it back. */
+  function setAside(stems, aside, then) {
+    if (!stems.length) return;
+    post(API + "/pieces/aside", { stems: stems, aside: aside }).then(function (r) {
+      flash(aside
+        ? (stems.length === 1 ? "Set aside. Nothing was deleted."
+                              : stems.length + " set aside. Nothing was deleted.")
+        : (stems.length === 1 ? "Back in play." : stems.length + " back in play."));
+      piecesData = null; loadPieces(); load();
+      if (then) then(r);
+    });
+  }
+  function binOthers(cluster, keep) {
+    var stems = cluster.filter(function (p) { return p.stem !== keep; }).map(function (p) { return p.stem; });
+    if (!stems.length) return;
+    curPiece = keep;
+    setAside(stems, true);
+  }
+  /* ⭐️ "I have looked at that, and it is fine." The mark lives on the PIECE,
+     like a name and like the variant mark, so it survives a re-cut — otherwise
+     every flag the person had answered would come back the next time the sheet
+     was cut, which is the same fault as handing back the duplicates you had
+     just set aside (fault 19). */
+  function itIsFine(stem, key, yes) {
+    var p = (piecesData.pieces || []).filter(function (x) { return x.stem === stem; })[0];
+    if (!p) return;
+    var now = waived(p).filter(function (x) { return x !== key; });
+    if (yes) now.push(key);
+    put(API + "/manifest/" + encodeURIComponent(stem), { fine: now.join(" ") })
+      .then(function (r) {
+        if (r.error) { flash(r.error, true); return; }
+        p.data = r.piece || {};
+        piecesData._done = false;            // the flags are worked out again
+        analyse();
+        renderPieceList();
+        showPiece(stem);
+        flash(yes ? "Noted — the room will stop flagging that."
+                  : "Flagged again.");
+      });
+  }
+
+  /* ⭐️ Marking a run of look-alikes as several designs of ONE component, or
+     taking the mark off again. Nothing is deleted either way — this only
+     settles whether the room goes on proposing to bin them. The token is
+     written onto each piece rather than kept in a list of its own, so it
+     follows the piece when the sheet is cut again, exactly as its name does. */
+  function markAlike(cluster, token) {
+    var stems = cluster.map(function (p) { return p.stem; });
+    if (!stems.length) return;
+    Promise.all(cluster.map(function (q) {
+      return put(API + "/manifest/" + encodeURIComponent(q.stem), { alike: token })
+        .then(function (r) { q.data = r.piece || {}; });
+    })).then(function () {
+      flash(token ? (stems.length + " kept as designs of one component.")
+                  : "No longer marked as variants.");
+      // the flags and the bar are both worked out from this, so do it again
+      piecesData._done = false;
+      analyse();
+      renderPieceList();
+      showPiece(curPiece);
+      refreshCounts();
+    });
+  }
+
+  /* ⭐️ GUESSING THE KIND FROM THE SIZE — Frank, 22 August 2026: "naming is
+     always going to be the fiddly bit here as it will tend to rely on 3rd
+     party lists etc, or rules manuals which may be tricky to comprehend."
+     Cutting a sheet is one press; saying what each piece IS is the evening.
+     The room cannot know a piece's NAME — that comes from outside it — but it
+     has measured every piece, and a 2.5 x 3.5in rectangle is a playing card
+     whatever the game. So it offers the kind rather than asking for it.
+
+     ⚠️ IT PROPOSES; IT DOES NOT DECIDE — the same rule the look-alike finder
+     follows. Every offer carries the measurement it was made from, one press
+     accepts a whole run of them, and ignoring the bar entirely is an ordinary
+     thing to do. The room never fills a kind in behind your back, and never
+     overwrites one you have set. */
+  var guessesHidden = false;
+  function article(kind, bold) {
+    var word = bold ? "<b>" + esc(kind) + "</b>" : esc(kind);
+    return ("aeiou".indexOf(kind.charAt(0)) >= 0 ? "an " : "a ") + word;
+  }
+  function renderGuessBar() {
+    var bar = document.getElementById("pGuess");
+    if (!piecesData || guessesHidden) { bar.innerHTML = ""; return; }
+    var open = piecesData.pieces.filter(function (p) {
+      var d = p.data || {};
+      return p.guess && !d.kind && !d.spare;
+    });
+    if (!open.length) { bar.innerHTML = ""; return; }
+    /* ⚠️ Grouped by the kind AND by how sure the room is of it, not by kind
+       alone. A game can hold twenty pieces the exact size of a poker card and
+       two more that are card-shaped but nobody's standard size; lumping them
+       together would make the room say it was unsure of all twenty-two, and
+       the reason printed beside them would be true of only some. Two rows,
+       each with its own reason and its own button. */
+    var by = {};
+    open.forEach(function (p) {
+      var key = p.guess.kind + (p.guess.sure ? "!" : "?");
+      var g = by[key] || (by[key] = { kind: p.guess.kind, sure: p.guess.sure, ps: [] });
+      g.ps.push(p);
+    });
+    var groups = Object.keys(by).map(function (k) { return by[k]; });
+    groups.sort(function (a, b) { return (b.sure - a.sure) || (b.ps.length - a.ps.length); });
+    var rows = groups.map(function (g, i) {
+      var n = g.ps.length;
+      // the reason, taken from the commonest measurement in the group
+      var why = g.ps[0].guess.why;
+      var pics = g.ps.slice(0, 6).map(function (q) {
+        return '<img loading="lazy" src="' + BASE + "/piece-thumb/" + encodeURIComponent(q.stem) +
+               '.png"' + bigAttrs(q) + turned(q.data) + ">";
+      }).join("");
+      return '<div class="grp' + (g.sure ? "" : " maybe") + '"><div class="pics">' + pics + "</div>" +
+        '<div class="said"><b>' + n + " piece" + (n === 1 ? "" : "s") + " look" + (n === 1 ? "s" : "") +
+        " like " + (n === 1 ? article(g.kind) : esc(g.kind) + "s") + "</b> " +
+        '<span class="tiny muted">' + esc(why) + (g.sure ? "" : " Less certain than the rest.") + "</span></div>" +
+        '<button data-g="' + i + '">Call ' + (n === 1 ? "it " + article(g.kind) : "these " + n + " " + esc(g.kind) + "s") + "</button></div>";
+    }).join("");
+    bar.innerHTML =
+      '<div class="guessbar"><div class="head"><b>The room can see what ' + open.length +
+      " of these pieces probably " + (open.length === 1 ? "is" : "are") + ".</b>" +
+      '<span class="tiny muted">Judged on printed size and shape alone. Nothing is filled in until you press.</span>' +
+      '<span class="spacer"></span><button id="gHide">Not now</button></div>' + rows + "</div>";
+    document.getElementById("gHide").addEventListener("click", function () {
+      guessesHidden = true; renderGuessBar();
+    });
+    bar.querySelectorAll("button[data-g]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var g = groups[parseInt(b.dataset.g, 10)];
+        b.disabled = true;
+        post(API + "/pieces/kind", { stems: g.ps.map(function (q) { return q.stem; }), kind: g.kind })
+          .then(function (r) {
+            if (r.error) { flash(r.error, true); b.disabled = false; return; }
+            flash(r.set + " called " + g.kind + (r.set === 1 ? "" : "s") + ". Change any of them in the panel on the right.");
+            piecesData = null; loadPieces();
+          });
+      });
+    });
+  }
+
+  document.getElementById("pSheet").addEventListener("change", function () {
+    pieceSheet = this.value;
+    renderPieceList();
+    var mine = shownPieces();
+    if (mine.length) showPiece(mine[0].stem);
+  });
+  /* ⭐️ WHICH BOX A SHEET CAME OUT OF. Frank, 24 August 2026: "I don't want
+     to go sheet by sheet, I'm much more likely to want to see core or
+     supplement pieces - the random sheet numbers are not useful."
+
+     A game arrives as a core box and its supplements, and that is the unit a
+     person works in — never "sheet 27". The box is taken off the sheet's own
+     id, which is how the Sheets page has always grouped them, so every page
+     in the room agrees about what a box is. */
+  function bookOf(sid) {
+    return (String(sid || "").match(/^(.+)-\d+$/) || [0, sid || ""])[1];
+  }
+
+  function bookLabel(book) {
+    var src = "";
+    (project && project.sheets || []).some(function (x) {
+      if (bookOf(x.id) === book && x.source) { src = " — " + x.source; return true; }
+      return false;
+    });
+    return book + src;
+  }
+
+  function sheetLabel(sid) {
+    var s = project && project.sheets.filter(function (x) { return x.id === sid; })[0];
+    return s ? s.label + (s.name ? " — " + s.name : "") : sid;
+  }
+  function renderPieceList() {
+    renderGuessBar();
+    var list = document.getElementById("plist");
+    list.innerHTML = "";
+    var mine = shownPieces();
+    document.getElementById("pCount").textContent =
+      mine.length + " piece" + (mine.length === 1 ? "" : "s") + (pieceSheet ? " on this sheet" : " in all");
+    var heads = [];
+    gather(mine, function (p) {
+      return pieceOrder === "size" ? (p.w_in >= 2 ? "Larger than 2 inches" : "Under 2 inches")
+           : pieceOrder === "name" ? ((p.data && p.data.name) ? "Named" : "Not named yet")
+           // ⚠️ A piece whose sheet the room has no record of used to be
+           // headed by an empty string, which reads as a bug. Say what it is.
+           : !p.sheet ? "Not off any sheet this project knows"
+           : pieceOrder === "book" ? bookLabel(bookOf(p.sheet))
+           : sheetLabel(p.sheet);
+    }).forEach(function (set) {
+      var h = Fold.head("pieces", set.key, set.key, list);
+      h.classList.add("sheet-head");
+      list.appendChild(h);
+      heads.push([set.key, h]);
+      set.rows.forEach(function (p) {
+      var r = document.createElement("div");
+      r.className = "prow" + (p.stem === curPiece ? " on" : "") + (choosing ? " picking" : "");
+      r.dataset.stem = p.stem;
+      var d = p.data || {};
+      var chips = (p.flags || []).filter(function (f) { return f[0] !== "none"; })
+        .map(function (f) { return '<span class="flag ' + f[0] + '">' + esc(f[1]) + "</span>"; }).join("");
+      // ⚠️ with the other chips, under the name — NOT beside them, where it
+      // squeezed the piece's id into an ellipsis. The id is the one thing on
+      // the row that must always be readable.
+      if (d.spare) chips = '<span class="flag aside">set aside</span>' + chips;
+      // ⭐️ a piece set aside stays in the list, in its own place, dimmed and
+      // labelled — Frank's call, so that nothing is ever out of sight
+      if (d.spare) r.className += " aside";
+      r.innerHTML = '<div class="pic"><img loading="lazy" src="' + BASE + "/piece-thumb/" + encodeURIComponent(p.stem) + '.png"' + turned(d) + '></div>' +
+        '<div class="who"><span class="nm">' + esc(d.name || "(unnamed)") + '</span><span class="sub">' + esc(p.stem) + (p.w_in ? " · " + p.w_in + '" × ' + p.h_in + '"' : "") + "</span>" +
+        (chips ? '<span class="flags">' + chips + "</span>" : "") + "</div>" +
+        '<span class="dot ' + (d.name ? (d.hold ? "held" : "named") : "") + '"></span>';
+      r.addEventListener("click", function () { showPiece(p.stem); });
+      /* ⚠️ AFTER the row's innerHTML, never before it: the first version of
+         this appended the tick and then set innerHTML, which threw it away
+         again. The bar said "20 pieces ticked" over a list with no tick
+         boxes on it at all. */
+      if (choosing) {
+        var tick = document.createElement("input");
+        tick.type = "checkbox";
+        tick.className = "tick";
+        tick.checked = !!chosen[p.stem];
+        tick.title = "Tick this piece to give it the component chosen above";
+        tick.addEventListener("click", function (e) {
+          e.stopPropagation();               // ticking is not choosing to view
+          chosen[p.stem] = tick.checked;
+          showChosen();
+        });
+        r.insertBefore(tick, r.firstChild);
+      }
+      r.dataset.fold = set.key;
+      list.appendChild(r);
+      });
+    });
+    heads.forEach(function (h) { Fold.apply("pieces", h[0], list, h[1]); });
+  }
+  function showPiece(stem, focusName) {
+    curPiece = stem;
+    document.querySelectorAll(".prow").forEach(function (r) { r.classList.toggle("on", r.dataset.stem === stem); });
+    var p = piecesData.pieces.filter(function (x) { return x.stem === stem; })[0];
+    if (!p) return;
+    var d = p.data || {};
+    var rot = parseInt(d.rotate || 0, 10) || 0;
+    /* ⚠️ The grid is a RULER — one square, one inch — so the honest thing is
+       96 CSS px to the inch. But a fleet sheet is nine inches tall and would
+       run off the bottom of the screen with its own feet cut off, which is
+       the fault this whole view exists to avoid. So it shrinks to fit when it
+       must, the grid shrinks with it (a square is still an inch), and the
+       caption says what scale you are looking at. */
+    var FIT = 560, inch = 96;
+    var big = Math.max(p.w_in || 1, p.h_in || 1);
+    if (big * inch > FIT) inch = Math.max(16, Math.floor(FIT / big));
+    var pct = Math.round(inch / 96 * 100);
+    var wpx = (p.w_in || 1) * inch, hpx = (p.h_in || 1) * inch;
+    var swap = (rot % 180) !== 0;
+    var fw = swap ? hpx : wpx, fh = swap ? wpx : hpx;
+    // the look-alike bar: the other pieces that appear to be this same thing
+    var review = document.getElementById("pReview");
+    var all = (piecesData._clusters || [])[p._cl] || [];
+    // ⭐️ pieces already set aside are not part of the question any more, so
+    // the bar counts what is still in play and falls silent once one is left
+    var cl = all.filter(function (q) { return !(q.data && q.data.spare); });
+    if (cl.length > 1) {
+      /* ⭐️ FRANK, 22 August 2026: "there are two different Wizard Marker cards.
+         They both have the same function, but just different designs (so that
+         each player would have their own)… the platform is suggesting Keep
+         this one, bin the other 2." And again for the ship templates: twelve
+         of them, one per fleet, differing only in the flag in the corner.
+
+         The room had exactly two ideas about two similar pieces — duplicates
+         to be binned, or unrelated — and neither is true here. So there is a
+         third answer: these are DESIGNS OF ONE COMPONENT, keep them all. It
+         never bins anything either way; it only stops asking. */
+      // ⚠️ no `title` here — the preview carries the caption; see Peek
+      var pics = cl.slice(0, 12).map(function (q) {
+        return '<img src="' + BASE + "/piece-thumb/" + encodeURIComponent(q.stem) +
+               '.png"' + bigAttrs(q) + turned(q.data) + '>'; }).join("");
+      var token = (d.alike || "");
+      if (token) {
+        review.innerHTML =
+          '<div class="dupbar kept"><div class="pics">' + pics +
+          "</div><div><b>" + cl.length + " designs of the same component</b><br>" +
+          '<span class="tiny muted">Kept on purpose. Each has its own id and its own ' +
+          'picture, and the checklist counts the component once however many ' +
+          'of these are linked to it.</span></div>' +
+          '<span class="spacer"></span><button id="dupUndo">They are duplicates after all</button></div>';
+        var ub = document.getElementById("dupUndo");
+        if (ub) ub.addEventListener("click", function () { markAlike(cl, ""); });
+      } else {
+        review.innerHTML =
+          '<div class="dupbar"><div class="pics">' + pics +
+          "</div><div><b>" + cl.length + " pieces look like this one</b><br>" +
+          '<span class="tiny muted">Printed more than once on the sheet, most likely. A component only needs cutting once — the game repeats it. Setting them aside deletes nothing: they stay in this list, and go back in one press.</span></div>' +
+          '<span class="spacer"></span>' +
+          '<button id="dupKeep">Keep this one, set the other ' + (cl.length - 1) + " aside</button>" +
+          '<button id="dupVary">These are variants — keep them all</button></div>';
+        var kb = document.getElementById("dupKeep");
+        if (kb) kb.addEventListener("click", function () { binOthers(cl, stem); });
+        var vb = document.getElementById("dupVary");
+        if (vb) vb.addEventListener("click", function () {
+          // join the group its look-alikes are already in, if there is one
+          var had = cl.map(function (q) { return (q.data || {}).alike; })
+                      .filter(function (x) { return x; })[0];
+          markAlike(cl, had || ("v" + Math.random().toString(36).slice(2, 8)));
+        });
+      }
+    } else {
+      review.innerHTML = "";
+    }
+    /* ⭐️ AND THE ROOM\'S OTHER WORRIES ABOUT THIS PIECE, EACH WITH AN ANSWER.
+       See WORRIES above for why an unanswerable flag is worse than no flag.
+       It goes UNDER the look-alike bar rather than replacing it: a piece can
+       easily be both a duplicate and off the edge, and answering one question
+       must not hide the other. */
+    (function () {
+      var said = waived(p);
+      var raised = Object.keys(WORRIES).filter(function (k) {
+        return WORRIES[k].test(p) && said.indexOf(k) < 0; });
+      var answered = said.filter(function (k) { return WORRIES[k]; });
+      if (!raised.length && !answered.length) return;
+      review.insertAdjacentHTML("beforeend", '<div class="dupbar worries">' +
+        raised.map(function (k) {
+          return '<div class="worry"><span class="flag ' + k + '">' + esc(WORRIES[k].chip) +
+            '</span><span>' + esc(WORRIES[k].says) + '</span><span class="spacer"></span>' +
+            '<button type="button" class="waive" data-k="' + k + '" data-tip="Stop flagging ' +
+            'this piece for that. Nothing about the piece changes and nothing is cut again — ' +
+            'the room simply stops asking, here and under Worth a look, and remembers you have ' +
+            'seen it. You can put the flag back at any time.">That is fine</button></div>';
+        }).join("") +
+        answered.map(function (k) {
+          return '<div class="worry said"><span class="tiny muted">' + esc(WORRIES[k].fine) +
+            '</span><span class="spacer"></span><button type="button" class="unwaive quiet" data-k="' +
+            k + '" data-tip="Put the flag back on this piece, so it shows up again under ' +
+            'Worth a look.">Flag it again</button></div>';
+        }).join("") + '</div>');
+      review.querySelectorAll(".waive").forEach(function (b) {
+        b.addEventListener("click", function () { itIsFine(stem, b.dataset.k, true); });
+      });
+      review.querySelectorAll(".unwaive").forEach(function (b) {
+        b.addEventListener("click", function () { itIsFine(stem, b.dataset.k, false); });
+      });
+    })();
+    var mine = shownPieces();
+    var at = mine.map(function (q) { return q.stem; }).indexOf(stem);
+    var stage = document.getElementById("pstage");
+    stage.innerHTML =
+      '<div class="pnav"><button id="pPrev"' + (at <= 0 ? " disabled" : "") + '>← previous</button>' +
+      '<button id="pNext"' + (at < 0 || at >= mine.length - 1 ? " disabled" : "") + '>next →</button>' +
+      '<span class="tiny muted">' + (at + 1) + " of " + mine.length + " · ← → to move, ⏎ in the name box to save and go on</span></div>" +
+      '<div class="plate" style="--inch:' + inch + "px;--six:" + (inch * 6) + 'px"><div class="frame" style="width:' + fw + "px;height:" + fh + 'px">' +
+      '<img src="' + BASE + "/piece/" + encodeURIComponent(stem) + ".png?" + Date.now() + '" style="width:' + wpx + "px;height:" + hpx + "px;transform:translate(-50%,-50%) rotate(" + rot + 'deg)"></div></div>' +
+      '<p class="measure">' + esc(stem) + " · <b>" + (p.w_in || "?") + '"</b> \u00d7 <b>' + (p.h_in || "?") + '"</b> as printed' +
+      (pct < 100 ? ' <span class="tiny">(shown at ' + pct + "% — one grid square is still one inch)</span>" : "") +
+      (p.outline ? ' · outline <b>' + p.outline + '</b> on ' + esc(sheetLabel(p.sheet)) + ' <a href="' + BASE + "/table#" + encodeURIComponent(p.sheet) + "/" + p.outline + '">mend it at the table</a>' : "") + "</p>";
+    var pv = document.getElementById("pPrev"), nx = document.getElementById("pNext");
+    if (pv) pv.addEventListener("click", function () { if (at > 0) showPiece(mine[at - 1].stem); });
+    if (nx) nx.addEventListener("click", function () { if (at < mine.length - 1) showPiece(mine[at + 1].stem); });
+    var form = document.getElementById("pform");
+    var types = piecesData.types || {};
+    var typeOpts = '<option value="">— none —</option>' + Object.keys(types).map(function (t) { return '<option value="' + esc(t) + '"' + (d.type === t ? " selected" : "") + ">" + esc(t) + " — " + esc(types[t]) + "</option>"; }).join("");
+    /* ⚠️ A DROPDOWN THAT CANNOT SHOW WHAT IT HOLDS THROWS IT AWAY. The kinds
+       come from the room's own list, but a manifest written by hand, or by an
+       older room, may carry a kind that is not on it — and the box would then
+       come up on "—" and the very next keystroke in this form would save that
+       blank over a real answer. Whatever this piece says it is, is on the list
+       for this piece. */
+    var kindList = (piecesData.kinds || []).slice();
+    if (d.kind && kindList.indexOf(d.kind) < 0) kindList.push(d.kind);
+    var kindOpts = '<option value="">—</option>' + kindList.map(function (k) { return '<option value="' + esc(k) + '"' + (d.kind === k ? " selected" : "") + ">" + esc(k) + "</option>"; }).join("");
+    /* ⭐️ The kind earns its keep the moment it is known: this list is every
+       component in the game, and on a real one that is hundreds. If we know
+       this piece is a card, the cards go to the top of it under a heading of
+       their own — which is a piece of the naming work done by measurement
+       rather than by reading a rules manual. The rest is still all there. */
+    var myKind = d.kind || (p.guess && p.guess.kind) || "";
+    var wantedOpts = wantedOptions({ chosen: d.wanted || "", kind: myKind,
+                                     set: boxSet(bookOf(p.sheet)) });
+    form.innerHTML =
+      '<label class="f" data-tip="What this piece IS — what is printed on it, or what you would call it. Everything downstream reads this: the file it is exported as, the checklist, the search.">Name</label><input id="fName" value="' + esc(d.name || "") + '" placeholder="what is printed on it, or what it is">' +
+      '<p class="tiny muted" id="fNameFrom" hidden></p>' +
+      '<label class="f" data-tip="Ties this piece to a line on the checklist, so the room knows that component is accounted for. It fills the name in for you. Only useful if you have typed a contents list.">This is the component…</label><select id="fWanted">' + wantedOpts + "</select>" +
+      '<label class="f" data-tip="What sort of thing it is — a counter, a card, a tile. Only decides which heading it sits under, so do not agonise over it. The room offers one from the piece\'s measurements where the size settles it.">Kind</label><select id="fKind">' + kindOpts + "</select>" +
+      '<div id="fKindGuess"></div>' +
+      (Object.keys(types).length ? '<label class="f">Type (the rule it plays by, for terrain)</label><select id="fType">' + typeOpts + "</select>" : '<input id="fType" type="hidden" value="' + esc(d.type || "") + '">') +
+      '<label class="f" data-tip="The word the game itself uses for this piece in its rules — sunk, blaze, wound. Left blank by most people; it is here for a game engine that looks pieces up by their rule word.">Use (what the game calls it: sunk, blaze…)</label><input id="fUse" value="' + esc(d.use || "") + '">' +
+      '<label class="f" data-tip="A short name of your own for this piece, if something else has to refer to it by name. Optional, and safe to ignore.">Id (for terrain)</label><input id="fId" value="' + esc(d.id || "") + '">' +
+      '<label class="f" data-tip="Turn the piece so it stands the right way up. The picture on disk is never rewritten — the turn is remembered and applied everywhere, so it can be changed as often as you like without losing quality.">Turn it</label><div class="turn"><button type="button" id="rotL">↺ 90</button><input id="fRot" value="' + rot + '" size="4"><button type="button" id="rotR">↻ 90</button><span class="tiny">degrees clockwise, applied when the piece is finished</span></div>' +
+      '<label class="f" data-tip="A note to yourself that this piece is not ready — the artwork needs redoing, the rules are unclear. It stays in the folder; this only records why you are not using it yet.">Hold back (why it is not in play yet)</label><input id="fHold" value="' + esc(d.hold || "") + '" placeholder="e.g. chaos, template, counter — or blank">' +
+      '<label class="f" data-tip="The piece that is the BACK of this one. Cut the back once, then point every card in the deck at it — a set with three different backs is just three pieces. It travels in the inventory as the file it is.">Its back</label><select id="fBack">' + pieceOptions(d.back || "", backsOnly) + "</select>" +
+      '<p class="tiny muted"><label><input type="checkbox" id="fBackOnly" class="nosave" title="Show only the pieces you have marked as a card back, instead of every piece in the game. Nothing is changed either way — it only shortens the list."' +
+        (backsOnly ? " checked" : "") + '> only pieces marked as a card back</label> — ' +
+        (backCount()
+          ? backCount() + " so far in this game."
+          : "none marked yet, so the whole list is shown.") +
+        ' To mark one, open that piece and set its <b>Kind</b> to <b>card back</b>.</p>' +
+      '<label class="f" data-tip="How many of this piece the GAME needs, when one design is used over and over — twenty Power cards from one printed design. You still only cut it once; this is what tells whatever reads the pieces to repeat it. Leave it blank for one.">How many the game needs</label><input id="fCopies" type="number" min="1" max="9999" value="' + esc(d.copies || "") + '" placeholder="1" style="max-width:8em">' +
+      '<label class="f" data-tip="Anything worth remembering about this piece — which rules page it is on, that its twin is on another sheet, that the scan is poor.">Note</label><textarea id="fNote">' + esc(d.note || "") + "</textarea>" +
+      '<div class="row" style="margin-top:14px">' +
+      '<button id="fShape" type="button" data-tip="Puts this piece\'s outline on the shelf of shapes, so the same shape can be laid down again with one click — on another sheet, or in another game. Nothing about this piece changes.">Keep the shape</button>' +
+      '<button id="fClear" type="button" data-tip="Empty every box above at once — name, component, kind, use, id, turn, note — and start this piece again. The picture, the outline and whether it is set aside are not touched.">Start this piece again</button>' +
+      '<span class="tiny muted">Puts this piece\'s outline on the shelf of shapes, to lay down again on any sheet, in any game</span>' +
+      '</div>' +
+      '<div class="row" style="margin-top:10px">' +
+      (d.spare
+        ? '<button id="fDel" data-tip="Bring it back into the game: it goes back among the ordinary pieces and is handed over with them.">Put this piece back in play</button>' +
+          '<span class="tiny muted">Set aside — kept on disk, left out of the hand-over</span>'
+        : '<button id="fDel" data-tip="For a piece you do not need — the second identical ice field. NOTHING IS DELETED: it is moved to a spare folder, keeps its name, stays in this list dimmed, and comes back in one press.">Set this piece aside</button>' +
+          '<span class="tiny muted">saved as you type</span>') + '</div>';
+    // a dropdown is not typed in, so it should not wait for the typing pause
+    var save = debounce(function () {
+      var body = {
+        back: form.querySelector("#fBack").value,
+        copies: form.querySelector("#fCopies").value,
+        name: form.querySelector("#fName").value, wanted: form.querySelector("#fWanted").value,
+        kind: form.querySelector("#fKind").value, type: form.querySelector("#fType").value,
+        use: form.querySelector("#fUse").value, id: form.querySelector("#fId").value,
+        rotate: form.querySelector("#fRot").value, hold: form.querySelector("#fHold").value,
+        note: form.querySelector("#fNote").value
+      };
+      put(API + "/manifest/" + encodeURIComponent(stem), body).then(function (r) {
+        if (r.error) { flash(r.error, true); return; }
+        p.data = r.piece || {};
+        wantedData = null;
+        renderPieceList();
+        document.querySelectorAll(".prow").forEach(function (x) { x.classList.toggle("on", x.dataset.stem === stem); });
+        refreshCounts();
+        flash("Saved.");
+      });
+    }, 400);
+    /* ⭐️ FRANK, 22 August 2026: "I'm not sure I understand the need for a NAME
+       if I've already set the THIS IS THE COMPONENT drop down or done the drag
+       and drop matching? NAME seems redundant?"
+
+       It is not redundant — the checklist is optional (a game may have no
+       component list at all), and the NAME is what goes into the game's own
+       manifest and is read back by the game; the component link only records
+       WHICH entry on the checklist this piece answers. But he was right that
+       the two disagreed: dragging a component onto a piece in Match filled
+       the name in, and choosing the same component from this dropdown did
+       not — so a piece linked here stayed "(unnamed)" everywhere and step 4
+       went on counting it as still to do. One rule now, both ways in. */
+    function nameFromComponent() {
+      var box = form.querySelector("#fName");
+      if (box.value.trim()) return;              // never overwrite a typed name
+      var id = form.querySelector("#fWanted").value;
+      var w = (piecesData.wanted || []).filter(function (x) { return x.id === id; })[0];
+      if (!w) return;
+      box.value = w.name;
+      if (w.kind) {
+        var k = form.querySelector("#fKind");
+        if (!k.value) k.value = w.kind;
+      }
+      sayWhereTheNameCameFrom();
+    }
+    /* Never let a field fill itself without saying so. */
+    function sayWhereTheNameCameFrom() {
+      var note = form.querySelector("#fNameFrom");
+      var id = form.querySelector("#fWanted").value;
+      var w = (piecesData.wanted || []).filter(function (x) { return x.id === id; })[0];
+      var same = w && form.querySelector("#fName").value.trim() === w.name;
+      note.hidden = !same;
+      if (same) note.textContent = "Taken from the component it is linked to. " +
+        "Type over it if this piece needs a name of its own.";
+    }
+    form.querySelector("#fWanted").addEventListener("change", nameFromComponent);
+    sayWhereTheNameCameFrom();
+    form.querySelectorAll("input, select, textarea").forEach(function (el) {
+      if (el.classList.contains("nosave")) return;   // narrowing a list is not an edit
+      el.addEventListener("input", save);
+      el.addEventListener("change", save);
+    });
+    /* ⚠️ The list is rebuilt in place rather than by drawing the form again:
+       redrawing would take the box out from under the pointer, and the
+       chosen back is always on the narrowed list anyway. */
+    form.querySelector("#fBackOnly").addEventListener("change", function () {
+      backsOnly = this.checked;
+      var b = form.querySelector("#fBack"), was = b.value;
+      b.innerHTML = pieceOptions(was, backsOnly);
+      b.value = was;
+    });
+    form.querySelector("#fName").addEventListener("input", sayWhereTheNameCameFrom);
+    /* ⭐️ The offer for this one piece, under the box it would fill. It appears
+       only while the box is empty: a kind you have chosen is an answer, and
+       the room does not argue with it or offer to change it. */
+    function sayWhatItLooksLike() {
+      var slot = form.querySelector("#fKindGuess");
+      var box = form.querySelector("#fKind");
+      if (!slot) return;
+      if (!p.guess || box.value) { slot.innerHTML = ""; return; }
+      slot.innerHTML = '<div class="kguess"><span>Looks like ' + article(p.guess.kind, true) +
+        " — " + esc(p.guess.why) + (p.guess.sure ? "" : " Less certain than most.") +
+        '</span><span class="spacer"></span><button type="button" id="fKindTake">Use it</button></div>';
+      slot.querySelector("#fKindTake").addEventListener("click", function () {
+        box.value = p.guess.kind;
+        sayWhatItLooksLike();
+        save();
+      });
+    }
+    form.querySelector("#fKind").addEventListener("change", sayWhatItLooksLike);
+    sayWhatItLooksLike();
+    function turn(by) {
+      var r = (parseInt(form.querySelector("#fRot").value, 10) || 0) + by;
+      r = ((r % 360) + 360) % 360;
+      form.querySelector("#fRot").value = r;
+      p.data = p.data || {}; p.data.rotate = r;
+      save();
+      showPiece(stem);
+    }
+    var nameBox = form.querySelector("#fName");
+    nameBox.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      save.flush ? save.flush() : save();
+      if (at >= 0 && at < mine.length - 1) setTimeout(function () { showPiece(mine[at + 1].stem, true); }, 260);
+    });
+    if (focusName) { nameBox.focus(); nameBox.select(); }
+    form.querySelector("#rotL").addEventListener("click", function () { turn(-90); });
+    form.querySelector("#rotR").addEventListener("click", function () { turn(90); });
+    // ⭐️ no confirmation, because there is nothing to be sorry about: the
+    // piece is moved, not deleted, and the same button brings it back
+    form.querySelector("#fDel").addEventListener("click", function () {
+      setAside([stem], !d.spare);
+    });
+    /* ⭐️ FRANK, 23 August 2026: "I should be able to save a shape cut from a
+       piece already cut - or is that too difficult?" It is not: the outline
+       this piece was cut from is still in the project's outlines.json, so the
+       room lifts the line that was drawn rather than tracing it back out of
+       the finished picture. Nothing here changes the piece. */
+    /* ⭐️ FRANK, 24 August 2026: "give me a single button when viewing any
+       single piece to remove all the metadata (name, component, kind etc) -
+       just strip back to all those fields being unfilled." A piece filled in
+       from the wrong row of a contents list is quicker to start again than to
+       unpick field by field.
+       ⚠️ It asks first, and it says what it will NOT touch — being set aside
+       and being one of several designs are decisions made elsewhere, and
+       somebody clearing a name is not asking to undo them. */
+    form.querySelector("#fClear").addEventListener("click", function () {
+      var has = ["name", "wanted", "kind", "type", "use", "id", "rotate", "hold", "note"]
+        .filter(function (k) { return (d || {})[k]; });
+      if (!has.length) { flash("There is nothing on this piece to clear."); return; }
+      if (!window.confirm(
+          "Empty every box on " + stem + "?\n\n" +
+          has.length + " thing" + (has.length === 1 ? "" : "s") + " will go: " +
+          has.join(", ") + ".\n\nThe picture and the outline are not touched, and " +
+          "nor is whether the piece is set aside. It cannot be undone, but nothing " +
+          "is deleted — you can fill it in again.")) return;
+      j(API + "/manifest/" + encodeURIComponent(stem), { method: "DELETE" })
+        .then(function (r) {
+          if (r.error) { flash(r.error, true); return; }
+          p.data = r.piece || {};
+          wantedData = null;
+          flash("Cleared. " + stem + " is unnamed again.");
+          loadWanted().then(function () {
+            renderPieceList();
+            showPiece(stem, true);
+            refreshCounts();
+          });
+        });
+    });
+    form.querySelector("#fShape").addEventListener("click", function () {
+      var name = window.prompt("What would you call this shape?\n\n" +
+        "It is the shape that is kept, not the piece — a name like \"door\" " +
+        "or \"round counter\" will find it again on any sheet, in any game.",
+        d.name || "");
+      if (name === null) return;
+      post(API + "/shape/" + encodeURIComponent(stem), { name: name })
+        .then(function (r) {
+          if (r.error) { flash(r.error, true); return; }
+          var sh = r.shape || {};
+          flash("Kept as “" + (sh.name || name) + "” — " +
+                (sh.w || 0).toFixed(2) + " × " + (sh.h || 0).toFixed(2) +
+                " in. It is on the shelf at the cutting table.");
+        });
+    });
+    // keep the name box focused when re-rendering after a turn
+  }
+
+  /* ⌨️ Naming forty-five pieces is a typing job, so it is one: ← and → move,
+     and Enter in the name box saves and goes on. */
+  document.addEventListener("keydown", function (e) {
+    if (document.getElementById("tab-pieces").hidden) return;
+    var t = e.target.tagName;
+    if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT") return;
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    var mine = shownPieces();
+    var at = mine.map(function (q) { return q.stem; }).indexOf(curPiece);
+    if (at < 0) return;
+    e.preventDefault();
+    var to = e.key === "ArrowLeft" ? at - 1 : at + 1;
+    if (to >= 0 && to < mine.length) showPiece(mine[to].stem);
+  });
+
+  /* ------------------------------------------------------------ match */
+  /* Frank, 21 August 2026: "perhaps a drag and drop feature where I can
+     match index with cut pieces? easier to drag name of component onto cut
+     piece (rather than vice versa)." So the NAME is what is picked up and
+     the PIECE is what it lands on. Dragging a piece back onto the list
+     undoes it, which is the same gesture in reverse. */
+  var mDragItem = null;
+  function loadMatch() {
+    var need = [];
+    if (!wantedData) need.push(loadWanted());
+    if (!piecesData) need.push(loadPieces());
+    Promise.all(need).then(renderMatch);
+  }
+  function renderMatch() {
+    if (!wantedData || !piecesData) return;
+    var linkedBy = {};                       // piece stem -> wanted id
+    piecesData.pieces.forEach(function (p) { if (p.data && p.data.wanted) linkedBy[p.stem] = p.data.wanted; });
+    var wantedById = {};
+    wantedData.items.forEach(function (w) { wantedById[w.id] = w; });
+    document.getElementById("nMatch").textContent = wantedData.items.filter(function (w) { return w.state === "missing"; }).length || "";
+
+    /* ---- the list of components */
+    var q = document.getElementById("mFind").value.trim().toLowerCase();
+    var all = document.getElementById("mAll").checked;
+    var groups = {}; (wantedData.groups || []).forEach(function (g) { groups[g.id] = g.name; });
+    var list = document.getElementById("mList");
+    list.innerHTML = "";
+    var shown = 0;
+
+    /* ⭐️ FRANK, 23 August 2026: "in Match, it would be very helpful to be able
+       to collapse sections eg for [the] Core Box, [one supplement, another]…
+       Just needs an arrow to expand collapse. Or just some other way to stop
+       me having to scroll all the way past one supplement to be able to match
+       another's components."
+
+       A game and its supplements are one list, and the box you are working
+       through is somewhere down it. So each set folds, and ⭐️ STAYS FOLDED —
+       per game, because a fold you have to make again every visit is not a
+       fold, it is a chore.
+
+       ⚠️ A search is the one thing that overrules it: a component hidden
+       inside a folded set while you are searching for it by name would look
+       like a component that is not there. */
+    /* ⚠️ A search overrules the folding: a component hidden inside a folded
+       set while you are searching for it by name would look like a component
+       that is not there. */
+    var mHeads = [];
+
+    // ⚠️ gathered, not merely walked: a component added later sits at the end
+    // of the list, and a heading started whenever the group changed would put
+    // its set on the screen twice. See `gather`.
+    var wanting = wantedData.items.filter(function (w) {
+      var isLinked = (w.pieces || []).length > 0;
+      if (!all && isLinked) return false;
+      if (q && (w.name + " " + (w.notes || "") + " " + (w.where || "")).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    gather(wanting, function (w) { return w.group || ""; }).forEach(function (set) {
+      var head = Fold.head("match", set.key,
+                           groups[set.key] || set.key || "Everything else", list);
+      head.classList.add("mgroup");
+      list.appendChild(head);
+      mHeads.push([set.key, head]);
+      set.rows.forEach(function (w) {
+      var isLinked = (w.pieces || []).length > 0;
+      var d = document.createElement("div");
+      d.className = "mitem " + w.state;
+      d.draggable = true;
+      d.dataset.id = w.id;
+      d.innerHTML = "<b>" + esc(w.name) + "</b>" +
+        '<span class="tiny muted">' + esc(w.kind || "") + (w.qty && w.qty !== "1" ? " · " + esc(w.qty) : "") + (w.where ? " · " + esc(w.where) : "") + "</span>" +
+        (isLinked ? '<span class="tag cut">cut</span>' : w.state === "probably" ? '<span class="tag probably">likely</span>' : "");
+      d.addEventListener("dragstart", function (e) {
+        mDragItem = w.id;
+        e.dataTransfer.setData("text/plain", w.id);
+        e.dataTransfer.effectAllowed = "link";
+        d.classList.add("dragging");
+      });
+      d.addEventListener("dragend", function () { mDragItem = null; d.classList.remove("dragging"); document.querySelectorAll(".mcell").forEach(function (c) { c.classList.remove("over"); }); });
+      d.addEventListener("click", function () {
+        // a click scrolls the grid to the piece it is already on
+        var st = (w.pieces || [])[0] || (w.guesses || [])[0];
+        if (st) { var cell = document.querySelector('.mcell[data-stem="' + st + '"]'); if (cell) cell.scrollIntoView({ block: "center" }); }
+      });
+      d.dataset.fold = set.key;
+      list.appendChild(d);
+      shown++;
+      });
+    });
+    mHeads.forEach(function (h) { Fold.apply("match", h[0], list, h[1], !!q); });
+    if (!shown) list.innerHTML = '<p class="note" style="padding:10px">Nothing left in this filter. ✓</p>';
+
+    /* ---- the grid of pieces */
+    /* ⭐️ FRANK, 24 August 2026: "in Match, I should have the option to limit
+       the display when de-selecting the tickbox 'only pieces with no component
+       yet' to pieces cut from either core or one of the supplements (or
+       whatever other core game + supplements I might otherwise be cutting).
+       otherwise I get served with 200+ objects from across the whole
+       game when I'm just trying to rationalise one supplement or something."
+
+       The board could only be narrowed to ONE SHEET at a time, which is far
+       too fine: a supplement is thirty sheets, and the thing being worked
+       through is the supplement. So the list offers the BOX first — every
+       piece cut from anything in it — and its sheets underneath, and the same
+       control still does both. The boxes are worked out the way the Sheets
+       page works them out, off the sheet id, so the two pages agree about
+       what a box is. */
+    var sel = document.getElementById("mSheet");
+    if (sel.options.length <= 1) {
+      var books = {}, order = [];
+      piecesData.pieces.forEach(function (p) {
+        if (!p.sheet) return;
+        var b = bookOf(p.sheet);
+        if (!books[b]) { books[b] = []; order.push(b); }
+        if (books[b].indexOf(p.sheet) < 0) books[b].push(p.sheet);
+      });
+      order.sort();
+      var html = '<option value="">every sheet in the game</option>';
+      order.forEach(function (b) {
+        var sheets = books[b].sort();
+        html += '<optgroup label="' + esc(bookLabel(b)) + '">' +
+          '<option value="book:' + esc(b) + '">everything from ' + esc(b) +
+          " (" + sheets.length + " sheet" + (sheets.length === 1 ? "" : "s") + ")</option>" +
+          sheets.map(function (sid) {
+            return '<option value="' + esc(sid) + '">' + esc(sheetLabel(sid)) + "</option>";
+          }).join("") + "</optgroup>";
+      });
+      sel.innerHTML = html;
+    }
+    var onlySheet = sel.value, onlyUn = document.getElementById("mUn").checked;
+    var onlyBook = onlySheet.indexOf("book:") === 0 ? onlySheet.slice(5) : "";
+    var grid = document.getElementById("mGrid");
+    grid.innerHTML = "";
+    var n = 0;
+    piecesData.pieces.forEach(function (p) {
+      if (onlyBook) {
+        if (bookOf(p.sheet) !== onlyBook) return;
+      } else if (onlySheet && p.sheet !== onlySheet) return;
+      var wid = linkedBy[p.stem];
+      if (onlyUn && wid) return;
+      n++;
+      var d = p.data || {};
+      var cell = document.createElement("div");
+      cell.className = "mcell" + (wid ? " linked" : "") + (d.spare ? " aside" : "");
+      cell.dataset.stem = p.stem;
+      cell.draggable = true;
+      cell.innerHTML =
+        '<div class="pic"><img src="' + BASE + "/piece-thumb/" + encodeURIComponent(p.stem) + '.png"' + turned(d) + '></div>' +
+        '<div class="cap"><b>' + esc(d.name || "(unnamed)") + "</b>" +
+        '<span class="tiny muted">' + esc(p.stem) + (p.w_in ? " · " + p.w_in + '" \u00d7 ' + p.h_in + '"' : "") + "</span>" +
+        (wid ? '<span class="tag cut">' + esc((wantedById[wid] || {}).name || wid) + "</span>" : "") + "</div>";
+      function take(e) {
+        e.preventDefault();
+        cell.classList.remove("over");
+        var id = mDragItem || (e.dataTransfer && e.dataTransfer.getData("text/plain"));
+        if (!id || !wantedById[id]) return;
+        link(p, id);
+      }
+      cell.addEventListener("dragover", function (e) { if (mDragItem) { e.preventDefault(); e.dataTransfer.dropEffect = "link"; cell.classList.add("over"); } });
+      cell.addEventListener("dragleave", function () { cell.classList.remove("over"); });
+      cell.addEventListener("drop", take);
+      cell.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", "piece:" + p.stem); e.dataTransfer.effectAllowed = "move"; });
+      cell.addEventListener("dblclick", function () { curPiece = p.stem; location.hash = "pieces"; showTab("pieces"); showPiece(p.stem); });
+      grid.appendChild(cell);
+    });
+    document.getElementById("mCount").textContent = n + " piece" + (n === 1 ? "" : "s") + " shown";
+    if (/[?&]probe=1/.test(location.search)) setTimeout(function () {
+      var c = document.querySelector(".mcell"), pic = c && c.querySelector(".pic"), im = pic && pic.querySelector("img");
+      document.title = JSON.stringify({ cell: c && c.getBoundingClientRect().height, pic: pic && pic.getBoundingClientRect().height,
+        disp: c && getComputedStyle(c).display, picH: pic && getComputedStyle(pic).height,
+        img: im && [im.getBoundingClientRect().height, im.naturalHeight, im.complete],
+        gridRows: getComputedStyle(document.getElementById("mGrid")).gridTemplateRows.slice(0, 60),
+        css: Array.prototype.map.call(document.styleSheets, function (ss) { return ss.href; }).join(",") });
+    }, 1500);
+    if (!n) grid.innerHTML = '<p class="note" style="padding:10px">No pieces in this filter.</p>';
+  }
+  /* Dropping a piece back on the list takes its component away again. */
+  (function () {
+    var list = document.getElementById("mList");
+    list.addEventListener("dragover", function (e) {
+      var d = e.dataTransfer.types && Array.prototype.indexOf.call(e.dataTransfer.types, "text/plain") >= 0;
+      if (d && !mDragItem) { e.preventDefault(); list.classList.add("over"); }
+    });
+    list.addEventListener("dragleave", function () { list.classList.remove("over"); });
+    list.addEventListener("drop", function (e) {
+      list.classList.remove("over");
+      var raw = e.dataTransfer.getData("text/plain") || "";
+      if (raw.indexOf("piece:") !== 0) return;
+      e.preventDefault();
+      var stem = raw.slice(6);
+      var p = piecesData.pieces.filter(function (x) { return x.stem === stem; })[0];
+      if (!p || !(p.data && p.data.wanted)) return;
+      link(p, "");
+    });
+  })();
+  /* One place that writes a link, so the list, the grid and the counts all
+     move together and neither store is reloaded from scratch. */
+  function link(p, wantedId) {
+    var body = { wanted: wantedId };
+    var w = wantedId ? wantedData.items.filter(function (x) { return x.id === wantedId; })[0] : null;
+    if (w && !(p.data && p.data.name)) {           // an unnamed piece takes the component's name
+      body.name = w.name;
+      if (w.kind) body.kind = w.kind;
+    }
+    put(API + "/manifest/" + encodeURIComponent(p.stem), body).then(function (r) {
+      if (r.error) { flash(r.error, true); return; }
+      p.data = r.piece || {};
+      // move the piece between the wanted items in the copy we hold
+      wantedData.items.forEach(function (it) {
+        it.pieces = (it.pieces || []).filter(function (s) { return s !== p.stem; });
+      });
+      if (w) { w.pieces = (w.pieces || []).concat([p.stem]); }
+      wantedData.items.forEach(function (it) {
+        it.state = (it.pieces || []).length ? "cut" : ((it.guesses || []).length ? "probably" : "missing");
+      });
+      var done = wantedData.items.filter(function (it) { return it.state !== "missing"; }).length;
+      wantedData.summary.done = done;
+      wantedData.summary.pct = wantedData.items.length ? Math.round(100 * done / wantedData.items.length) : 0;
+      loadWantedSummary(wantedData);
+      renderMatch();
+      renderPieceList();
+      refreshCounts();
+      flash(w ? ("“" + w.name + "” ← " + p.stem) : (p.stem + " unlinked"));
+    });
+  }
+  ["mFind", "mSheet", "mUn", "mAll"].forEach(function (id) {
+    var el = document.getElementById(id);
+    el.addEventListener(id === "mFind" ? "input" : "change", debounce(renderMatch, 150));
+  });
+
+  /* ----------------------------------------------------------- wanted */
+  function loadWanted() {
+    return j(API + "/wanted").then(function (d) {
+      wantedData = d;
+      var empty = !d.items.length;
+      document.getElementById("wEmpty").hidden = !empty;
+      document.getElementById("wBody2").hidden = empty;
+      document.getElementById("wFoot").hidden = empty;
+      var s = d.summary;
+      document.getElementById("wPct").textContent = s.pct + "%";
+      document.getElementById("wDone").textContent = s.done;
+      document.getElementById("wTotal").textContent = s.total;
+      document.getElementById("wBar").style.width = s.pct + "%";
+      document.getElementById("wCut").textContent = d.items.filter(function (i) { return i.state === "cut"; }).length;
+      document.getElementById("wProb").textContent = d.items.filter(function (i) { return i.state === "probably"; }).length;
+      document.getElementById("wMiss").textContent = d.items.filter(function (i) { return i.state === "missing"; }).length;
+      document.getElementById("wPart").textContent = d.items.filter(function (i) { return i.state === "part"; }).length;
+      // ⭐️ a deck of twenty-four counts once as a component and is
+      // twenty-four evenings of cutting; say both, or the figure lies
+      var wc = document.getElementById("wCards");
+      wc.textContent = (s.pieces_wanted > s.total)
+        ? "That is " + s.pieces_cut + " of " + s.pieces_wanted + " actual pieces, counting every card in a deck."
+        : "";
+      var kinds = {}; d.items.forEach(function (i) { kinds[i.kind || "other"] = 1; });
+      var ks = document.getElementById("wKind"); var keepK = ks.value; ks.innerHTML = '<option value="">any</option>' + Object.keys(kinds).sort().map(function (k) { return "<option>" + esc(k) + "</option>"; }).join(""); ks.value = keepK;
+      var gs = document.getElementById("wGroup"); var keepG = gs.value; gs.innerHTML = '<option value="">any</option>' + (d.groups || []).map(function (g) { return '<option value="' + esc(g.id) + '">' + esc(g.name) + "</option>"; }).join(""); gs.value = keepG;
+      var ig = document.getElementById("wImportGroup"); ig.innerHTML = (d.groups || []).map(function (g) { return '<option value="' + esc(g.id) + '">' + esc(g.name) + "</option>"; }).join("") || '<option value="core">the box</option>';
+      renderWanted();
+    });
+  }
+  function renderWanted() {
+    var body = document.getElementById("wBody");
+    body.innerHTML = "";
+    var st = document.getElementById("wState").value, kind = document.getElementById("wKind").value, grp = document.getElementById("wGroup").value;
+    var q = document.getElementById("wFind").value.trim().toLowerCase();
+    var groups = {}; (wantedData.groups || []).forEach(function (g) { groups[g.id] = g.name; });
+    var wHeads = [];
+    var showing = wantedData.items.filter(function (it) {
+      if (st && it.state !== st) return false;
+      if (kind && (it.kind || "other") !== kind) return false;
+      if (grp && it.group !== grp) return false;
+      if (q && (it.name + " " + (it.notes || "") + " " + (it.where || "") + " " + (it.source || "")).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    // ⚠️ gathered first — a component added by hand goes on the end of the
+    // list, so walking it would show its set twice. See `gather`.
+    gather(showing, function (it) { return it.group || ""; }).forEach(function (set) {
+      var gh = document.createElement("tr");
+      gh.className = "ghead";
+      var cell = document.createElement("td");
+      cell.colSpan = 8;
+      var gb = Fold.head("wanted", set.key,
+                         groups[set.key] || set.key || "Everything else", body);
+      cell.appendChild(gb);
+      gh.appendChild(cell);
+      body.appendChild(gh);
+      wHeads.push([set.key, gb]);
+      set.rows.forEach(function (it) {
+      var tr = document.createElement("tr");
+      tr.className = it.state;
+      /* ⭐️ FRANK, 24 August 2026: "if a piece has been marked as cut with a
+         green tick (ie assumed to be complete and ready for the game) can you
+         make it appear on hover over the green CUT pill?" A tick is a claim
+         about a piece, and the piece is the evidence for it — so the claim
+         shows what it is made of, and so does each piece's own name beside
+         it. */
+      var links = (it.pieces || []).map(function (s) {
+        return '<a href="#pieces" data-stem="' + esc(s) + '"' + bigForStem(s) + ">" + esc(s) + "</a>"; }).join(" ") +
+                  (it.guesses || []).map(function (s) { return '<a href="#pieces" data-stem="' + esc(s) + '" class="hold" title="name matches — link it on the Pieces page to confirm">' + esc(s) + "?</a>"; }).join(" ");
+      tr.innerHTML =
+        '<td class="nm"><input data-k="name" value="' + esc(it.name) + '" title="' + esc(it.notes || "") + '">' +
+          // where a generic line was broken up, say so: the printed contents
+          // list still reads the old way, and that is what somebody checks against
+          (it.from ? '<div class="tiny muted">one of the ' + esc(it.from) + "</div>" : "") +
+          (it.notes ? '<div class="tiny muted">' + esc(it.notes) + "</div>" : "") + "</td>" +
+        /* ⭐️ FRANK, 24 August 2026, on a component that landed in the wrong
+           set: "So how do i get this in the right place, which is within
+           [the other box]?" There was no way at all — a component's set was
+           fixed when it was made, and there was no way to make a new set
+           either. Both are this one dropdown. */
+        '<td><select data-k="group" class="setpick" title="Which box this component belongs to — the core game, or one of its supplements. Everything in the room groups by it.">' +
+          (wantedData.groups || []).map(function (g) {
+            return '<option value="' + esc(g.id) + '"' +
+              ((it.group || "") === g.id ? " selected" : "") + ">" + esc(g.name) + "</option>";
+          }).join("") +
+          ((wantedData.groups || []).some(function (g) { return g.id === (it.group || ""); })
+            ? "" : '<option value="' + esc(it.group || "") + '" selected>' +
+                   esc(it.group || "\u2014 none \u2014") + "</option>") +
+          '<option value="__new">+ a new set…</option></select></td>' +
+        '<td><input data-k="kind" value="' + esc(it.kind || "") + '" style="width:8em"></td>' +
+        '<td><input data-k="qty" class="qty" value="' + esc(it.qty || "") + '">' +
+          // ⭐️ ONE IS ENOUGH, UNLESS EVERY ONE IS DIFFERENT. Nothing in a
+          // printed contents list tells those apart — 26 wound counters is
+          // one design printed 26 times, 24 damage cards is 24 different
+          // cards — so the person says which, and the room never guesses.
+          '<button class="quiet each" data-each="1" title="' +
+            (it.each
+              ? "Every one of them is a different card, so all of them must be cut before this is done. Press to go back to counting it as one design."
+              : "One design, printed this many times — cutting one is enough, and that is how the room counts it. Press if these are all DIFFERENT, like a deck of cards, and every one has to be cut.") +
+          '">' + (it.each ? "all different" : "one is enough") + "</button></td>" +
+        '<td><input data-k="where" value="' + esc(it.where || "") + '" style="width:9em" title="' + esc(it.source || "") + '"></td>' +
+        '<td class="st"><span class="tag ' + it.state + '"' +
+          ((it.pieces || []).length ? bigForStem(it.pieces[0]) : "") + ">" +
+          (it.state === "probably" ? "probably cut"
+           : it.state === "part" ? esc(it.got + " of " + it.need)
+           : it.state === "cut" ? ((it.need || 1) > 1 ? esc(it.got + " of " + it.need + " ✓") : "cut ✓")
+           : (it.need || 1) > 1 ? esc("0 of " + it.need) : "not yet") + "</span></td>" +
+        '<td class="pieces-links">' + links + "</td>" +
+        '<td class="wacts">' +
+          '<button class="quiet" data-split="1" title="One line of a printed contents list often stands for several different components — three ship templates, not one thing three times. Break it into them, so each cut piece gets its own name and the game can tell them apart.">Split</button>' +
+          '<button class="quiet danger" data-del="1" title="Take this component off the list. No piece is touched.">×</button></td>';
+      /* ⚠️⚠️ EVERY HANDLER ON THIS ROW WORKS BY ID, AND THE REASON IS A REAL
+         FAULT. Frank, 24 August 2026: "removing a piece in the checklist
+         doesn't work - verify that." It was worse than not working: it
+         removed THE WRONG COMPONENT. `saveWantedAll()` replaces `wantedData`
+         with the answer from the room and does not re-render — it must not,
+         because it fires as you type and would take the box away from under
+         you. So every row on the screen was left holding an item object that
+         is no longer in the list: `indexOf(it)` gave -1, and `splice(-1, 1)`
+         took the LAST component off instead of the one whose × was pressed.
+         Edit a name, then remove something, and a different component was
+         quietly thrown away. An id is the only thing about a row that
+         survives a save. */
+      function mine() {
+        return (wantedData.items || []).filter(function (x) { return x.id === it.id; })[0];
+      }
+      tr.querySelectorAll("input").forEach(function (inp) {
+        inp.addEventListener("change", function () {
+          var now = mine();
+          if (!now) { flash("That component is not on the list any more.", true); return; }
+          now[inp.dataset.k] = inp.value;
+          saveWantedAll();
+        });
+      });
+      /* ⭐️ A QUANTITY IS NOT A SET OF DESIGNS. Frank, 23 August 2026: a
+         game's supplements list one faction's "ship templates" where the box
+         holds three differently named ships — three different
+         pieces of card summed up in one line. Twenty-six wound counters, on
+         the other hand, really are one design and want one row. Only a person
+         knows which is which, so the room offers and never decides. */
+      tr.querySelector("select.setpick").addEventListener("change", function () {
+        var pick = this;
+        var now = mine();
+        if (!now) { flash("That component is not on the list any more.", true); return; }
+        if (pick.value === "__new") {
+          var name = window.prompt("What is the new set called?\n\n" +
+            "A set is a box: the core game, or one of its supplements. " +
+            "Everything in the room groups components by it.");
+          pick.value = now.group || "";
+          if (!name || !name.trim()) return;
+          name = name.trim().slice(0, 80);
+          var gid = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
+                    ("set" + ((wantedData.groups || []).length + 1));
+          if (!(wantedData.groups || []).some(function (g) { return g.id === gid; })) {
+            wantedData.groups = (wantedData.groups || []).concat([{ id: gid, name: name }]);
+          }
+          now.group = gid;
+        } else {
+          now.group = pick.value;
+        }
+        // ⚠️ open it, or the component vanishes into a folded set the moment
+        // it is moved — the same fault as adding one. See CLAUDE.md 44.
+        Fold.open("wanted", now.group);
+        var moved = now.group, what = now.name;
+        saveWantedAll().then(function () {
+          renderWanted();
+          showWantedRow(it.id);
+          var g = (wantedData.groups || []).filter(function (x) { return x.id === moved; })[0];
+          flash("“" + what + "” moved to " + ((g && g.name) || moved) + ".");
+        });
+      });
+      tr.querySelector("[data-each]").addEventListener("click", function () {
+        var now = mine();
+        if (!now) { flash("That component is not on the list any more.", true); return; }
+        now.each = !now.each;
+        saveWantedAll().then(function () { renderWanted(); });
+      });
+      tr.querySelector("[data-split]").addEventListener("click", function () {
+        splitting = mine() || it;
+        var n = parseInt(it.qty, 10);
+        document.getElementById("wSplitSays").innerHTML =
+          "Break <b>" + esc(it.name) + "</b> into the components it really stands for — " +
+          "one name a line." +
+          (n > 1 ? " The list says there are <b>" + n + "</b> of them." : "") +
+          ((it.pieces || []).length
+            ? " ⚠️ " + it.pieces.length + " piece" + (it.pieces.length === 1 ? "" : "s") +
+              " already linked to it will move to the first name you give."
+            : "");
+        var box = document.getElementById("wSplitText");
+        box.value = "";
+        document.getElementById("wImport").hidden = true;
+        document.getElementById("wSplit").hidden = false;
+        box.focus();
+      });
+      tr.querySelector("[data-del]").addEventListener("click", function () {
+        var now = mine();
+        if (!now) { flash("That component is not on the list any more.", true); return; }
+        if (!window.confirm("Remove “" + now.name + "” from the wanted list?\n\n" +
+            "No piece is touched — anything cut and linked to it simply stops " +
+            "being counted against it.")) return;
+        wantedData.items = wantedData.items.filter(function (x) { return x.id !== it.id; });
+        saveWantedAll().then(renderWanted);
+      });
+      tr.querySelectorAll("a[data-stem]").forEach(function (a) {
+        a.addEventListener("click", function (e) { e.preventDefault(); curPiece = a.dataset.stem; location.hash = "pieces"; showTab("pieces"); if (piecesData) showPiece(curPiece); });
+      });
+      tr.dataset.fold = set.key;
+      body.appendChild(tr);
+      });
+    });
+    wHeads.forEach(function (h) { Fold.apply("wanted", h[0], body, h[1]); });
+  }
+  function saveWantedAll() {
+    var items = wantedData.items.map(function (it) {
+      // ⚠️ THE WORKED-OUT FIELDS MUST NOT BE WRITTEN BACK. The room computes
+      // pieces, guesses, state and now the two counts every time it is asked;
+      // saving them into wanted.json would leave a stale answer on disk that
+      // looks exactly like a real one.
+      var c = {}; Object.keys(it).forEach(function (k) {
+        if (["pieces", "guesses", "state", "need", "got"].indexOf(k) < 0) c[k] = it[k];
+      }); return c;
+    });
+    return put(API + "/wanted", { items: items }).then(function (d) { wantedData = d; flash("Saved."); loadWantedSummary(d); });
+  }
+  function loadWantedSummary(d) {
+    var s = d.summary; document.getElementById("wPct").textContent = s.pct + "%"; document.getElementById("wDone").textContent = s.done; document.getElementById("wTotal").textContent = s.total; document.getElementById("wBar").style.width = s.pct + "%";
+    document.getElementById("nWanted").textContent = s.total ? s.pct + "%" : "";
+  }
+  ["wState", "wKind", "wGroup"].forEach(function (id) { document.getElementById(id).addEventListener("change", renderWanted); });
+  document.getElementById("wFind").addEventListener("input", debounce(renderWanted, 200));
+  document.getElementById("wConfirm").addEventListener("click", function () {
+    post(API + "/wanted/confirm").then(function (d) { wantedData = d; renderWanted(); loadWantedSummary(d); piecesData = null; flash((d.confirmed || 0) + " link" + (d.confirmed === 1 ? "" : "s") + " confirmed."); });
+  });
+  var splitting = null;
+  document.getElementById("wSplitCancel").addEventListener("click", function () {
+    splitting = null;
+    document.getElementById("wSplit").hidden = true;
+  });
+  document.getElementById("wSplitGo").addEventListener("click", function () {
+    if (!splitting) return;
+    var names = document.getElementById("wSplitText").value.split("\n")
+      .map(function (x) { return x.replace(/^[-•*·\s]+|\s+$/g, ""); })
+      .filter(function (x) { return x; });
+    if (names.length < 2) {
+      flash("Give at least two names — one for each component.", true);
+      return;
+    }
+    post(API + "/wanted/split", { id: splitting.id, names: names }).then(function (d) {
+      if (d.error) { flash(d.error, true); return; }
+      Fold.open("wanted", splitting.group || "");   // the parts must be seen
+      splitting = null;
+      document.getElementById("wSplit").hidden = true;
+      wantedData = d;
+      piecesData = null;
+      renderWanted();
+      loadWantedSummary(d);
+      refreshCounts();
+      flash("Split into " + (d.made || []).length + " components" +
+            (d.moved ? ", and " + d.moved + " piece" + (d.moved === 1 ? "" : "s") +
+                       " now points at " + (d.made[0] || {}).name : "") + ".");
+    });
+  });
+
+  document.getElementById("wAdd").addEventListener("click", function () {
+    var name = window.prompt("The component — e.g. Turning template");
+    if (!name) return;
+    var grp = document.getElementById("wGroup").value || (wantedData.groups[0] || {}).id || "core";
+    post(API + "/wanted/import", { text: name, group: grp }).then(function (d) {
+      wantedData = d;
+      // ⚠️ open the set it went into, or the new row is added straight into
+      // something folded away and the press looks as though it did nothing
+      Fold.open("wanted", grp);
+      renderWanted();
+      loadWantedSummary(d);
+      var made = (d.added || [])[0];
+      var where = (wantedData.groups || []).filter(function (g) { return g.id === grp; })[0];
+      flash("Added" + (where ? " to " + where.name : "") + ": " +
+            ((made && made.name) || name));
+      if (made) showWantedRow(made.id);
+    });
+  });
+
+  /* Bring a row into view and mark it for a moment, so a list of two hundred
+     does not have to be searched for the thing just added to it. */
+  function showWantedRow(id) {
+    var it = (wantedData.items || []).filter(function (x) { return x.id === id; })[0];
+    if (!it) return;
+    var name = it.name;
+    Array.prototype.some.call(document.querySelectorAll("table.wanted tbody tr"), function (tr) {
+      var inp = tr.querySelector('input[data-k="name"]');
+      if (!inp || inp.value !== name) return false;
+      tr.scrollIntoView({ block: "center" });
+      tr.classList.add("justadded");
+      setTimeout(function () { tr.classList.remove("justadded"); }, 2500);
+      return true;
+    });
+  }
+  document.getElementById("wImportBtn").addEventListener("click", function () { document.getElementById("wImport").hidden = false; });
+  document.getElementById("wStart").addEventListener("click", function () {
+    document.getElementById("wEmpty").hidden = true;
+    document.getElementById("wBody2").hidden = false;
+    document.getElementById("wImport").hidden = false;
+    document.getElementById("wText").focus();
+  });
+  document.getElementById("wStartOne").addEventListener("click", function () {
+    document.getElementById("wEmpty").hidden = true;
+    document.getElementById("wBody2").hidden = false;
+    document.getElementById("wAdd").click();
+  });
+  document.getElementById("wImportCancel").addEventListener("click", function () { document.getElementById("wImport").hidden = true; });
+  document.getElementById("wImportGo").addEventListener("click", function () {
+    var text = document.getElementById("wText").value;
+    if (!text.trim()) return;
+    var into = document.getElementById("wImportGroup").value;
+    post(API + "/wanted/import", { text: text, group: into,
+                                  each: document.getElementById("wImportEach").checked }).then(function (d) {
+      wantedData = d;
+      document.getElementById("wText").value = "";
+      document.getElementById("wImport").hidden = true;
+      Fold.open("wanted", into);          // or they arrive inside a folded set
+      renderWanted();
+      loadWantedSummary(d);
+      flash((d.added || []).length + " added.");
+    });
+  });
+
+  /* ⭐️⭐️ THE SAFETY NET, AND A WAY TO REACH IT. Frank, 24 August 2026, on
+     being told to commit his checklist to git more often: "I'm afraid this
+     means nothing to me - it needs to be automated if it needs to happen." A
+     backup somebody has to remember to make is not a backup, and one they
+     cannot reach without a terminal is not a restore. */
+  function loadHistory() {
+    j(API + "/history").then(function (d) {
+      var box = document.getElementById("history");
+      document.getElementById("hWhere").textContent = d.where || "";
+      document.getElementById("hKeep").textContent = d.how_many || 60;
+      var titles = { outlines: "The outlines you drew",
+                     manifest: "What each piece is called",
+                     wanted: "The checklist" };
+      box.innerHTML = Object.keys(titles).map(function (key) {
+        var mine = (d.kept || {})[key] || [];
+        return '<div class="histset"><b>' + esc(titles[key]) + "</b> " +
+          '<span class="tiny muted">' +
+          (mine.length ? mine.length + " kept" : "nothing kept yet — it starts at the next save") +
+          "</span>" +
+          (mine.length ? '<div class="histrows">' + mine.slice(0, 12).map(function (c) {
+            return '<div class="histrow"><span class="tiny">' + esc(when(c.when)) +
+              '</span><span class="tiny muted">' + esc(c.says) + "</span>" +
+              '<button class="quiet" data-key="' + esc(key) + '" data-file="' + esc(c.file) +
+              '" title="Put this copy back. The one it replaces is kept too.">put this one back</button></div>';
+          }).join("") + "</div>" : "");
+      }).join("");
+      box.querySelectorAll("button[data-file]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          if (!window.confirm("Put back the copy of “" +
+              (b.parentNode.querySelector(".tiny") || {}).textContent + "”?\n\n" +
+              "What is there now is kept as well, so this can be undone the same way.")) return;
+          post(API + "/history/restore", { key: b.dataset.key, file: b.dataset.file })
+            .then(function (r) {
+              if (r.error) { flash(r.error, true); return; }
+              flash("Put back. Reloading so you see it.");
+              setTimeout(function () { location.reload(); }, 900);
+            });
+        });
+      });
+    });
+  }
+
+  function when(secs) {
+    var d = new Date((secs || 0) * 1000);
+    return d.toLocaleString(undefined, { day: "numeric", month: "short",
+                                         hour: "2-digit", minute: "2-digit" });
+  }
+
+  /* ------------------------------------------------------------ about */
+  document.getElementById("aSave").addEventListener("click", function () {
+    post(API, { name: document.getElementById("aName").value, game: document.getElementById("aGame").value, notes: document.getElementById("aNotes").value })
+      .then(function () { flash("Saved."); load(); });
+  });
+  document.getElementById("revealLink").addEventListener("click", function (e) { e.preventDefault(); post(API + "/reveal", { what: "project" }); });
+  function renderHooks() {
+    var box = document.getElementById("hooks");
+    box.innerHTML = "";
+    if (!project.hooks || !project.hooks.length) return;
+    var h2 = document.createElement("h2"); h2.textContent = "Hand-overs"; h2.style.marginTop = "28px"; box.appendChild(h2);
+    project.hooks.forEach(function (h) {
+      var row = document.createElement("div"); row.className = "row"; row.style.marginBottom = "8px";
+      var b = document.createElement("button"); b.textContent = h.label || h.id; b.className = "primary";
+      var out = document.createElement("pre"); out.className = "hookout"; out.hidden = true;
+      b.addEventListener("click", function () {
+        b.disabled = true; b.textContent = (h.label || h.id) + " — running…";
+        post(API + "/hook/" + encodeURIComponent(h.id)).then(function (r) {
+          b.disabled = false; b.textContent = h.label || h.id;
+          out.hidden = false; out.textContent = (r.ok ? "✓ done\n\n" : "⚠ did not finish cleanly\n\n") + (r.out || r.error || "");
+        });
+      });
+      row.appendChild(b); box.appendChild(row); box.appendChild(out);
+    });
+  }
+
+  load().then(fromHash);
+})();
+</script>
+</body>
+</html>
