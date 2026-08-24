@@ -46,6 +46,7 @@ fi
 # everything else at the end, and cannot read a stale one.
 export PYTHONPYCACHEPREFIX="$TMP/pycache"
 ROOM_PID=""
+SLOW_PID=""
 # ⭐️ The run's verdict, declared here at the top rather than half way down.
 # A block that said `|| code=1` before this was set had its answer wiped out by
 # the `code=0` that used to sit in the middle of the file — so it could only
@@ -63,6 +64,7 @@ code=0
 # throwaway game behind in /tmp. `|| true` on both, and no bare `&&`.
 clear_up() {
   if [ -n "$ROOM_PID" ]; then kill "$ROOM_PID" 2>/dev/null || true; fi
+  if [ -n "$SLOW_PID" ]; then kill "$SLOW_PID" 2>/dev/null || true; fi
   rm -rf "$TMP" || true
 }
 trap clear_up EXIT INT TERM
@@ -80,6 +82,43 @@ $PY -c "import ast; ast.parse(open('check/names_across_a_recut.py').read())"
 # editor that quietly saves nothing.
 $PY -c "import sys; sys.path.insert(0,'.'); import cutting_room; cutting_room.table_template()"
 echo "  ok   the room's Python parses and every editor patch still matches"
+
+# ⭐️ A GOOGLE DOC IS NOT A FILE, IT IS A THING GOOGLE WILL MAKE A FILE OUT OF.
+# The designer, 24 August 2026, trying one: a document has no download at its own
+# address, so what came back was the editor's web page — and the room reported
+# a perfectly well shared document as unshared. Asked to EXPORT, the same
+# document comes back as a PDF. No network here: this is which address the
+# room decides to ask.
+say "a link to a Google document is asked for as a PDF"
+$PY - <<'PYDOC' || code=1
+import sys
+sys.path.insert(0, ".")
+import cutting_room as c
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+for kind in ("document", "presentation", "spreadsheets"):
+    link = "https://docs.google.com/%s/d/1AbCdEfGhIjKlMnOpQrStUv/edit?usp=sharing" % kind
+    m = c.DOC_EXPORT.search(link)
+    check("a Google %s link is recognised" % kind, bool(m), link)
+    if m:
+        check("and it is its id the room asks about",
+              m.group(2) == "1AbCdEfGhIjKlMnOpQrStUv", m.group(2))
+# ⚠️ A PUBLISHED link is a different address with no export behind it, and a
+# plain Drive FILE already has a download of its own — neither is a document
+# to be exported, and quietly rewriting either would break a link that works.
+check("a published link is left exactly as it is",
+      not c.DOC_EXPORT.search("https://docs.google.com/document/d/e/2PACX-1vAbCdEf/pub"))
+check("and so is an ordinary Drive file link",
+      not c.DOC_EXPORT.search("https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUv/view"))
+sys.exit(1 if bad else 0)
+PYDOC
 
 # ⚠️ AN UNTERMINATED STRING KILLS A PAGE SILENTLY, with a working server
 # behind it. Each page's script is pulled out and parsed on its own.
@@ -547,9 +586,44 @@ im = Image.new("RGBA", (60, 60), (0, 0, 0, 0))
 ImageDraw.Draw(im).rectangle([0, 0, 59, 59], fill=(180, 90, 90, 255))
 im.save(sys.argv[1] + "/a-speck.png")              # 0.20in square at 300dpi
 PY7
+# ⭐️⭐️ A LINK THAT TAKES ITS TIME, so there is something to watch while it
+# does. The designer, 24 August 2026, importing a document from a link: "status says
+# 'Fetching...' but would be much more useful if that were an actual progress
+# bar or at the very least something a little more animated so i can see if
+# it's stalled." A file served instantly proves nothing about that, so this
+# serves a real sheet a tenth at a time with a wait between each — the same
+# shape as a slow link, and it takes about two and a half seconds.
+SLOW_PORT=$((PORT + 3))
+$PY - "$SLOW_PORT" <<'PYSLOW' > /dev/null 2>&1 &
+import http.server, socketserver, sys, time
+data = open("demo/demo-sheet.png", "rb").read()
+
+
+class Trickle(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "image/png")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        step = max(1, len(data) // 10)
+        for i in range(0, len(data), step):
+            self.wfile.write(data[i:i + step])
+            self.wfile.flush()
+            time.sleep(0.25)
+
+    def log_message(self, *a):
+        pass
+
+
+socketserver.TCPServer.allow_reuse_address = True
+socketserver.TCPServer(("127.0.0.1", int(sys.argv[1])), Trickle).serve_forever()
+PYSLOW
+SLOW_PID=$!
+
 ROOM="http://127.0.0.1:$PORT" \
 COUNTER="$TMP/a-counter.png" \
 SPECK="$TMP/a-speck.png" \
+SLOW_URL="http://127.0.0.1:$SLOW_PORT/a-slow-sheet.png" \
 PROJECT="proving-ground" \
 SHEETS=66 \
 OUTLINES="$TMP/home/proving-ground/outlines.json" \

@@ -953,6 +953,36 @@ rather than by reading the code.
     doing it from the request's own thread races the main thread's tidying up,
     and whichever won, the room might simply be gone.
 
+60. ⭐️⭐️ **A FROZEN WORD CANNOT ANSWER "HAS IT STALLED?", AND THAT IS THE
+    ONLY QUESTION ANYBODY ASKS DURING A WAIT.** The designer, 24 August 2026,
+    importing from a link: *"status says 'Fetching...' but would be much more
+    useful if that were an actual progress bar or at the very least something
+    a little more animated so i can see if it's stalled."*
+    The room already had a job with progress on it — the rendering step counts
+    pages as they land (fault 8) — but the **download** was one `r.read()`, a
+    single blocking call with nothing to report and nothing to look at. So it
+    is read in pieces and counted: a bar that fills where the size is known
+    and creeps where it is not, the size that has arrived, the seconds since
+    it began, and ⭐️ **when nothing the room says has changed for ten seconds,
+    it says so in as many words** — which is what somebody is really asking,
+    and the room is better placed to notice it than they are.
+    ⚠️ **`read1`, not `read`.** `read(n)` waits until it has all n bytes, so
+    the count jumps in lumps and sits perfectly still between them — the very
+    thing being fixed. `read1` hands back whatever has arrived.
+    ⚠️ The messages already said their own counts in words (*"rendered page 3
+    of 40"*) and the page appended *"(3/40)"* to them as well. The numbers go
+    to the **bar** now and the words are left alone.
+    ⭐️⭐️ And what they were actually importing found a second thing: **a
+    Google Doc is not a file, it is a thing Google will make a file out of.**
+    A document, sheet or slide deck has no download at its own address — the
+    link opens the editor, and what comes back to anything else asking is the
+    editor's own web PAGE. So the room was reporting a perfectly well shared
+    document as *not shared* (fault 9's rule, quite correctly applied to the
+    wrong situation). Asked to `export?format=pdf`, the same document comes
+    back as a PDF. ⚠️ Only the plain `/d/<id>` form: a **published** link
+    (`/d/e/<id>/pub`) is a different address with no export behind it, and
+    quietly rewriting it would break a link that works.
+
 ---
 
 ## Architecture
@@ -1072,7 +1102,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 344 checks, about a minute
+check/check.sh          # 358 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

@@ -1528,6 +1528,27 @@ def doc_to_docx(path, out_dir):
 
 DRIVE_ID = re.compile(r"/file/d/([A-Za-z0-9_-]{10,})|[?&]id=([A-Za-z0-9_-]{10,})|/folders/([A-Za-z0-9_-]{10,})")
 
+# ⭐️ A GOOGLE DOC IS NOT A FILE, IT IS A THING GOOGLE WILL MAKE A FILE OUT OF.
+# The designer, 24 August 2026, trying one: a document, a sheet or a set of slides
+# has no download at its own address — the link opens the editor, and what
+# comes back to anything else asking is the editor's own web PAGE. Asked to
+# export, the same document comes back as a PDF, which is exactly what the
+# room wants. So the room asks for the export rather than reporting a
+# perfectly good link as unshared (which is what it used to say, and it was
+# wrong: the file was shared, it simply is not a file).
+# ⚠️ Only the plain `/d/<id>` form: a PUBLISHED link (`/d/e/<id>/pub`) is a
+# different address with no export, and is left exactly as it is.
+DOC_EXPORT = re.compile(r"//docs\.google\.com/(document|presentation|spreadsheets)"
+                        r"/d/(?!e/)([A-Za-z0-9_-]{10,})")
+
+
+def human_bytes(n):
+    if n >= 1e6:
+        return "%.1f MB" % (n / 1e6)
+    if n >= 1000:
+        return "%d kB" % round(n / 1000)
+    return "%d bytes" % n
+
 
 def fetch_url(url, progress=None):
     """Pull a file down from a link. Returns (filename, bytes).
@@ -1551,7 +1572,12 @@ def fetch_url(url, progress=None):
     if not re.match(r"^https?://", url):
         raise RuntimeError("that is not a link — it should start with http:// or https://")
     name = None
-    m = DRIVE_ID.search(url) if "google.com" in url else None
+    doc = DOC_EXPORT.search(url) if "docs.google.com" in url else None
+    if doc:
+        kind, doc_id = doc.group(1), doc.group(2)
+        url = ("https://docs.google.com/%s/d/%s/export?format=pdf" % (kind, doc_id))
+        name = "%s-%s.pdf" % (kind, doc_id[:8])
+    m = DRIVE_ID.search(url) if (not doc and "google.com" in url) else None
     if m:
         if m.group(3):
             raise RuntimeError(
@@ -1563,7 +1589,7 @@ def fetch_url(url, progress=None):
         url = ("https://drive.usercontent.google.com/download"
                "?id=%s&export=download&confirm=t" % file_id)
     if progress:
-        progress(0, 0, "fetching")
+        progress(0, 0, "asking the link for the file")
     req = urllib.request.Request(url, headers={
         "User-Agent": "Mozilla/5.0 (Macintosh) CuttingRoom/1",
         "Accept": "*/*"})
@@ -1574,16 +1600,51 @@ def fetch_url(url, progress=None):
             mm = re.search(r'filename\*?=(?:UTF-8\'\'|")?([^";]+)', disp)
             if mm:
                 name = urllib.parse.unquote(mm.group(1)).strip('"')
-            data = r.read()
+            # ⭐️⭐️ READ IT IN PIECES, AND SAY SO AS IT COMES. The designer, 24
+            # August 2026: "status says 'Fetching...' but would be much more
+            # useful if that were an actual progress bar or at the very least
+            # something a little more animated so i can see if it's stalled."
+            # `r.read()` in one call is a wait of unknown length with nothing
+            # to look at — and the one question a person has during it is the
+            # one thing a frozen word cannot answer. Read in blocks and count
+            # them: a number that keeps moving IS the answer to "has it
+            # stalled?", and it costs nothing.
+            # ⚠️ Content-Length is often missing (Drive and Docs both send the
+            # export as it makes it), so the count has to read sensibly with
+            # no total to compare against — hence "so far".
+            size = 0
+            try:
+                size = int(r.headers.get("Content-Length") or 0)
+            except ValueError:
+                size = 0
+            # ⚠️ `read1`, NOT `read`: read(n) waits until it has all n bytes,
+            # so on a slow link the count jumps in lumps and sits perfectly
+            # still between them — which is the very thing being fixed here.
+            # read1 hands back whatever has arrived, so the number moves when
+            # the bytes move.
+            reader = getattr(r, "read1", None) or r.read
+            blocks, got = [], 0
+            while True:
+                block = reader(65536)
+                if not block:
+                    break
+                blocks.append(block)
+                got += len(block)
+                if progress:
+                    progress(got, size, "downloading — %s%s" % (
+                        human_bytes(got),
+                        (" of %s" % human_bytes(size)) if size else " so far"))
+            data = b"".join(blocks)
     except urllib.error.HTTPError as exc:
         raise RuntimeError("the link answered %s %s" % (exc.code, exc.reason))
     except urllib.error.URLError as exc:
         raise RuntimeError("could not reach that link: %s" % exc.reason)
     if ctype in ("text/html", "application/xhtml+xml"):
         raise RuntimeError(
-            "that link gave back a web page rather than a file — on Drive that "
-            "means it is not shared. Set the file to \"Anyone with the link\" and "
-            "paste it again, or download it and drop it on this page.")
+            "that link gave back a web page rather than a file. On Google that "
+            "nearly always means it is not shared: set it to \"Anyone with the "
+            "link\" and paste it again. Otherwise, download it and drop it on "
+            "this page.")
     if not name:
         name = os.path.basename(urllib.parse.urlsplit(url).path) or "download"
         ext = {"application/pdf": ".pdf", "image/png": ".png", "image/jpeg": ".jpg",

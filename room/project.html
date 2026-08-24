@@ -45,13 +45,14 @@
       <input type="file" id="files" multiple accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.docx,.doc,.zip">
       <div><b>Drop scans anywhere on this page</b> — a PDF (every page becomes a sheet), a scan, a Word file with pictures in it, a ZIP, or <b>a whole folder</b>. Or <a href="#" id="pick">choose files</a>.</div>
       <div class="progress" id="progress"></div>
+      <div class="progbar" id="progbar" hidden><i></i></div>
       <div class="queue" id="queue"></div>
       <details class="linkdetail"><summary class="tiny muted">…or fetch one file from a link</summary>
         <div class="linkrow" id="linkrow">
-          <input id="fetchUrl" placeholder="a Google Drive share link, or any URL">
-          <button id="fetchGo" data-tip="Download one file from that link and import it. Only works for a file shared &quot;anyone with the link&quot; — dragging a downloaded folder onto the page is better in every other case.">Fetch it</button>
+          <input id="fetchUrl" placeholder="a Google Drive or Google Docs link, or any URL">
+          <button id="fetchGo" data-tip="Download one file from that link and import it. A Google Doc, Sheet or Slides link is asked for as a PDF; anything else is downloaded as it is. Only works for something shared &quot;anyone with the link&quot; — dragging a downloaded folder onto the page is better in every other case.">Fetch it</button>
         </div>
-        <p class="tiny muted" style="margin:6px 0 0">Only works for a file shared “anyone with the link”. A whole Drive folder cannot be fetched — download it (Drive hands you a ZIP) and drop that instead.</p>
+        <p class="tiny muted" style="margin:6px 0 0">Only works for something shared “anyone with the link”. A Google <b>Doc</b>, Sheet or Slides link is fetched as a PDF, because a document has no file to download at its own address. A whole Drive folder cannot be fetched — download it (Drive hands you a ZIP) and drop that instead.</p>
       </details>
     </div>
     <div class="row" style="margin-bottom:12px">
@@ -869,19 +870,52 @@
     });
   }
 
+  /* ⭐️⭐️ WATCHING A JOB, AND THE ONLY QUESTION ANYBODY ASKS OF ONE. The
+     designer, 24 August 2026, importing from a link: "status says 'Fetching...' but
+     would be much more useful if that were an actual progress bar or at the
+     very least something a little more animated so i can see if it's
+     stalled."
+     Three things answer that, and the third is the one that really does:
+       · a BAR, filled where the room knows the size and creeping where it
+         does not;
+       · the seconds counting up, so a slow job looks slow rather than dead;
+       · ⭐️ and, when nothing the room says has CHANGED for a while, saying
+         so in as many words. A number that keeps moving proves it is alive;
+         a number that has stopped is the fault, and the room should be the
+         one to point at it rather than leaving somebody to wonder. */
+  function showBar(frac) {
+    var bar = document.getElementById("progbar");
+    if (!bar) return;
+    bar.hidden = false;
+    bar.classList.toggle("unsure", !(frac > 0));
+    bar.querySelector("i").style.width = frac > 0 ? Math.min(100, frac * 100) + "%" : "";
+  }
+  function hideBar() {
+    var bar = document.getElementById("progbar");
+    if (bar) { bar.hidden = true; bar.classList.remove("unsure"); bar.querySelector("i").style.width = ""; }
+  }
   function watchJob(id, label, onTick) {
     var prog = document.getElementById("progress");
+    var began = Date.now(), changed = Date.now(), was = "";
+    showBar(0);
     return new Promise(function (resolve, reject) {
       (function tick() {
         j("/api/jobs/" + id).then(function (job) {
           if (job.state === "running") {
-            var say = job.message + (job.total ? " (" + job.done + "/" + job.total + ")" : "");
-            prog.textContent = label + ": " + say;
+            // the messages say their own counts in words ("rendered page 3 of
+            // 40"), so the numbers go to the bar rather than being repeated
+            var say = job.message || "working";
+            if (say !== was) { was = say; changed = Date.now(); }
+            showBar(job.total ? job.done / job.total : 0);
+            var secs = Math.round((Date.now() - began) / 1000);
+            var still = Math.round((Date.now() - changed) / 1000);
+            prog.textContent = label + ": " + say + "  ·  " + secs + "s" +
+              (still >= 10 ? "  ·  nothing new for " + still + "s" : "");
             if (onTick) onTick(say);
-            setTimeout(tick, 700);
-          } else if (job.state === "done") { resolve(job.result); }
-          else { reject(new Error(job.error || "failed")); }
-        }).catch(reject);
+            setTimeout(tick, 500);
+          } else if (job.state === "done") { hideBar(); resolve(job.result); }
+          else { hideBar(); reject(new Error(job.error || "failed")); }
+        }).catch(function (e) { hideBar(); reject(e); });
       })();
     });
   }
@@ -902,16 +936,22 @@
     b.disabled = true; b.textContent = "Fetching…";
     var prog = document.getElementById("progress");
     prog.textContent = "asking for that link…";
+    // ⚠️ before the job even exists: the first second or two is the room
+    // opening the connection, and that is exactly when a still page looks
+    // like a dead one
+    showBar(0);
     post(API + "/fetch", { url: url }).then(function (r) {
       if (r.error) throw new Error(r.error);
       return watchJob(r.job, "the link");
     }).then(function (res) {
       var n = (res && res.sheets ? res.sheets.length : 0);
       prog.textContent = n + " sheet" + (n === 1 ? "" : "s") + " added.";
+      hideBar();
       box.value = ""; b.disabled = false; b.textContent = "Fetch it";
       load();
     }).catch(function (e) {
       prog.textContent = "⚠ " + e.message;
+      hideBar();
       b.disabled = false; b.textContent = "Fetch it";
       window.alert(e.message);
     });

@@ -15,6 +15,26 @@ as when you finish. The full version of all of that is in CLAUDE.md under
 
 ## NOW
 
+### `[x]` ⭐️⭐️ Something to watch while a link is fetched — **built**
+
+The designer, 24 August 2026: *"i'm trialling importing a google doc - have pasted the
+open link, and pressed Fetch - status says 'Fetching...' but would be much
+more useful if that were an actual progress bar or at the very least something
+a little more animated so i can see if it's stalled."*
+
+The room now reads the file in pieces and counts them: a bar that **fills**
+where the size is known and creeps where it is not, how much has arrived, the
+seconds counting up, and — the part that really answers the question —
+*nothing new for 12s* when nothing has changed.
+
+⭐️ **And the thing they were importing did not work at all.** A Google Doc has
+no file to download at its own address, so the room was reporting a perfectly
+well shared document as *not shared*. A Doc, Sheet or Slides link is now asked
+for as a **PDF**, which is exactly what the room wants. See CLAUDE.md 60.
+
+Fourteen new checks, 344 to 358 — including a link that really is slow, served
+a tenth at a time, with the browser watching the bar fill.
+
 ### `[x]` ⭐️⭐️ Start the room again, from the room — **built**
 
 The designer, 24 August 2026, after being told twice in a day to close the room and
@@ -370,7 +390,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 344 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 358 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -481,6 +501,11 @@ anything that speeds up cutting.
   other said twenty-one, and it was missing the last five faults. That is the
   fault this codebase warns about most, arriving in the documents themselves.
 - `[x]` **1 new check** — 321 to 322.
+- `[x]` **14 new checks** — 344 to 358: a Google document link asked for as a
+  PDF (and a published link and a plain Drive file left alone), and a link
+  that really is slow — served a tenth at a time from a server of the check's
+  own — with the browser watching the bar fill, the bytes count up, the clock
+  run, and the bar come down at the end.
 - `[x]` **10 new checks** — 334 to 344: the restart refused while an edit is
   in flight, the room saying it is starting again, a NEW room answering on the
   same address by itself with the same projects in it, code that would not

@@ -127,6 +127,18 @@ file shared **"anyone with the link"** — a private file answers with a sign-in
 *page*, and the room tells you so rather than filing the page as a sheet. A
 link to a *folder* cannot work at all. **Dragging is nearly always easier.**
 
+⭐️ **A Google Doc, Sheet or Slides link works too**, and is fetched **as a
+PDF**: a document has no file to download at its own address — the link opens
+the editor, and what comes back to anything else asking is the editor's own
+web page — so the room asks Google to export it instead. Every page of the
+document becomes a sheet, the same as any other PDF.
+
+⭐️ **While it is fetching, there is something to watch.** The room reads the
+file in pieces and says how much has arrived, out of how much where the link
+says so, with a bar that fills and the seconds counting up — and if nothing it
+can tell you has changed for ten seconds, it says *nothing new for 12s*, which
+is the honest answer to the only question anybody asks during a wait.
+
 ⚠️ **300 dpi is the whole basis of the sizes.** A PDF at true size rendered at
 300 dpi gives pieces whose inches are right by construction. A photograph or a
 scan at unknown scale does not — for those, use **Measure something** in the

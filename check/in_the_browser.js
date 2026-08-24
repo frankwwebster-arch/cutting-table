@@ -1558,6 +1558,57 @@ const SHAPE = `(function () {
             !(await page.val(`!!document.getElementById("staleRoom")`)));
     }
 
+    /* ⭐️⭐️ SOMETHING TO WATCH WHILE A LINK IS FETCHED. The designer, 24 August
+       2026: "I'm trialling importing a google doc - have pasted the open link,
+       and pressed Fetch - status says 'Fetching...' but would be much more
+       useful if that were an actual progress bar or at the very least
+       something a little more animated so i can see if it's stalled."
+       A frozen word cannot answer the one question anybody asks during a
+       wait. The room reads the file in pieces and counts them, so there is a
+       bar that fills, a size that keeps moving, and a clock.
+       ⚠️ Its own project, so a sheet arriving from a link cannot change the
+       sheet counts every other check in here is reading. */
+    if (process.env.SLOW_URL) {
+      console.log("\nfetching a file from a link, with something to watch");
+      const made = await (await fetch(`${ROOM}/api/projects`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "A Slow Link" }) })).json();
+      const pid = made.project && made.project.id;
+      await page.go(`${ROOM}/p/${pid}/?tab=sheets`);
+      await page.val(`(function () {
+        var d = document.querySelector("details.linkdetail");
+        if (d) d.open = true;
+        document.getElementById("fetchUrl").value = ${JSON.stringify(process.env.SLOW_URL)};
+        document.getElementById("fetchGo").click(); return true; })()`);
+      let sawBar = false, sawFill = false, sawBytes = false, sawClock = false, over = false;
+      for (let i = 0; i < 90 && !over; i++) {
+        const st = await page.val(`(function () {
+          var b = document.getElementById("progbar");
+          var p = document.getElementById("progress");
+          return { on: !!b && !b.hidden,
+                   w: b ? b.querySelector("i").style.width : "",
+                   says: p ? p.textContent : "" }; })()`);
+        if (st.on) sawBar = true;
+        if (/%$/.test(st.w) && parseFloat(st.w) > 0) sawFill = true;
+        if (/downloading/.test(st.says)) sawBytes = true;
+        if (/·\s*\d+s/.test(st.says)) sawClock = true;
+        if (/sheets? added/.test(st.says) || /^⚠/.test(st.says)) over = true;
+        await sleep(200);
+      }
+      check("a link being fetched puts up a bar to watch", sawBar);
+      // ⚠️ the bar FILLING is the half that says how far along it is; a bar
+      // that only ever creeps says no more than the word "Fetching…" did
+      check("and the bar fills as the bytes come down, not merely creeps", sawFill);
+      check("and the room says how much has arrived", sawBytes);
+      check("and how long it has been going, so a slow link is not a dead one", sawClock);
+      const after = await (await fetch(`${ROOM}/api/p/${pid}`)).json();
+      check("and what was at the end of the link becomes a sheet",
+            (after.sheets || []).length === 1, (after.sheets || []).length);
+      check("with the bar taken down again when it is over",
+            await page.val(`document.getElementById("progbar").hidden === true`));
+      await page.shot("fetching.png");
+    }
+
     // ---------------------------------------------------- the offline page
     if (BAKED) {
       console.log("\nthe same editor, baked and opened from a file");

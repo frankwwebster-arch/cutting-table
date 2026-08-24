@@ -48,6 +48,10 @@
       <input type="file" id="homeFiles" multiple accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.docx,.doc,.zip">
       …or <b>drop this game's scans anywhere on this page</b> — a folder will do — and the project is made for you.
       <span class="tiny muted" id="homeProgress"></span>
+      <!-- ⭐️ something that moves while a big PDF is being read: the wait here
+           is the same wait as on a project's page, and a still page during it
+           reads as a stuck one -->
+      <div class="progbar" id="homeBar" hidden><i></i></div>
     </div>
     <div class="queue" id="homeQueue"></div>
     <details style="margin-top:10px">
@@ -201,6 +205,8 @@
       return r;
     });
     prog.textContent = "making “" + name + "”…";
+    var bar = document.getElementById("homeBar");
+    if (bar) { bar.hidden = false; bar.classList.add("unsure"); }
     fetch(api, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name }) })
       .then(function (r) { return r.json(); })
       .then(function (jj) {
@@ -230,7 +236,10 @@
         });
         return chain.then(function () { location.href = "/p/" + encodeURIComponent(pid) + "/"; });
       })
-      .catch(function (e) { prog.textContent = "⚠ " + e.message; flash(e.message); });
+      .catch(function (e) {
+        if (bar) bar.hidden = true;
+        prog.textContent = "⚠ " + e.message; flash(e.message);
+      });
   }
 
   var rt = document.getElementById("regToggle");
