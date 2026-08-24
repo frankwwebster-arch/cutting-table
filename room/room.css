@@ -460,6 +460,18 @@ header.bar nav a.closelink:hover { color: var(--bad); opacity: 1; }
   padding: 9px 22px;
 }
 .staleroom b { color: #fff; }
+/* ⭐️ the way out of the banner, in the banner: a person told to restart the
+   room should not have to go and find the window it was started from */
+.staleroom button {
+  background: var(--hold);
+  border: 0;
+  color: #1a1206;
+  font-weight: 600;
+  margin-left: 4px;
+  padding: 4px 12px;
+  vertical-align: baseline;
+}
+.staleroom button:hover { filter: brightness(1.12); }
 
 /* ⭐️ The piece under the pointer, at a size worth looking at, without
    leaving the page — see `Peek` in project.html. The designer, 23 August 2026:

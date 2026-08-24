@@ -140,7 +140,9 @@ game belongs in that game's own repository.
    white background rather than the black)."* Read the reason the ground is
    dark before changing it; it is written in the editor's `:root` block.
 3. **No terminal window at all** — a minimal `.app` bundle. All that is left
-   of *"a simpler way to open and quit"*.
+   of *"a simpler way to open and quit"*: opening, quitting and **starting it
+   again** are all a press on the page now (24 August), so what remains is
+   only that the window exists at all.
 4. ⭐️ **A way in from the report to the piece** — `?tab=pieces&piece=<stem>`.
    The report names pieces by their stem and cannot open them, and it is the
    same door a game engine would want in order to say *this one is wrong*.
@@ -917,6 +919,40 @@ rather than by reading the code.
     ticked pieces aside now, and offers to bring them back when they already
     are.
 
+59. ⭐️⭐️ **THE ROOM STARTS ITSELF AGAIN, BECAUSE THE ADVICE WAS RIGHT AND THE
+    ERRAND WAS THE PROBLEM.** The designer, 24 August 2026, having been told twice
+    in one day to close the room and open it again: *"is there a way to build a
+    relaunch button into the browser tab it uses somehow?"* Fault 38's banner
+    says exactly what to do and then sends somebody who *"[doesn't] like
+    terminal at the best of times"* to go and find a Terminal window to do it
+    in. So the banner carries the button that does it, and so does the top bar
+    of every page. `os.execv` in `main()` — same window, same port, same
+    command, **new process**, which is the whole point, because a running
+    program cannot re-read itself.
+    ⚠️ **A RELAUNCH THAT CANNOT COME BACK IS A QUIT.** The button is pressed
+    at exactly the moment the code has just changed — which is exactly the
+    moment it might not parse — and once the old process has gone there is
+    nothing to fall back to. `code_that_will_not_start()` reads and compiles
+    the new code **before** anything is stopped, and a room that would not
+    start again refuses to stop, saying which file and which line.
+    ⚠️ **The same guard as closing, and only one of it.** A restart is a close
+    with a promise attached, so a table holding an edit not yet written down
+    holds this door exactly as it holds the other (fault 21). Two copies of
+    that question would drift, and the one that drifted would be the one that
+    lost the work — so `ask()` in `close.js` is one function and only its last
+    line differs.
+    ⚠️ **"It answers" is not "it came back".** The old room answers perfectly
+    well for the half second before it goes, so the page waits for a room
+    reporting a **different** `started` before it reloads.
+    ⚠️ And it strips `--open` from the arguments on the way through: the
+    launcher opens a browser when it starts, which is right the first time and
+    wrong now — the tab that pressed the button is sitting there waiting to
+    reload itself, and a second tab is a mess somebody has to tidy up.
+    ⭐️ The exec is the **last thing the old process does**, in the main
+    thread, after `serve_forever` has returned and the socket is closed —
+    doing it from the request's own thread races the main thread's tidying up,
+    and whichever won, the room might simply be gone.
+
 ---
 
 ## Architecture
@@ -930,7 +966,11 @@ cutting_room.py          the app: HTTP server, projects, import, cut, API
   room/close.js          Close the Cutting Room, and the sign on the door.
                          Shared. ?closedsign=1 puts the sign up to be looked at.
                          ⭐️ Also the banner saying the room is running older
-                         code than the page — see fault 38.
+                         code than the page — see fault 38 — and the button in
+                         that banner that STARTS THE ROOM AGAIN, in the same
+                         window at the same port, which is what makes fault 38
+                         a press rather than an errand. `/api/relaunch`;
+                         `os.execv` in main(), after the socket is closed.
   room/tips.js           ⭐️ Every control says what it does. `data-tip` (or a
                          plain `title`, which it takes over) on ANY element.
                          Shared by both pages AND by the served table, and it
@@ -1032,7 +1072,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 334 checks, about a minute
+check/check.sh          # 344 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

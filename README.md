@@ -233,9 +233,11 @@ On a Mac, make a launcher once and forget the command line:
 ```
 
 Double-click it to open the room; press **Close the Cutting Room** at the top
-of any of its pages to stop it. It will not close over the top of a running
-import or a table with an edit that has not reached the disk — it says what it
-is waiting for and lets you decide.
+of any of its pages to stop it, or **Start it again** to stop and restart it
+in the same window — which is how the room picks up its own updates without
+anybody going near a terminal. Neither will act over the top of a running
+import or a table with an edit that has not reached the disk: they say what
+they are waiting for and let you decide.
 
 Or the editor on its own:
 

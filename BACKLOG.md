@@ -15,6 +15,30 @@ as when you finish. The full version of all of that is in CLAUDE.md under
 
 ## NOW
 
+### `[x]` ⭐️⭐️ Start the room again, from the room — **built**
+
+The designer, 24 August 2026, after being told twice in a day to close the room and
+open it again: *"is there a way to build a relaunch button into the browser
+tab it uses somehow?"* There is. **Start it again** sits in the top bar of
+every page, and in the banner that says the room is running older code than
+its pages — which is the one place somebody has just been told to do something
+that meant finding a Terminal window.
+
+The room stops and starts itself in place: same window, same address, same
+command, new process. The page waits for a room that says it started at a
+different moment, then reloads itself.
+
+- `[x]` ⚠️ It reads the new code **before** letting go of the old room. A
+  relaunch that cannot come back is a quit.
+- `[x]` ⚠️ The same guard as closing, and only one copy of it: an edit not yet
+  written down holds this door too.
+- `[x]` ⚠️ No second browser tab — `--open` is dropped on the way through.
+
+See CLAUDE.md 59. Ten new checks, 334 to 344.
+
+⭐️ **What is left of *"a simpler way to open and quit"***: only that the
+window exists at all. A minimal `.app` bundle is the last piece.
+
 ### `[x]` ⚠️⚠️ Setting a piece aside is written down, always — **fixed**
 
 The designer, 24 August 2026: *"setting pieces aside seems pretty temperamental — I
@@ -346,7 +370,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 334 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 344 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -457,6 +481,11 @@ anything that speeds up cutting.
   other said twenty-one, and it was missing the last five faults. That is the
   fault this codebase warns about most, arriving in the documents themselves.
 - `[x]` **1 new check** — 321 to 322.
+- `[x]` **10 new checks** — 334 to 344: the restart refused while an edit is
+  in flight, the room saying it is starting again, a NEW room answering on the
+  same address by itself with the same projects in it, code that would not
+  start being refused before the old room lets go, and the button being in the
+  banner and in the top bar with its sentence on it.
 - `[x]` **7 new checks** — 327 to 334: setting aside a piece nothing has ever
   named, in bulk and singly, the file really being in the spare folder, the
   piece staying on the list dimmed, the same button bringing it back, and a

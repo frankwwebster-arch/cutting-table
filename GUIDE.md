@@ -58,6 +58,13 @@ cut running, or a cutting table open in another tab with an edit not yet
 saved — and tells you what it is waiting for. The page it leaves behind says
 the room is closed and how to open it again.
 
+**To start it again** — after the room has been updated, or whenever anything
+seems stuck — press **Start it again**, next to it. The room stops and comes
+straight back in the same window at the same address, and the page you were
+on reloads itself when it does. It asks the same question closing asks, and
+it reads the new code before letting go of the old room, so it cannot leave
+you with no room at all.
+
 ⚠️ Do not just close the browser tab and walk away while something is still
 being written. That is what the button is for.
 

@@ -2625,6 +2625,43 @@ def close_the_room(httpd):
     threading.Thread(target=run, daemon=True).start()
 
 
+# ⭐️⭐️ OPENING IT AGAIN, WITHOUT THE TERMINAL. The designer, 24 August 2026: "is
+# there a way to build a relaunch button into the browser tab it uses
+# somehow?" — asked after being told, twice in one day, to close the room and
+# open it again because it was running older code than its pages (fault 38).
+# The advice is right and the errand is the problem: it means finding a
+# Terminal window they never wanted to see.
+#
+# So the room starts itself again, in place: the same window, the same port,
+# the same arguments, and a NEW process — which is the whole point, because a
+# running program cannot re-read itself.
+#
+# ⚠️ The exec happens in the MAIN thread, after `serve_forever` has returned
+# and the listening socket has been closed. Doing it from the handler's thread
+# would race the main thread's own tidying up, and whichever won, the room
+# might simply be gone.
+RELAUNCH = {"asked": False}
+
+
+def code_that_will_not_start():
+    """⚠️ A RELAUNCH THAT CANNOT COME BACK IS A QUIT. The button exists to be
+    pressed after the room's code has changed — which is exactly the moment
+    that code might not parse. The old process is about to be replaced by the
+    new one and there is nothing to fall back to, so the new code is read and
+    compiled BEFORE anything is stopped, and a room that would not start again
+    refuses to stop. Says which file, and what is wrong with it."""
+    for mod in ("cutting_room.py", "sheets.py", "cut.py"):
+        path = os.path.join(HERE, mod)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                compile(fh.read(), path, "exec")
+        except OSError as exc:
+            return "%s cannot be read (%s)" % (mod, exc)
+        except SyntaxError as exc:
+            return "%s would not start: %s at line %s" % (mod, exc.msg, exc.lineno)
+    return None
+
+
 # --------------------------------------------------------- the table page
 
 _TABLE_CACHE = {"mtime": None, "html": None}
@@ -3236,6 +3273,30 @@ class Room(BaseHTTPRequestHandler):
                 return self.send_json({"closed": False, "hold": False, "reasons": reasons,
                                        "error": "this room cannot close itself"}, 500)
             self.send_json({"closed": True, "how": HOW_TO_OPEN[0]})
+            close_the_room(self.httpd)
+            return
+        # ⭐️⭐️ THE SAME DOOR, BUT IT OPENS AGAIN BEHIND YOU. Stopping and
+        # starting are one act here, and they answer to the same guard as
+        # closing — a room that must not be closed must not be restarted
+        # either, because a restart IS a close with a promise attached.
+        if api == ["relaunch"] and method == "POST":
+            reasons = work_in_flight()
+            hold = any(r["hold"] for r in reasons)
+            if hold and not self.body_json().get("force"):
+                return self.send_json({"relaunching": False, "hold": True,
+                                       "reasons": reasons})
+            if self.httpd is None:
+                return self.send_json({"relaunching": False, "hold": False,
+                                       "error": "this room cannot start itself again"},
+                                      500)
+            # ⚠️ read the new code before letting go of the old room
+            bad = code_that_will_not_start()
+            if bad:
+                return self.send_json({"relaunching": False, "hold": False,
+                                       "reasons": reasons, "wont_start": bad})
+            RELAUNCH["asked"] = True
+            self.send_json({"relaunching": True, "was": int(STARTED_AT * 1000),
+                            "how": HOW_TO_OPEN[0]})
             close_the_room(self.httpd)
             return
         if len(api) >= 2 and api[0] == "jobs":
@@ -4127,6 +4188,22 @@ def main():
     except KeyboardInterrupt:
         pass
     httpd.server_close()
+    # ⭐️ THE RELAUNCH, and it is the LAST thing the old process does: the
+    # socket is closed, so the new room can take the port, and `execv` puts
+    # the new one in this same window under this same command. It never
+    # returns — anything after it belongs to a room that was only closed.
+    if RELAUNCH["asked"]:
+        print("The Cutting Room is starting again…")
+        sys.stdout.flush()
+        # ⚠️ WITHOUT `--open`, however it was started. The launcher on the
+        # desktop opens a browser when it runs, which is right the first time
+        # and wrong now: the tab that pressed the button is sitting there
+        # waiting to reload itself, and a second tab is a small mess somebody
+        # then has to tidy up.
+        again = [a for a in sys.argv[1:] if a != "--open"]
+        # the script by its real path, so a cwd that has moved cannot matter
+        os.execv(sys.executable,
+                 [sys.executable, os.path.join(HERE, "cutting_room.py")] + again)
     print("The Cutting Room is closed.")
 
 

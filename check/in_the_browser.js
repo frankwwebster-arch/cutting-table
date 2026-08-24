@@ -1527,8 +1527,30 @@ const SHAPE = `(function () {
         return b ? b.textContent : ""; })()`);
       check("a room whose code has changed under it says so, on the page",
             /running older code than these pages/.test(bar), bar.slice(0, 70));
-      check("and says what to do about it", /Close the room and open it again/.test(bar));
+      check("and says what to do about it", /Start it again/.test(bar));
       check("and that nothing is at risk", /on the disk/.test(bar));
+      /* ⭐️ AND THE BUTTON IS IN THE BANNER. The designer, 24 August 2026: "is there a
+         way to build a relaunch button into the browser tab it uses somehow?"
+         This banner is the one place in the room where somebody has just been
+         told to do something that meant finding a Terminal window.
+         ⚠️ It is read, NOT pressed: pressing it here would restart the room
+         out from under every check that comes after this one. */
+      // ⚠️ `title` OR `data-tip`: tips.js takes a plain title over as its own
+      // bubble and takes the attribute off, so reading .title alone finds
+      // nothing and calls a well-explained button unexplained (fault 31).
+      const button = await page.val(`(function () {
+        var b = document.querySelector("#staleRoom button");
+        return b ? { says: b.textContent,
+                     tip: b.title || b.getAttribute("data-tip") || "" } : null; })()`);
+      check("and offers the button that does it, in the banner itself",
+            button && /Start the room again/.test(button.says || ""), button);
+      check("which says what will happen and that the page comes back",
+            button && /same window/.test(button.tip || "") &&
+            /comes back/.test(button.tip || ""), button && button.tip);
+      check("and the same offer sits in the bar at the top of every page",
+            await page.val(`(function () { var a = document.getElementById("againRoom");
+              return !!a && /Start it again/.test(a.textContent) &&
+                     !!(a.title || a.getAttribute("data-tip")); })()`));
 
       fs.utimesSync(src, was.atime, was.mtime);
       await page.go(`${ROOM}/p/${PROJECT}/?tab=sheets`);

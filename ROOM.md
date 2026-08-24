@@ -748,9 +748,21 @@ opened it, and a running program cannot re-read itself. So if the Cutting Room
 has been updated while it was open, you can be looking at a new button whose
 answer does not exist yet.
 
-The room notices this and says so in a band across the top of every page.
-**Close the room and open it again** and the button will work. Nothing is ever
-at risk: everything cut and named is on the disk.
+The room notices this and says so in a band across the top of every page,
+with the button that fixes it in the band: **Start the room again now**. The
+room stops and starts itself in the same window at the same address, and this
+page comes back by itself a few seconds later. Nothing is ever at risk:
+everything cut and named is on the disk.
+
+⭐️ **Start it again** is also in the bar at the top of every page, beside
+*Close the Cutting Room*, for whenever you want it — after updating the room,
+or if anything ever seems stuck.
+
+⚠️ It asks the same question closing asks: if a cutting table is holding an
+edit that has not reached the disk, it says so and waits for you, because a
+restart is a close with a promise attached. And it **reads the new code before
+letting go of the old room** — if that code would not start, the room says so
+and stays exactly as it is, rather than going away and not coming back.
 
 ## Keyboard
 

@@ -1159,6 +1159,114 @@ os.remove(spare)
 sys.exit(1 if bad else 0)
 PY6
 
+# ⭐️⭐️ STARTING THE ROOM AGAIN, FROM THE ROOM. The designer, 24 August 2026: "is
+# there a way to build a relaunch button into the browser tab it uses
+# somehow?" — having been told twice in a day to close the room and open it
+# again because it was running older code than its own pages. The room stops
+# and starts itself in place: same window, same port, same command, NEW
+# process. This runs before the closing section, which then closes the room
+# that came back.
+say "starting the room again, from the room"
+$PY - "$TMP" "$PORT" <<'PY12' || code=1
+import json, os, sys, time, urllib.error, urllib.request
+tmp, port = sys.argv[1], sys.argv[2]
+room = "http://127.0.0.1:%s" % port
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+def post(where, body=None):
+    req = urllib.request.Request(room + where, json.dumps(body or {}).encode(),
+                                 {"Content-Type": "application/json"})
+    try:
+        return json.load(urllib.request.urlopen(req))
+    except urllib.error.HTTPError as e:
+        return json.load(e)
+
+
+def get(where):
+    return json.load(urllib.request.urlopen(room + where, timeout=4))
+
+
+# ⚠️⚠️ A RESTART IS A CLOSE WITH A PROMISE ATTACHED, so it answers to the same
+# guard: an edit not yet written down holds this door exactly as it holds the
+# other one. Two guards would drift apart, and the one that drifted would be
+# the one that lost the work.
+post("/api/at-the-table", {"tab": "check-again", "project": "proving-ground",
+                           "name": "The Proving Ground",
+                           "sheet": "proving-ground-sheets-01",
+                           "label": "proving-ground-sheets p.1", "dirty": True})
+held = post("/api/relaunch")
+check("an edit not yet written down holds the restart, as it holds the close",
+      held.get("relaunching") is False and held.get("hold") is True, json.dumps(held))
+check("and the room is still running, having refused",
+      get("/api/health").get("ok") is True)
+post("/api/at-the-table", {"tab": "check-again", "gone": True})
+
+was = get("/api/health")["started"]
+said = post("/api/relaunch")
+check("with nothing in flight, the room says it is starting again",
+      said.get("relaunching") is True and said.get("was") == was, json.dumps(said))
+# ⚠️ IT IS A DIFFERENT ROOM OR IT IS NOTHING — the old one answers perfectly
+# well for the half second before it goes, so "it answers" proves nothing.
+now, waited = None, 0.0
+while waited < 40:
+    time.sleep(0.5)
+    waited += 0.5
+    try:
+        now = get("/api/health")
+    except Exception:
+        continue                      # between the two rooms
+    if now.get("started") and now["started"] != was:
+        break
+check("and a NEW room answers on the same address, by itself",
+      bool(now) and now.get("started") not in (None, was),
+      "%s -> %s after %ss" % (was, (now or {}).get("started"), waited))
+check("with the same projects in it as before",
+      any(p["id"] == "proving-ground" for p in get("/api/projects")["projects"]))
+sys.exit(1 if bad else 0)
+PY12
+
+# ⚠️⚠️ A RELAUNCH THAT CANNOT COME BACK IS A QUIT. The button is pressed after
+# the code has changed, which is exactly when the code might not parse — and
+# there is nothing to fall back to once the old process has gone. So the new
+# code is read before anything is stopped. No server here: it is one function
+# and a folder with a broken file in it.
+$PY - "$TMP" <<'PY13' || code=1
+import json, os, sys
+sys.path.insert(0, ".")
+import cutting_room as c
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+check("the code on the disk now would start, so the room would come back",
+      c.code_that_will_not_start() is None, c.code_that_will_not_start())
+was = c.HERE
+try:
+    pretend = os.path.join(sys.argv[1], "brokenroom")
+    os.makedirs(pretend, exist_ok=True)
+    for f in ("cutting_room.py", "sheets.py", "cut.py"):
+        open(os.path.join(pretend, f), "w").write("def half_a_thing(:\n")
+    c.HERE = pretend
+    said = c.code_that_will_not_start()
+finally:
+    c.HERE = was
+check("and code that would NOT start is refused before the room lets go",
+      bool(said) and "cutting_room.py" in said, said)
+sys.exit(1 if bad else 0)
+PY13
+
 say "closing the room, from the room"
 hello() {
   curl -s -o /dev/null -X POST -H "Content-Type: application/json" -d "$1" \
