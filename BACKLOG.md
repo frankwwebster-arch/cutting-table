@@ -15,6 +15,32 @@ as when you finish. The full version of all of that is in CLAUDE.md under
 
 ## NOW
 
+### `[x]` ⚠️⚠️ Setting a piece aside is written down, always — **fixed**
+
+The designer, 24 August 2026: *"setting pieces aside seems pretty temperamental — I
+just tried to get rid of multiple copies of [one piece], but didn't seem to
+work, either in bulk when suggested, or individually when selected in
+#pieces."*
+
+It half worked every time, which is worse. The file moved; the **mark** was
+written only onto pieces the manifest already knew — and an unwanted duplicate
+is exactly the piece nobody has named — so the room went on drawing it as
+though it were in play, and a re-cut would have handed it back to the game.
+Reading the designer's own project found three pieces in that state.
+
+- `[x]` The mark lands on every piece set aside, named or not.
+- `[x]` ⭐️ **The folder is the truth**: anything in `pieces/spare/` is set
+  aside whether or not it was written down, so pieces already adrift repair
+  themselves when the list is next read — and before a re-cut, which is when
+  the folder stops being able to say so.
+- `[x]` The press says what actually happened, instead of always saying it
+  worked.
+- `[x]` ⭐️ **Several at once** from the *choose several* bar, which is what
+  "get rid of multiple copies" actually asks for. The same button brings them
+  back.
+
+See CLAUDE.md 58. Seven new checks, 327 to 334; teeth tried.
+
 ### `[x]` ⭐️⭐️ A deck that is full says so, even when it is thirteen pictures — **fixed**
 
 The designer, 24 August 2026: *"I need to finalise a deck. It contains 13 different
@@ -320,7 +346,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 327 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 334 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -431,6 +457,11 @@ anything that speeds up cutting.
   other said twenty-one, and it was missing the last five faults. That is the
   fault this codebase warns about most, arriving in the documents themselves.
 - `[x]` **1 new check** — 321 to 322.
+- `[x]` **7 new checks** — 327 to 334: setting aside a piece nothing has ever
+  named, in bulk and singly, the file really being in the spare folder, the
+  piece staying on the list dimmed, the same button bringing it back, and a
+  piece put in `spare/` by hand being taken as set aside. ⭐️ Teeth tried: the
+  fault put back turns four of them red.
 - `[x]` **5 new checks** — 322 to 327: a deck filled by a design the game wants
   twenty-two times, the mark taken off again, and the bulk bar's list of card
   backs taking in a back marked while it is open. ⭐️ Teeth tried: both faults

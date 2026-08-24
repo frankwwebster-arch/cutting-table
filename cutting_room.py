@@ -782,6 +782,49 @@ class Project:
         aside = self.spare_path(stem)
         return aside if os.path.exists(aside) else live
 
+    def spare_stems(self):
+        "Every piece actually sitting in the spare folder, whatever any list says."
+        d = self.spare_dir()
+        if not os.path.isdir(d):
+            return set()
+        return {f[:-4] for f in os.listdir(d) if f.endswith(".png")}
+
+    # ⚠️⚠️ THE FOLDER IS THE TRUTH; THE MARK IS ONLY THE RECORD OF IT — AND THE
+    # RECORD WENT MISSING FOR EXACTLY THE PIECES THIS IS FOR. The designer, 24
+    # August 2026: "setting pieces aside seems pretty temperamental — I just
+    # tried to get rid of multiple copies of [one piece], but didn't seem to
+    # work, either in bulk when suggested, or individually when selected."
+    #
+    # It had half worked, every time, which is worse. `set_aside` wrote the
+    # mark only onto pieces the manifest ALREADY knew — and a duplicate you
+    # want rid of is precisely the piece nobody has bothered to name, so it
+    # has no manifest entry at all. The file moved; nothing was written down;
+    # and the room reads the mark, so the piece came back onto the screen
+    # undimmed and unflagged, looking exactly as though the press had done
+    # nothing. Three of the designer's pieces were sitting in that state.
+    # ⚠️ And it is not only cosmetic: a re-cut reads the mark to put a piece
+    # straight back into the spare folder, so an unmarked spare would be
+    # handed back to the game the next time its sheet was cut — fault 19's
+    # whole subject.
+    #
+    # So: whatever is in the folder is set aside, and the manifest is made to
+    # say so. Called where the folder is read (the pieces list) and where it
+    # is about to be destroyed (a re-cut sweeps the last cut out of it).
+    def adopt_spares(self):
+        loose = self.spare_stems()
+        if not loose:
+            return 0
+        man = self.manifest()
+        book = man.setdefault("pieces", {})
+        n = 0
+        for st in sorted(loose):
+            if not (book.get(st) or {}).get("spare"):
+                book.setdefault(st, {})["spare"] = True
+                n += 1
+        if n:
+            self.save_manifest(man)
+        return n
+
     def set_aside(self, stems, aside=True):
         "Move pieces between the store and its `spare` folder. Deletes nothing."
         moved = 0
@@ -794,12 +837,25 @@ class Project:
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 os.replace(src, dst)
                 moved += 1
-            for book in (man.get("pieces", {}), idx.get("pieces", {})):
-                if st in book:
-                    if aside:
-                        book[st]["spare"] = True
-                    else:
-                        book[st].pop("spare", None)
+            # ⚠️ THE MANIFEST IS TOLD EVEN IF IT HAD NEVER HEARD OF THE PIECE.
+            # `if st in book` was the whole fault above: an unnamed duplicate
+            # has no entry, so the one piece this feature exists for was the
+            # one piece it did not record.
+            book = man.setdefault("pieces", {})
+            if aside:
+                book.setdefault(st, {})["spare"] = True
+            elif st in book:
+                book[st].pop("spare", None)
+                if not book[st]:
+                    book.pop(st)          # an entry holding nothing is not an entry
+            # the index says where a piece was CUT from, so it is not invented
+            # here — only kept in step where it already knows the piece
+            ib = idx.get("pieces", {})
+            if st in ib:
+                if aside:
+                    ib[st]["spare"] = True
+                else:
+                    ib[st].pop("spare", None)
         self.save_manifest(man)
         self.save_index(idx)
         return moved
@@ -1652,6 +1708,11 @@ def cut_sheet(project, sid):
         idx = project.index()
         old = {k: v for k, v in idx.get("pieces", {}).items() if v.get("sheet") == sid}
         os.makedirs(project.p("pieces"), exist_ok=True)
+        # ⚠️ Anything in the spare folder is written down as set aside BEFORE
+        # the sweep takes it away: the mark is what carries "put this one back
+        # in the spare folder" across the re-cut, and the folder is about to
+        # stop being able to say so.
+        project.adopt_spares()
         # sweep the last cut of this sheet — from the spare folder too, or a
         # piece put away on the previous cut would linger with stale artwork
         for folder in (project.p("pieces"), project.spare_dir()):
@@ -3393,9 +3454,18 @@ class Room(BaseHTTPRequestHandler):
             return self.send_json({"job": job["id"], "sheets": todo})
 
         if head == "pieces" and method == "GET":
+            # ⚠️ WHATEVER IS IN THE SPARE FOLDER IS SET ASIDE, whether or not
+            # anything ever wrote it down — see adopt_spares(). This is where
+            # the screen is drawn from, so this is where the two are made to
+            # agree, and it writes nothing unless they disagree.
+            with pr.lock:
+                pr.adopt_spares()
             idx = pr.index().get("pieces", {})
             man = pr.manifest().get("pieces", {})
-            stems = sorted(set(idx) | set(pr.piece_files()))
+            # a piece set aside is still one of this game's pieces: it is in
+            # neither the index nor the folder in play, so it is asked for by
+            # name or it drops off the screen altogether
+            stems = sorted(set(idx) | set(pr.piece_files()) | pr.spare_stems())
             sizes = {s["id"]: (s.get("w"), s.get("h")) for s in pr.sheets}
             out = []
             for st in stems:

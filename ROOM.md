@@ -467,7 +467,8 @@ do the same.
 ### Setting a piece aside
 
 ⚠️ **Nothing in the room throws a cut piece away.** *Set this piece aside* — on
-the look-alike bar or on the piece itself — **moves** it into `pieces/spare/`.
+the look-alike bar, on the piece itself, or on the *choose several at once*
+bar for a whole handful at a time — **moves** it into `pieces/spare/`.
 Its name, kind, note, turn and component link are all kept, and the mark
 follows the piece when the sheet is cut again, so a re-cut will not hand the
 game back the nineteen duplicates you had just put away.
@@ -477,6 +478,15 @@ identical terrain tiles; the game stores one, and can place it twice.* A piece s
 aside stops counting as work still to do, stops being flagged as a look-alike,
 and is left out of the hand-over — because the hand-over reads the pieces
 folder itself and does not look inside `spare/`.
+
+⭐️ **Several at once.** Tick **choose several at once**, tick the copies, and
+**Set the ticked pieces aside** puts the lot away in one press. Tick pieces
+that are already aside and the same button offers to bring them back.
+
+⭐️ **Where the piece IS, is what the room believes.** Anything sitting in
+`pieces/spare/` is set aside, whether or not anything ever wrote it down —
+so a piece dropped in there by hand shows as set aside, and a mark that went
+missing repairs itself the next time the Pieces list is read.
 
 To undo it, open the piece and press **Put this piece back in play**.
 

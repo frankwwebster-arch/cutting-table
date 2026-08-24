@@ -98,6 +98,12 @@
         <select id="pChooseWanted" title="The component to give every ticked piece."></select>
         <select id="pChooseBack" title="The piece that is the back of every ticked piece. Cut the back once and point the whole deck at it — a deck with its own back is one extra piece, not a special case."><option value="">— leave the backs alone —</option></select>
         <button class="primary" id="pApply" title="Give every ticked piece the component and the back chosen here. A piece that already has a name of its own keeps it; only blanks are filled.">Apply to the ticked pieces</button>
+        <!-- ⭐️ GETTING RID OF SEVERAL COPIES IS A BULK JOB. Until now the only
+             way to set more than one piece aside was the look-alike bar's
+             "keep this one", which only appears when the room itself has
+             spotted the resemblance — so a person looking at four copies of
+             the same card back had to do them one at a time. -->
+        <button id="pAside" data-tip="Set every ticked piece aside — the second, third and fourth copies of something you only need one of. NOTHING IS DELETED: they keep their names, stay in this list dimmed, and the same button puts them back.">Set the ticked pieces aside</button>
       </span>
     </div>
     <div id="pGuess"></div>
@@ -1412,6 +1418,19 @@
         pieceOptions(backs.value, backsOnly).replace('<option value="">— none —</option>', ""));
     }
     document.getElementById("pApply").disabled = !n;
+    /* ⭐️ The same button both ways round, as on the piece itself: if every
+       piece ticked is already set aside, the only thing anybody wants of it
+       is to bring them back. */
+    var aside = document.getElementById("pAside");
+    var mine = chosenStems().map(function (st) {
+      return ((piecesData && piecesData.pieces || []).filter(function (p) {
+        return p.stem === st; })[0] || {}).data || {};
+    });
+    var allAside = n > 0 && mine.every(function (d) { return d.spare; });
+    aside.dataset.back = allAside ? "1" : "";
+    aside.textContent = allAside ? "Put the ticked pieces back in play"
+                                 : "Set the ticked pieces aside";
+    aside.disabled = !n;
   }
 
   document.getElementById("pChooseOn").addEventListener("change", function () {
@@ -1430,6 +1449,11 @@
     chosen = {};
     renderPieceList();
     showChosen();
+  });
+  document.getElementById("pAside").addEventListener("click", function () {
+    var stems = chosenStems();
+    if (!stems.length) return;
+    setAside(stems, !document.getElementById("pAside").dataset.back);
   });
   document.getElementById("pApply").addEventListener("click", function () {
     var stems = chosenStems();
@@ -1527,13 +1551,27 @@
      and one press puts it back. */
   function setAside(stems, aside, then) {
     if (!stems.length) return;
+    /* ⚠️⚠️ A MESSAGE THAT SAYS IT WORKED WHATEVER HAPPENED IS WORSE THAN NO
+       MESSAGE. This flashed "Set aside. Nothing was deleted." even if the
+       room had refused outright, and said nothing at all if the answer never
+       came — so a press that half worked looked exactly like one that
+       worked. Say what the room actually did, and say when it did not. */
     post(API + "/pieces/aside", { stems: stems, aside: aside }).then(function (r) {
+      if (!r || r.error) {
+        flash((r && r.error) || "The room could not set that aside.", true);
+        return;
+      }
       flash(aside
         ? (stems.length === 1 ? "Set aside. Nothing was deleted."
                               : stems.length + " set aside. Nothing was deleted.")
         : (stems.length === 1 ? "Back in play." : stems.length + " back in play."));
-      piecesData = null; loadPieces(); load();
+      chosen = {};
+      piecesData = null;
+      loadPieces().then(function () { showChosen(); refreshCounts(); });
+      load();
       if (then) then(r);
+    }, function () {
+      flash("The room did not answer. Nothing was moved, and nothing was deleted.", true);
     });
   }
   function binOthers(cluster, keep) {

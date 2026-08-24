@@ -881,6 +881,42 @@ rather than by reading the code.
     differ from what is up — and restores the choice already made, or
     replacing the markup would quietly blank it (fault 48's family).
 
+58. ⚠️⚠️⚠️ **SETTING A PIECE ASIDE HALF WORKED, EVERY TIME, AND HALF WORKING
+    IS WORSE THAN NOT WORKING.** The designer, 24 August 2026: *"setting pieces
+    aside seems pretty temperamental — I just tried to get rid of multiple
+    copies of [one piece], but didn't seem to work, either in bulk when
+    suggested, or individually when selected in #pieces."*
+    The file moved into `pieces/spare/` every single time. What did not happen
+    was the **writing down**: `set_aside()` marked the piece only `if st in
+    book` — only if the manifest already had an entry for it — and **a
+    duplicate you want rid of is precisely the piece nobody has bothered to
+    name**, so it has no entry at all. The room draws the Pieces list from the
+    manifest, so the piece came back on screen undimmed, unflagged and
+    apparently untouched. Press it again and nothing happened at all, because
+    the file had already gone. **Reading the designer's own project found three
+    pieces sitting in exactly that state** — in the spare folder, with nothing
+    anywhere saying so. Habit 2 again.
+    ⚠️ And it was not only cosmetic: a re-cut reads that mark to put the piece
+    straight back into the spare folder, so an unmarked spare would have been
+    **handed back to the game** the next time its sheet was cut. Fault 19's
+    whole subject, arriving by a door nobody had tried.
+    ⭐️⭐️ The rule, and it is worth more than the fix: **the folder is the
+    truth; the mark is only the record of it.** `adopt_spares()` makes the
+    record agree with the folder — where the list is read, and again before a
+    re-cut sweeps the folder and destroys the evidence. A piece dropped into
+    `spare/` by hand is set aside, and the designer's three repair themselves the
+    moment they open the Pieces list.
+    ⚠️ The room also **said it had worked whatever happened**: the press
+    flashed *"Set aside. Nothing was deleted."* even when the room refused,
+    and said nothing at all when no answer came. A message that cannot fail
+    teaches you to stop reading it (fault 53's lesson about exit codes, in the
+    interface this time).
+    ⭐️ And the missing door: getting rid of *several* copies was only ever
+    possible from the look-alike bar, which appears only when the room has
+    spotted the resemblance itself. The *choose several at once* bar sets the
+    ticked pieces aside now, and offers to bring them back when they already
+    are.
+
 ---
 
 ## Architecture
@@ -996,7 +1032,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 327 checks, about a minute
+check/check.sh          # 334 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

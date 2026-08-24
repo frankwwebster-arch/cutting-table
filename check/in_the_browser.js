@@ -1122,6 +1122,82 @@ const SHAPE = `(function () {
             !!(twinA.data || {}).back && (twinA.data || {}).back === (twinB.data || {}).back,
             [(twinA.data || {}).back, (twinB.data || {}).back]);
 
+      /* ⚠️⚠️ SETTING A PIECE ASIDE HALF WORKED, WHICH IS WORSE THAN NOT
+         WORKING. The designer, 24 August 2026: "setting pieces aside seems pretty
+         temperamental — I just tried to get rid of multiple copies of [one
+         piece], but didn't seem to work, either in bulk when suggested, or
+         individually when selected in #pieces."
+         The file moved every time; the MARK was written only onto pieces the
+         manifest already knew — and a duplicate you want rid of is exactly
+         the piece nobody has bothered to name. So the room went on drawing it
+         as though it were in play. This piece is named by nothing, which is
+         the whole point of it. */
+      const loose = path.join(BED, "pieces", "zz_aside.png");
+      fs.copyFileSync(process.env.SPECK, loose);
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=pieces`);
+      const bulkAside = await page.val(`(function () {
+        var on = document.getElementById("pChooseOn");
+        on.checked = true; on.dispatchEvent(new Event("change"));
+        var r = document.querySelector('.prow[data-stem="zz_aside"]');
+        if (!r) return "no row";
+        r.scrollIntoView({ block: "center" });
+        var t = r.querySelector("input.tick");
+        if (!t) return "no tick";
+        t.click();
+        var b = document.getElementById("pAside");
+        return { says: b.textContent, off: b.disabled }; })()`);
+      check("several pieces can be set aside at once, from the same bar that names them",
+            bulkAside && bulkAside.off === false &&
+            /Set the ticked pieces aside/.test(bulkAside.says || ""), bulkAside);
+      await page.val(`document.getElementById("pAside").click(); true`);
+      await sleep(2000);
+      const put = await (await fetch(`${ROOM}/api/p/${PROJECT}/pieces`)).json();
+      const one = put.pieces.filter((p) => p.stem === "zz_aside")[0] || {};
+      // ⚠️ THE FAULT ITSELF: the mark, on a piece that had no entry to put it on
+      check("a piece nothing has ever named is written down as set aside",
+            !!(one.data || {}).spare, one.data);
+      check("and the file really is in the spare folder, not deleted",
+            fs.existsSync(path.join(BED, "pieces", "spare", "zz_aside.png")) &&
+            !fs.existsSync(loose));
+      check("while the piece itself stays on the list, dimmed, rather than vanishing",
+            await page.val(`(function () {
+              var r = document.querySelector('.prow[data-stem="zz_aside"]');
+              return !!r && /aside/.test(r.className) && /set aside/.test(r.textContent); })()`));
+      // ⭐️ and the same button the other way round, as on the piece itself
+      const backAgain = await page.val(`(function () {
+        var r = document.querySelector('.prow[data-stem="zz_aside"]');
+        var t = r && r.querySelector("input.tick");
+        if (!t) return "no tick";
+        t.click();
+        return document.getElementById("pAside").textContent; })()`);
+      check("and ticking pieces that are already aside offers to bring them back",
+            /Put the ticked pieces back/.test(backAgain || ""), backAgain);
+      await page.val(`document.getElementById("pAside").click(); true`);
+      await sleep(2000);
+      const home = await (await fetch(`${ROOM}/api/p/${PROJECT}/pieces`)).json();
+      const two = home.pieces.filter((p) => p.stem === "zz_aside")[0] || {};
+      check("one press brings them back into play, mark and all",
+            !(two.data || {}).spare && fs.existsSync(loose), two.data);
+
+      /* ⭐️ THE FOLDER IS THE TRUTH; THE MARK IS THE RECORD OF IT. Three of the
+         designer's pieces were sitting in the spare folder with nothing written
+         down about them, from before the fault above was found — so what the
+         room reads is made to agree with where the piece actually is. */
+      fs.renameSync(loose, path.join(BED, "pieces", "spare", "zz_aside.png"));
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=pieces`);
+      const adopted = await (await fetch(`${ROOM}/api/p/${PROJECT}/pieces`)).json();
+      const three = adopted.pieces.filter((p) => p.stem === "zz_aside")[0] || {};
+      check("a piece put in the spare folder by hand is taken as set aside",
+            !!(three.data || {}).spare, three.data);
+      // ⚠️ take the bench back exactly as it was: put the piece back in play,
+      // which is also what takes its manifest entry away, and then the file
+      await fetch(`${ROOM}/api/p/${PROJECT}/pieces/aside`, { method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stems: ["zz_aside"], aside: false }) });
+      fs.unlinkSync(loose);
+      await page.val(`(function () { var on = document.getElementById("pChooseOn");
+        on.checked = false; on.dispatchEvent(new Event("change")); return true; })()`);
+
       /* ⭐️ EVERYTHING A PIECE HAS BEEN CALLED, TAKEN OFF IT. The designer, 24 August
          2026: "give me a single button when viewing any single piece to
          remove all the metadata (name, component, kind etc) - just strip back
