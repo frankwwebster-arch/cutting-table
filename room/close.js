@@ -161,6 +161,17 @@
                        "room, and would not have been able to start again.");
           return;
         }
+        /* ⚠️ THE ONE ROOM THAT CANNOT DO THIS IS THE ROOM THAT MOST NEEDS
+           TO: one opened before the button existed answers "no such call" to
+           it, which is fault 38 all over again and reads as a broken button.
+           Say what it really means, and what to do this one time. */
+        if (j.error === "no such call") {
+          window.alert("This room was opened before it knew how to start " +
+                       "itself again, so it cannot — a running program cannot " +
+                       "re-read itself.\n\nClose it and open it again by hand " +
+                       "this once, and the button will work from then on.");
+          return;
+        }
         if (j.error) { window.alert("The room could not start itself again: " + j.error); return; }
         if (j.relaunching) waitForTheNewRoom(j.was, j.how);
       })
