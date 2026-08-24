@@ -145,6 +145,18 @@ scan at unknown scale does not — for those, use **Measure something** in the
 table's Scale panel (drag a line across anything whose real length you know)
 and every size after that is anchored to it.
 
+⭐️⭐️ **Name the box a set of sheets came out of.** Sheets are grouped by the
+file they were imported from, and nobody names their scans well — so each
+heading on **Sheets** carries **Name this set**. Call it *Core box*, or the
+name on a supplement's lid, and everything in the room says that afterwards:
+the headings, the *Show* lists on Pieces and Match, the sheet cards, and the
+rail at the cutting table.
+
+⚠️ **Nothing underneath is renamed.** A piece is named from its sheet's id and
+the outlines are filed under it, so the id never changes — this is only what
+the box is *called*. Empty the name and every sheet goes straight back to its
+file name. A sheet you have named yourself is never touched.
+
 ⭐️ **The sheet list opens on the work still to do.** With a hundred sheets
 imported, the ones already cut and filed are the ones in the way — so *Sheets*
 opens on **To outline**, and whichever filter you choose is remembered for that
@@ -587,6 +599,21 @@ Long range ruler
 
 A leading or trailing number becomes the quantity; the third field after a
 `|` sets the kind. Everything can be edited afterwards.
+
+⭐️⭐️ **One box at a time.** The panel asks which set the lines belong to, and
+offers **+ a new set…** — so paste the core box's contents list into *Core
+box*, then the supplement's into a set of its own. Everything in the room
+groups by that set afterwards: the checklist, Match, and the end-of-job
+report, which counts each box separately.
+
+⚠️ **The tick beside it — *these are all different pieces* — is worth
+understanding.** Left unticked, `26 Damage counters` means one design printed
+twenty-six times and **cutting one is enough**, which is the rule the whole
+room is built on. Tick it when you are pasting a page of *decks*, where all
+thirty-two cards really are different and every one has to be cut. Nothing in
+a printed contents list can tell those apart, so only you can say — and any
+line can be changed afterwards with the *one is enough* / *all different*
+button on its row.
 
 ⭐️ **A program can write this list.** It is plain JSON, and `PUT` to
 `/api/p/<project>/wanted` with an `items` array replaces the lot. If whatever

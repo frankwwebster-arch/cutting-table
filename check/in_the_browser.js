@@ -1609,6 +1609,113 @@ const SHAPE = `(function () {
       await page.shot("fetching.png");
     }
 
+    /* ⚠️⚠️ A BUTTON THAT READS A CONTROL THAT IS NOT THERE DOES NOTHING AT
+       ALL, AND SAYS NOTHING EITHER. The designer, 25 August 2026: "I have the contents
+       list for the core box, pasted it into the checklist field, but the
+       'Add them' button doesn't seem to do anything."
+       It read a tick box that had never been in the page, threw, and stopped
+       — with the list sitting there, apparently ignored. Every check the room
+       had went through the API, which worked perfectly. This one presses the
+       button.
+       ⭐️ And the other half of the same message: "how do I add a separate
+       contents list for core as opposed to [the supplement]?" — a set can be
+       made from the panel itself now, so one box's list goes in at a time. */
+    {
+      console.log("\npasting a contents list in, one box at a time");
+      const born = await (await fetch(`${ROOM}/api/projects`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "A Pasted List" }) })).json();
+      const pid = born.project && born.project.id;
+      await page.go(`${ROOM}/p/${pid}/?tab=wanted`);
+      const panel = await page.val(`(function () {
+        window.prompt = function () { return "Terror in the Dark"; };
+        document.getElementById("wStart").click();
+        return { open: !document.getElementById("wImport").hidden,
+                 tick: !!document.getElementById("wImportEach"),
+                 sets: Array.prototype.map.call(
+                   document.getElementById("wImportGroup").options,
+                   function (o) { return o.value; }) }; })()`);
+      check("the panel that takes a pasted list is there when the list is empty",
+            panel.open, panel);
+      // ⚠️ THE FAULT ITSELF: this control was read by the button and had never
+      // existed in the page
+      check("and the tick that says whether these are all different is really in it",
+            panel.tick, panel);
+      check("and a set can be made from the panel, so one box goes in at a time",
+            (panel.sets || []).indexOf("__new") >= 0, panel.sets);
+      await page.val(`(function () {
+        /* ⚠️ FAULT 27 AGAIN: inside a template literal a backslash escape is
+           eaten before the expression is ever sent, so a "\n" written here
+           arrives as a real newline, ends the string it is in, and the page
+           throws a SyntaxError. Built out of a list instead, which has no
+           escape in it to lose. */
+        document.getElementById("wText").value =
+          ["26 Damage counters", "12 Doors", "2 Boards"].join(String.fromCharCode(10));
+        document.getElementById("wImportGroup").value = "__new";
+        document.getElementById("wImportGo").click(); return true; })()`);
+      await sleep(1800);
+      const landed = await page.val(`(function () {
+        return { rows: document.querySelectorAll("#wBody tr.missing, #wBody tr.cut, #wBody tr.part, #wBody tr.probably").length,
+                 heads: Array.prototype.map.call(document.querySelectorAll("#wBody .fold .what"),
+                   function (h) { return h.textContent; }),
+                 said: (document.querySelector(".flash") || {}).textContent || "" }; })()`);
+      check("pressing Add them puts every line on the checklist",
+            landed.rows === 3, landed);
+      check("and says how many it added, rather than nothing at all",
+            /3 components added/.test(landed.said || ""), landed.said);
+      check("under the set it was told to make, by the name it was given",
+            (landed.heads || []).indexOf("Terror in the Dark") >= 0, landed.heads);
+      // ⚠️ and the set's NAME reaches the disk, or the next load shows a bare id
+      const kept = await (await fetch(`${ROOM}/api/p/${pid}/wanted`)).json();
+      check("and the new set is written down, name and all",
+            (kept.groups || []).some((g) => g.name === "Terror in the Dark"),
+            kept.groups);
+      check("with every component in it", (kept.items || []).length === 3,
+            (kept.items || []).length);
+    }
+
+    /* ⭐️⭐️ NAMING THE BOX A SET OF SHEETS CAME OUT OF. The designer, 25 August
+       2026: "Ability to rename imported sections... I need to rename them from
+       their current file names (which are lots of nonsense)." */
+    {
+      console.log("\nnaming a box of sheets, from the page");
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=sheets`);
+      const before = await page.val(`(function () {
+        var f = document.querySelector('#sFilter button[data-f=""]');
+        if (f) f.click();
+        return Array.prototype.map.call(document.querySelectorAll(".boxrow"), function (r) {
+          return { name: r.querySelector(".fold .what").textContent,
+                   says: r.querySelector("button.rename").textContent }; }); })()`);
+      check("every box of sheets offers a name of its own",
+            before.length >= 2 &&
+            before.every((h) => /Name this set|Rename/.test(h.says || "")), before);
+      await page.val(`(function () {
+        window.prompt = function () { return "The Odd One"; };
+        var rows = document.querySelectorAll(".boxrow");
+        for (var i = 0; i < rows.length; i++) {
+          if (/odd-one-out/.test(rows[i].querySelector(".fold .what").textContent)) {
+            rows[i].querySelector("button.rename").click(); return true;
+          }
+        }
+        return false; })()`);
+      await sleep(1800);
+      const after = await page.val(`(function () {
+        return { heads: Array.prototype.map.call(document.querySelectorAll(".boxrow .fold .what"),
+                   function (h) { return h.textContent; }),
+                 sheet: (document.querySelector('.sheet .body b') || {}).textContent || "" }; })()`);
+      check("naming one changes what the room calls it",
+            (after.heads || []).indexOf("The Odd One") >= 0, after.heads);
+      // ⚠️ and the sheets under it, because the file name is on every card too
+      const said = await (await fetch(`${ROOM}/api/p/${PROJECT}`)).json();
+      const odd = (said.sheets || []).filter((x) => x.id.indexOf("odd-one-out") === 0)[0] || {};
+      check("and the sheets in it are called by it as well",
+            /^The Odd One/.test(odd.label || ""), odd.label);
+      // put the bench back exactly as it was
+      await fetch(`${ROOM}/api/p/${PROJECT}/book/odd-one-out`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "" }) });
+    }
+
     // ---------------------------------------------------- the offline page
     if (BAKED) {
       console.log("\nthe same editor, baked and opened from a file");

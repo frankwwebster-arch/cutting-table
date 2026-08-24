@@ -183,7 +183,19 @@
     </div>
     <div id="wImport" hidden style="margin:0 0 12px">
       <textarea id="wText" placeholder="Paste the box&#39;s own contents list — one component a line:&#10;26 Damage counters&#10;Turning template x2&#10;9 | Large templates | template"></textarea>
-      <div class="row" style="margin-top:6px"><label class="tiny muted">into group <select id="wImportGroup"></select></label><button class="primary" id="wImportGo" title="Add every line above to the checklist.">Add them</button><button class="quiet" id="wImportCancel" title="Leave the list as it was; nothing above is added.">Cancel</button></div>
+      <div class="row" style="margin-top:6px">
+        <!-- ⭐️ THE DESIGNER, 25 August 2026: "how do I add a separate contents list
+             for core as opposed to [the supplement]?" Here: paste the core
+             box's list into one set, then paste the supplement's into a set
+             of its own, made from this box. -->
+        <label class="tiny muted" data-tip="Which box these components belong to — the core game, or one of its supplements. Paste one box's contents list at a time and everything in the room can then be worked through a box at a time.">into <select id="wImportGroup"></select></label>
+        <!-- ⚠️⚠️ THIS TICK WAS READ BY THE BUTTON AND NEVER EXISTED IN THE
+             PAGE, so pressing Add them threw and did nothing at all, silently.
+             See CLAUDE.md 61. -->
+        <label class="tiny muted" data-tip="Tick this only if every line you are pasting is a set of DIFFERENT pieces — a deck of cards, where all thirty-two have to be cut. Left unticked, a line like “26 Damage counters” means one design printed twenty-six times, and cutting one is enough. You can change any line afterwards."><input type="checkbox" id="wImportEach"> these are all different pieces</label>
+        <button class="primary" id="wImportGo" title="Add every line above to the checklist.">Add them</button>
+        <button class="quiet" id="wImportCancel" title="Leave the list as it was; nothing above is added.">Cancel</button>
+      </div>
     </div>
     <table class="wanted"><thead><tr><th>Component</th><th>Set</th><th>Kind</th><th>Qty</th><th>Where</th><th>Status</th><th>Pieces</th><th></th></tr></thead><tbody id="wBody"></tbody></table>
     </div>
@@ -747,10 +759,26 @@
       var gs = groups[g];
       var gh = null;
       if (many) {
-        var src = gs[0].source ? " — " + gs[0].source : "";
-        gh = Fold.head("sheets", g, g + src, box);
-        gh.classList.add("group-head");
-        box.appendChild(gh);
+        /* ⚠️ ONE LABEL, WORKED OUT IN ONE PLACE. This built its own heading
+           out of the id and the file it came from, while every other list
+           asked `bookLabel()` — so a box renamed here would have gone on
+           being called by its file name everywhere else. Fault 24, which has
+           bitten this codebase six times. */
+        var row = document.createElement("div");
+        row.className = "group-head boxrow";
+        gh = Fold.head("sheets", g, bookLabel(g), box);
+        row.appendChild(gh);
+        var ren = document.createElement("button");
+        ren.type = "button";
+        ren.className = "quiet rename";
+        ren.textContent = bookName(g) ? "Rename" : "Name this set";
+        ren.title = "Give this set of sheets a name of your own — “Core box”, " +
+                    "the name of a supplement. Every list in the room calls it " +
+                    "that afterwards. Nothing else changes: the sheets keep " +
+                    "their own names and nothing already cut is touched.";
+        ren.addEventListener("click", function () { renameBook(g); });
+        row.appendChild(ren);
+        box.appendChild(row);
       }
       gs.forEach(function (s) {
         var d = document.createElement("div");
@@ -995,7 +1023,7 @@
         Object.keys(books).sort().map(function (b) {
           var mine = Object.keys(books[b].sheets).sort();
           return '<optgroup label="' + esc(bookLabel(b)) + '">' +
-            '<option value="book:' + esc(b) + '">everything from ' + esc(b) +
+            '<option value="book:' + esc(b) + '">everything from ' + esc(bookLabel(b)) +
             " (" + books[b].n + ")</option>" +
             mine.map(function (sid) {
               return '<option value="' + esc(sid) + '">' + esc(sheetLabel(sid)) +
@@ -1760,13 +1788,47 @@
     return (String(sid || "").match(/^(.+)-\d+$/) || [0, sid || ""])[1];
   }
 
+  /* ⭐️ WHAT THIS BOX IS CALLED. The designer, 25 August 2026: "I need to rename them
+     from their current file names (which are lots of nonsense)." A sheet id is
+     made from the file it arrived as, and the box is the part before the page
+     number — so a game imported from a folder of scans is called whatever the
+     scanner called it, in every list in the room.
+     ⚠️ The name is a LABEL and nothing else: the id underneath it never
+     changes, because pieces are named from it and the outlines are filed
+     under it. */
+  function bookName(book) {
+    return (project && project.books || {})[book] || "";
+  }
   function bookLabel(book) {
+    var named = bookName(book);
+    if (named) return named;
     var src = "";
     (project && project.sheets || []).some(function (x) {
       if (bookOf(x.id) === book && x.source) { src = " — " + x.source; return true; }
       return false;
     });
     return book + src;
+  }
+  function renameBook(book, after) {
+    var was = bookName(book);
+    var said = window.prompt(
+      "What is this set of sheets called?\n\n" +
+      "“Core box”, “Terror in the Dark”, whatever the box says. Every list in " +
+      "the room will call it that.\n\nNothing else changes: the sheets keep " +
+      "their own names, and nothing already cut is touched. Empty the box below " +
+      "to go back to its file name.",
+      was || book);
+    if (said === null) return;
+    post(API + "/book/" + encodeURIComponent(book), { name: said.trim() })
+      .then(function (r) {
+        if (r.error) { flash(r.error, true); return; }
+        project.books = r.books || {};
+        piecesData = null;            // Pieces and Match say it too
+        flash(said.trim() ? "This set is “" + said.trim() + "” from now on."
+                          : "Back to its own file name.");
+        if (after) after();
+        load();
+      });
   }
 
   function sheetLabel(sid) {
@@ -2316,7 +2378,7 @@
       order.forEach(function (b) {
         var sheets = books[b].sort();
         html += '<optgroup label="' + esc(bookLabel(b)) + '">' +
-          '<option value="book:' + esc(b) + '">everything from ' + esc(b) +
+          '<option value="book:' + esc(b) + '">everything from ' + esc(bookLabel(b)) +
           " (" + sheets.length + " sheet" + (sheets.length === 1 ? "" : "s") + ")</option>" +
           sheets.map(function (sid) {
             return '<option value="' + esc(sid) + '">' + esc(sheetLabel(sid)) + "</option>";
@@ -2451,7 +2513,11 @@
       var kinds = {}; d.items.forEach(function (i) { kinds[i.kind || "other"] = 1; });
       var ks = document.getElementById("wKind"); var keepK = ks.value; ks.innerHTML = '<option value="">any</option>' + Object.keys(kinds).sort().map(function (k) { return "<option>" + esc(k) + "</option>"; }).join(""); ks.value = keepK;
       var gs = document.getElementById("wGroup"); var keepG = gs.value; gs.innerHTML = '<option value="">any</option>' + (d.groups || []).map(function (g) { return '<option value="' + esc(g.id) + '">' + esc(g.name) + "</option>"; }).join(""); gs.value = keepG;
-      var ig = document.getElementById("wImportGroup"); ig.innerHTML = (d.groups || []).map(function (g) { return '<option value="' + esc(g.id) + '">' + esc(g.name) + "</option>"; }).join("") || '<option value="core">the box</option>';
+      var ig = document.getElementById("wImportGroup");
+      ig.innerHTML = ((d.groups || []).map(function (g) {
+          return '<option value="' + esc(g.id) + '">' + esc(g.name) + "</option>";
+        }).join("") || '<option value="core">the box</option>') +
+        '<option value="__new">+ a new set…</option>';
       renderWanted();
     });
   }
@@ -2581,17 +2647,9 @@
         var now = mine();
         if (!now) { flash("That component is not on the list any more.", true); return; }
         if (pick.value === "__new") {
-          var name = window.prompt("What is the new set called?\n\n" +
-            "A set is a box: the core game, or one of its supplements. " +
-            "Everything in the room groups components by it.");
+          var gid = newSet();
           pick.value = now.group || "";
-          if (!name || !name.trim()) return;
-          name = name.trim().slice(0, 80);
-          var gid = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
-                    ("set" + ((wantedData.groups || []).length + 1));
-          if (!(wantedData.groups || []).some(function (g) { return g.id === gid; })) {
-            wantedData.groups = (wantedData.groups || []).concat([{ id: gid, name: name }]);
-          }
+          if (!gid) return;
           now.group = gid;
         } else {
           now.group = pick.value;
@@ -2656,7 +2714,13 @@
        out here as well as in the room, which is fault 24 waiting to happen:
        the room now takes them off in the one place that saves the list, so
        this sends what it was given and nothing has to agree with anything. */
-    return put(API + "/wanted", { items: wantedData.items }).then(function (d) { wantedData = d; flash("Saved."); loadWantedSummary(d); });
+    return put(API + "/wanted", { items: wantedData.items,
+                                 // ⚠️ THE SETS GO TOO. A set made from a
+                                 // component's own Set box lived in this page
+                                 // and nowhere else, so its NAME was lost on
+                                 // the next load and the set showed as the
+                                 // bare id it was made from.
+                                 groups: wantedData.groups || [] }).then(function (d) { wantedData = d; flash("Saved."); loadWantedSummary(d); });
   }
   function loadWantedSummary(d) {
     var s = d.summary; document.getElementById("wPct").textContent = s.pct + "%"; document.getElementById("wDone").textContent = s.done; document.getElementById("wTotal").textContent = s.total; document.getElementById("wBar").style.width = s.pct + "%";
@@ -2731,6 +2795,25 @@
       return true;
     });
   }
+  /* ⭐️ ONE PLACE THAT KNOWS HOW TO MAKE A SET, because two places now offer
+     it — a component's own Set box, and the panel that pastes a whole
+     contents list in. Written twice they would disagree about what a set id
+     looks like, and the second list pasted would land in a set of its own
+     that merely looked like the first. Returns the id, or "" for a change of
+     mind. */
+  function newSet() {
+    var name = window.prompt("What is the new set called?\n\n" +
+      "A set is a box: the core game, or one of its supplements. " +
+      "Everything in the room groups components by it.");
+    if (!name || !name.trim()) return "";
+    name = name.trim().slice(0, 80);
+    var gid = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
+              ("set" + ((wantedData.groups || []).length + 1));
+    if (!(wantedData.groups || []).some(function (g) { return g.id === gid; })) {
+      wantedData.groups = (wantedData.groups || []).concat([{ id: gid, name: name }]);
+    }
+    return gid;
+  }
   document.getElementById("wImportBtn").addEventListener("click", function () { document.getElementById("wImport").hidden = false; });
   document.getElementById("wStart").addEventListener("click", function () {
     document.getElementById("wEmpty").hidden = true;
@@ -2746,17 +2829,33 @@
   document.getElementById("wImportCancel").addEventListener("click", function () { document.getElementById("wImport").hidden = true; });
   document.getElementById("wImportGo").addEventListener("click", function () {
     var text = document.getElementById("wText").value;
-    if (!text.trim()) return;
-    var into = document.getElementById("wImportGroup").value;
-    post(API + "/wanted/import", { text: text, group: into,
-                                  each: document.getElementById("wImportEach").checked }).then(function (d) {
+    if (!text.trim()) { document.getElementById("wText").focus(); return; }
+    var pick = document.getElementById("wImportGroup");
+    var into = pick.value;
+    if (into === "__new") {
+      into = newSet();
+      pick.value = into || (wantedData.groups || [{}])[0].id || "core";
+      if (!into) return;                    // changed their mind: nothing added
+    }
+    var tick = document.getElementById("wImportEach");
+    var named = ((wantedData && wantedData.groups || []).filter(function (g) {
+      return g.id === into; })[0] || {}).name || "";
+    post(API + "/wanted/import", { text: text, group: into, group_name: named,
+                                   each: !!(tick && tick.checked) }).then(function (d) {
+      // ⚠️ AND THE ANSWER IS READ. This took whatever came back as the list
+      // itself, so a refusal would have been installed as the checklist.
+      if (d.error) { flash(d.error, true); return; }
       wantedData = d;
       document.getElementById("wText").value = "";
+      if (tick) tick.checked = false;       // a tick is about one paste, not for ever
       document.getElementById("wImport").hidden = true;
       Fold.open("wanted", into);          // or they arrive inside a folded set
       renderWanted();
       loadWantedSummary(d);
-      flash((d.added || []).length + " added.");
+      var n = (d.added || []).length;
+      flash(n + (n === 1 ? " component added" : " components added") + ".");
+    }, function () {
+      flash("The room did not answer. Nothing was added.", true);
     });
   });
 

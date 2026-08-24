@@ -983,6 +983,55 @@ rather than by reading the code.
     (`/d/e/<id>/pub`) is a different address with no export behind it, and
     quietly rewriting it would break a link that works.
 
+61. ⚠️⚠️ **A BUTTON THAT READS A CONTROL THAT IS NOT THERE DOES NOTHING AT
+    ALL, AND SAYS NOTHING EITHER.** The designer, 25 August 2026: *"I have the
+    contents list for the core box, pasted it into the checklist field, but
+    the 'Add them' button doesn't seem to do anything."*
+    It read `#wImportEach` — the tick that says *these are all different*
+    (fault 36) — and **that control had never existed in the page**. Reading
+    `.checked` off `null` throws, the handler stops on that line, and the
+    press does nothing whatsoever: no request, no message, no error anybody
+    would see. The list sits there looking ignored.
+    ⚠️⚠️ **And every check the room had went through the API**, which worked
+    perfectly the whole time. That is **fault 54's rule** — a check that asks
+    the easy question in place of the real one is worse than no check, because
+    it is a green light over the fault. The real question was never "does
+    `/wanted/import` work?", it was "does the button work?". There is a check
+    that presses the button now, and putting the fault back turns six of them
+    red.
+    ⭐️ The other half of the same message — *"how do I add a separate contents
+    list for core as opposed to [the supplement]?"* — was that a set could not
+    be made from that panel at all, only from a component's own Set box. It
+    can now, and **the room writes the new set down**: the id went onto every
+    pasted component while the NAME lived only in the page, so the next load
+    showed a bare id where a box's name should be. (`saveWantedAll()` had the
+    same hole: it sent the components and not the sets they belong to.)
+
+62. ⭐️⭐️ **A SHEET IS NAMED AFTER THE FILE IT ARRIVED IN, AND NOBODY NAMES
+    THEIR SCANS WELL.** The designer, 25 August 2026: *"Ability to rename imported
+    sections (I've imported two separate sets of things into the project, the
+    first is the core box, the second [a supplement]). I need to rename them
+    from their current file names (which are lots of nonsense)."*
+    A box is a sheet id with the page number taken off (fault 42), and a sheet
+    id is made from the file — so a game imported from a folder of scans is
+    filed, and displayed, under whatever the scanner called it. A box can be
+    given a name now, from its heading on Sheets, and every list in the room
+    calls it that: the headings, the *Show* lists on Pieces and Match, the
+    sheet cards, and the rail on the cutting table.
+    ⚠️⚠️ **THE ID IS NEVER TOUCHED, and that is the whole design.** Pieces are
+    named from the sheet id (`core_p03_00`), the outlines are filed under it,
+    and a game reading the manifest knows pieces by it. This writes down what
+    the box is CALLED. **Renaming what other things are keyed by is how work
+    gets lost** — so the label in `project.json` is left exactly as it was as
+    well, and clearing the name puts every sheet straight back to its file
+    name.
+    ⚠️ A label somebody typed themselves is left alone: only a label that is
+    still the file's own name is swapped, which is what the slug test in
+    `sheet_title()` is for.
+    ⚠️ The Sheets page built its own heading out of the id while every other
+    list asked `bookLabel()` — so a renamed box would have gone on being
+    called by its file name everywhere else. **Fault 24, sixth time.**
+
 ---
 
 ## Architecture
@@ -1102,7 +1151,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 358 checks, about a minute
+check/check.sh          # 375 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

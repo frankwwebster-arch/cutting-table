@@ -764,6 +764,39 @@ class Project:
     # the manifest, marked `spare`, and the mark follows the piece across a
     # re-cut the way a name does — otherwise every re-cut would resurrect the
     # nineteen duplicates you had just put away.
+    # ⭐️ WHICH BOX A SHEET CAME OUT OF, and what that box is called. The room
+    # has always worked this out on the page (`bookOf()` in project.html) —
+    # the same rule, which is the part that matters: the box is the sheet id
+    # with the page number taken off (fault 42).
+    def book_of(self, sid):
+        m = re.match(r"^(.+)-\d+$", str(sid or ""))
+        return m.group(1) if m else str(sid or "")
+
+    def sheet_title(self, s):
+        """What to CALL this sheet.
+
+        ⭐️ The designer, 25 August 2026: "I need to rename them from their current
+        file names (which are lots of nonsense)." A sheet's label is made from
+        the file it arrived in — `AHQ core scan.pdf p.7` — so naming the box
+        has to reach the sheets as well, or the nonsense is still on every
+        card and every tab of the rail.
+
+        ⚠️ It is a DISPLAY name and nothing is rewritten: the label in
+        `project.json` is left exactly as it was, so clearing the box's name
+        puts every sheet straight back. And a label somebody has typed
+        themselves is left alone — only one that is still the file's own name
+        is swapped, which is what the slug test is for.
+        """
+        label = s.get("label") or s.get("id") or ""
+        named = (self.meta.get("books") or {}).get(self.book_of(s.get("id")))
+        if not named:
+            return label
+        m = re.match(r"^(.*?)(\s(?:p\.\d+|·\s*picture\s*\d+))$", label)
+        front = m.group(1) if m else label
+        if slug(front, 40) == self.book_of(s.get("id")):
+            return named + (m.group(2) if m else "")
+        return label
+
     def spare_dir(self):
         return os.path.join(self.p("pieces"), "spare")
 
@@ -964,7 +997,10 @@ class Project:
             named = sum(1 for st in cut
                         if (man.get(st) or {}).get("name")
                         or (man.get(st) or {}).get("spare"))
-            sheets.append(dict(s, outlines=n_out, cut=len(cut), named=named,
+            # ⭐️ the box's name reaches the sheets themselves — see
+            # sheet_title(). The stored label is untouched.
+            sheets.append(dict(s, label=self.sheet_title(s),
+                               outlines=n_out, cut=len(cut), named=named,
                                # the thumbnail is drawn from the outlines, so the
                                # page has to know when they last moved
                                stamp=int(o.get("stamp") or 0),
@@ -980,6 +1016,11 @@ class Project:
             "named": sum(1 for st in man
                          if man[st].get("name") or man[st].get("spare")),
             "wanted": wanted["summary"],
+            # ⭐️ what each BOX of sheets is called. A sheet id comes from the
+            # file it was imported from, so a game arrives as "ahq-core-scan-07"
+            # and the room has been calling the box that ever since — see the
+            # `book` route for why the id itself is never touched.
+            "books": self.meta.get("books") or {},
             "hooks": [{"id": h.get("id"), "label": h.get("label")}
                       for h in (self.meta.get("hooks") or [])],
             "kinds": KINDS,
@@ -3075,7 +3116,9 @@ def table_page(project, sheet_ids=None):
         if sheet_ids and s["id"] not in sheet_ids:
             continue
         sheets.append({
-            "id": s["id"], "label": s.get("label") or s["id"], "name": s.get("name") or "",
+            # the rail says what the box is called too, or the table and the
+            # room disagree about the name of the sheet on the table
+            "id": s["id"], "label": project.sheet_title(s), "name": s.get("name") or "",
             "w": s.get("w"), "h": s.get("h"),
             "src": "/p/%s/sheet/%s.jpg" % (project.id, s["id"]),
             "suggested": None, "done": bool(s.get("done")), "rot": int(s.get("rot") or 0),
@@ -3450,6 +3493,35 @@ class Room(BaseHTTPRequestHandler):
                 return {"sheets": made}
             job = start_job("fetch %d link(s)" % len(urls), run)
             return self.send_json({"job": job["id"]})
+
+        # ⭐️⭐️ WHAT A BOX OF SHEETS IS CALLED. The designer, 25 August 2026: "Ability
+        # to rename imported sections (I've imported two separate sets of
+        # things into the project, the first is the core box, the second a
+        # supplement. I need to rename them from their current file names
+        # (which are lots of nonsense)."
+        #
+        # A sheet's id is made from the name of the file it came in as, and
+        # the box is the part of that id before the page number (fault 42) —
+        # so a game imported from a folder of scans is filed under whatever
+        # the scanner called them, and every list in the room says so.
+        #
+        # ⚠️⚠️ THE ID IS NEVER TOUCHED, and that is the whole design. A piece
+        # is named from its sheet's id (`core_p03_00`), the outlines are filed
+        # under it, and a game reading the manifest knows pieces by it. This
+        # writes down what the box is CALLED and nothing else: a name is a
+        # label, and renaming things that other things are keyed by is how
+        # work gets lost.
+        if head == "book" and len(rest) == 2 and method == "POST":
+            name = str((self.body_json() or {}).get("name") or "").strip()[:80]
+            with pr.lock:
+                books = dict(pr.meta.get("books") or {})
+                if name:
+                    books[rest[1]] = name
+                else:
+                    books.pop(rest[1], None)     # back to its own name
+                pr.meta["books"] = books
+                pr.save_meta()
+            return self.send_json({"ok": True, "books": books})
 
         if head == "sheet" and len(rest) == 2:
             s = pr.sheet(rest[1])
@@ -3847,7 +3919,8 @@ class Room(BaseHTTPRequestHandler):
                 d = self.body_json()
                 added = import_wanted_text(pr, str(d.get("text") or ""),
                                            str(d.get("group") or "core"),
-                                           bool(d.get("each")))
+                                           bool(d.get("each")),
+                                           str(d.get("group_name") or ""))
                 return self.send_json(dict(added=added, **pr.wanted_status()))
 
         if head == "wanted" and len(rest) == 2 and rest[1] == "split" and method == "POST":
@@ -3984,12 +4057,23 @@ class Room(BaseHTTPRequestHandler):
         return 0
 
 
-def import_wanted_text(pr, text, group, each=False):
+def import_wanted_text(pr, text, group, each=False, group_name=None):
     """Lines like `26 Damage counters`, `Turning template x2`, `Long range ruler`,
-    or `9 | Large templates | template` become wanted items."""
+    or `9 | Large templates | template` become wanted items.
+
+    ⭐️ THE SET IS MADE HERE IF IT IS NEW. The designer, 25 August 2026: "how do I add
+    a separate contents list for core as opposed to [the supplement]?" — by
+    pasting one box's list at a time into a set of its own. A set the room has
+    never heard of would otherwise arrive as a bare id on every component and
+    no name anywhere, which reads as a fault rather than as a new box.
+    """
     added = []
     with pr.lock:
         w = pr.wanted()
+        groups = w.setdefault("groups", [])
+        if group and not any(g.get("id") == group for g in groups):
+            groups.append({"id": group,
+                           "name": (group_name or "").strip()[:80] or group})
         have = {it.get("id") for it in w["items"]}
         for raw in text.splitlines():
             line = raw.strip().strip("-•*· ").strip()

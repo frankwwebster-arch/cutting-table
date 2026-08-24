@@ -143,6 +143,12 @@ section[hidden] { display: none; }
 .sheet .acts { display: flex; gap: 6px; flex-wrap: wrap; }
 .sheet .acts button, .sheet .acts a { padding: 4px 9px; font-size: 12px; }
 .sheet.stale .counts .cut { color: var(--hold); }
+/* ⭐️ the heading of a box of sheets, with the way to name it beside it —
+   ⚠️ two children declared, and a third would wrap onto its own line
+   silently (fault 29), so anything added here needs the row widening too */
+.boxrow { display: flex; align-items: baseline; gap: 12px; }
+.boxrow .fold { width: auto; flex: 1; min-width: 0; }
+.boxrow .rename { font-size: 11px; letter-spacing: .04em; padding: 2px 8px; flex: none; }
 .group-head { grid-column: 1 / -1; margin: 8px 0 -4px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
 
 /* ---- pieces */

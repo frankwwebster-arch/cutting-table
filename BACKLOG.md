@@ -15,6 +15,38 @@ as when you finish. The full version of all of that is in CLAUDE.md under
 
 ## NOW
 
+### `[x]` ⚠️⚠️ "Add them" did nothing at all — **fixed**
+
+The designer, 25 August 2026: *"I have the contents list for the core box, pasted it
+into the checklist field, but the 'Add them' button doesn't seem to do
+anything."* It read a tick box that had never been in the page, so the press
+threw on that line and stopped: no request, no message, nothing. Every check
+the room had went through the API, which worked perfectly — fault 54's rule,
+and there is a check that presses the button now.
+
+- `[x]` The tick — *these are all different pieces* — is really there, and it
+  is what decides whether a deck counts as one design or all of them.
+- `[x]` ⭐️ **A set can be made from that panel**, which is the other half of
+  the same message: *"how do I add a separate contents list for core as
+  opposed to [the supplement]?"* Paste one box's list at a time.
+- `[x]` ⚠️ And the new set is **written down** — its id went onto every pasted
+  component while its name lived only in the page.
+
+See CLAUDE.md 61.
+
+### `[x]` ⭐️⭐️ A box of sheets can be given a name — **built**
+
+The designer, 25 August 2026: *"Ability to rename imported sections… I need to rename
+them from their current file names (which are lots of nonsense)."* Every box
+heading on **Sheets** carries *Name this set*. Everything in the room calls it
+by that name afterwards — the headings, the *Show* lists on Pieces and Match,
+the sheet cards, and the rail at the cutting table.
+
+⚠️ **Nothing underneath is renamed**: pieces are named from the sheet id and
+the outlines are filed under it, so the id is untouched and the stored label
+is left as it was. Clearing the name puts every sheet straight back. A label
+somebody typed themselves is never swapped. See CLAUDE.md 62.
+
 ### `[x]` ⭐️⭐️ Something to watch while a link is fetched — **built**
 
 The designer, 24 August 2026: *"i'm trialling importing a google doc - have pasted the
@@ -390,7 +422,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 358 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 375 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -501,6 +533,12 @@ anything that speeds up cutting.
   other said twenty-one, and it was missing the last five faults. That is the
   fault this codebase warns about most, arriving in the documents themselves.
 - `[x]` **1 new check** — 321 to 322.
+- `[x]` **17 new checks** — 358 to 375: a box named and every sheet in it
+  called by that name (and the ids untouched, and a typed label left alone,
+  and all of it undone by emptying the name), and the checklist's paste panel
+  PRESSED rather than called — the tick that is really in the page, the lines
+  landing on the list, the set made from the panel and written down. ⭐️ Teeth
+  tried: the faults put back turn seven of them red.
 - `[x]` **14 new checks** — 344 to 358: a Google document link asked for as a
   PDF (and a published link and a plain Drive file left alone), and a link
   that really is slow — served a tenth at a time from a server of the check's

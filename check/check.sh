@@ -1233,6 +1233,83 @@ os.remove(spare)
 sys.exit(1 if bad else 0)
 PY6
 
+# ⭐️⭐️ WHAT A BOX OF SHEETS IS CALLED. The designer, 25 August 2026: "Ability to
+# rename imported sections... I need to rename them from their current file
+# names (which are lots of nonsense)." A sheet id is made from the file it
+# arrived in, and the box is that id with the page number taken off — so a
+# game imported from a folder of scans is called whatever the scanner called
+# it, everywhere in the room.
+say "naming a box of sheets, without renaming anything underneath it"
+$PY - "$PORT" <<'PY14' || code=1
+import json, sys, urllib.request
+port = sys.argv[1]
+API = "http://127.0.0.1:%s/api/p/proving-ground" % port
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+def get():
+    return json.load(urllib.request.urlopen(API))
+
+
+def name_it(book, name):
+    req = urllib.request.Request(API + "/book/" + book, json.dumps({"name": name}).encode(),
+                                 {"Content-Type": "application/json"}, method="POST")
+    return json.load(urllib.request.urlopen(req))
+
+
+def sheets_of(d, book):
+    return [s for s in d["sheets"] if s["id"].startswith(book + "-")]
+
+
+was = sheets_of(get(), "second-book-of-tests")
+name_it("second-book-of-tests", "The Second Box")
+now = get()
+check("a box of sheets can be given a name of its own",
+      (now.get("books") or {}).get("second-book-of-tests") == "The Second Box",
+      now.get("books"))
+mine = sheets_of(now, "second-book-of-tests")
+check("and every sheet in it is called by it, page numbers kept",
+      all(s["label"].startswith("The Second Box p.") for s in mine),
+      [s["label"] for s in mine[:3]])
+check("while the sheets in the other boxes are left alone",
+      all(not s["label"].startswith("The Second Box")
+          for s in now["sheets"] if not s["id"].startswith("second-book-of-tests-")),
+      [s["label"] for s in now["sheets"][:2]])
+# ⚠️⚠️ THE ID IS NEVER TOUCHED. A piece is named from its sheet's id, the
+# outlines are filed under it, and a game reading the manifest knows pieces by
+# it. A name is a label; renaming what other things are keyed by loses work.
+check("and not one sheet id changed, which is what pieces are named from",
+      [s["id"] for s in mine] == [s["id"] for s in was],
+      [s["id"] for s in mine[:3]])
+# ⚠️ and a label somebody typed themselves is not the file's name, so it stays
+req = urllib.request.Request(API + "/sheet/second-book-of-tests-01",
+                             json.dumps({"label": "The one with the map on it"}).encode(),
+                             {"Content-Type": "application/json"}, method="POST")
+urllib.request.urlopen(req)
+after = [s for s in get()["sheets"] if s["id"] == "second-book-of-tests-01"][0]
+check("a label somebody typed themselves is left exactly as it was",
+      after["label"] == "The one with the map on it", after["label"])
+# and it all goes back
+name_it("second-book-of-tests", "")
+back = get()
+check("emptying the name puts every sheet back to its own file name",
+      all(s["label"].startswith("second-book-of-tests")
+          for s in sheets_of(back, "second-book-of-tests")
+          if s["id"] != "second-book-of-tests-01"),
+      [s["label"] for s in sheets_of(back, "second-book-of-tests")[:3]])
+req = urllib.request.Request(API + "/sheet/second-book-of-tests-01",
+                             json.dumps({"label": "second-book-of-tests p.1"}).encode(),
+                             {"Content-Type": "application/json"}, method="POST")
+urllib.request.urlopen(req)
+sys.exit(1 if bad else 0)
+PY14
+
 # ⭐️⭐️ STARTING THE ROOM AGAIN, FROM THE ROOM. The designer, 24 August 2026: "is
 # there a way to build a relaunch button into the browser tab it uses
 # somehow?" — having been told twice in a day to close the room and open it
