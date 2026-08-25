@@ -307,10 +307,14 @@
       folder with the pieces, so it travels with them.</p>
     </div>
 
+    <div class="row" style="margin-top:14px">
+      <label class="tiny muted" data-tip="Write the whole game, or just one set of sheets and the pieces cut from it. A set goes into a folder of its own, so exporting one never touches the others.">Take away <select id="exportSet"></select></label>
+    </div>
+
     <div class="whatout" id="whatOut"></div>
 
     <div class="row" style="margin-top:14px">
-      <button class="primary" id="exportGo" data-tip="Write everything out as an ordinary folder: each piece as a picture named by what it is, at true printed size, plus a spreadsheet, a contact sheet, the checklist and cutting files. Read the notice above first — it goes in the folder with them.">Write the folder</button>
+      <button class="primary" id="exportGo" data-tip="Write it out as an ordinary folder: each piece as a picture named by what it is, at true printed size, plus a spreadsheet, a contact sheet and cutting files. Choose a set above to take just that one — it goes into a folder of its own and touches nothing else. Read the notice first: it goes in the folder with them.">Write the folder</button>
       <button id="exportOpen" hidden data-tip="Show the folder that was just written on your desktop.">Open the folder</button>
       <span class="tiny muted" id="exportNote"></span>
     </div>
@@ -518,13 +522,56 @@
   });
   document.getElementById("reviewAgain").addEventListener("click", renderReview);
 
+  /* ⭐️⭐️ ONE SET OUT OF THE GAME, RATHER THAN THE WHOLE GAME. The designer,
+     26 August 2026: "I'd like to be able to just export a set of cut pieces,
+     rather than everything in one project folder." A box is what every list
+     in the room gathers by (fault 42), so it is the natural thing to hand
+     over on its own — and a game of four boxes wants one of them far more
+     often than it wants all four.
+     ⚠️ Each set goes into a folder of ITS OWN, so taking one away never
+     destroys another: an export folder is replaced whole every time. */
+  var exportSet = "";
+  function exportBands() {
+    var got = {}, order = [];
+    ((project && project.sheets) || []).forEach(function (x) {
+      var b = bookOf(x.id);
+      if (!got[b]) { got[b] = { id: b, sheets: 0, cut: 0, named: 0 }; order.push(b); }
+      got[b].sheets += 1;
+      got[b].cut += (x.cut || 0);
+      got[b].named += (x.named || 0);
+    });
+    return order.map(function (b) { return got[b]; });
+  }
+
   function renderExport() {
     if (!project) return;
     renderReview();
-    document.getElementById("exportWhere").textContent = project.path + "/export";
-    var cut = project.pieces, named = project.named;
-    var sheets = project.sheets.filter(function (x) { return x.outlines > 0; }).length;
-    var w = project.wanted || { total: 0 };
+    var bands = exportBands();
+    var whole = project.pieces;
+    fillSelect(document.getElementById("exportSet"),
+      '<option value="">everything in this game (' + whole +
+      (whole === 1 ? " piece" : " pieces") + ")</option>" +
+      bands.map(function (b) {
+        return '<option value="' + esc(b.id) + '">' + esc(bookLabel(b.id)) +
+               " (" + b.cut + (b.cut === 1 ? " piece" : " pieces") + ")</option>";
+      }).join(""));
+    document.getElementById("exportSet").value = exportSet;
+    if (document.getElementById("exportSet").value !== exportSet) exportSet = "";
+    var band = null;
+    bands.forEach(function (b) { if (b.id === exportSet) band = b; });
+    /* ⚠️ THE FOLDER'S NAME COMES FROM THE ROOM, never worked out here — two
+       spellings of it would show one folder and fill another (fault 24). */
+    var folder = "export";
+    ((project && project.sets) || []).forEach(function (x) {
+      if (x.id === exportSet) folder = x.folder;
+    });
+    document.getElementById("exportWhere").textContent = project.path + "/" + folder;
+    var cut = band ? band.cut : project.pieces;
+    var named = band ? band.named : project.named;
+    var sheets = project.sheets.filter(function (x) {
+      return x.outlines > 0 && (!exportSet || bookOf(x.id) === exportSet);
+    }).length;
+    var w = band ? { total: 0 } : (project.wanted || { total: 0 });
     var bits = [
       ["pieces", cut + (cut === 1 ? " piece" : " pieces"),
        "one picture each, transparent background, at full resolution and named by what it is"],
@@ -541,17 +588,28 @@
       return '<div class="w"><b>' + esc(b[1]) + "</b><span>" + esc(b[2]) + "</span></div>";
     }).join("");
     var note = document.getElementById("exportNote");
-    if (!cut) note.textContent = "Nothing has been cut yet — there is nothing to take away.";
+    if (!cut) note.textContent = exportSet
+      // ⚠️ Say WHICH empty this is. "Nothing has been cut yet" over a game
+      // with two hundred pieces in it reads as the room having lost them.
+      ? "Nothing has been cut from this set yet — there is nothing to take away."
+      : "Nothing has been cut yet — there is nothing to take away.";
     else if (named < cut) note.innerHTML = "⚠️ " + (cut - named) + " of " + cut +
       " pieces have no name, so they will come out filed under the number they were cut as.";
     else note.textContent = "";
     document.getElementById("exportGo").disabled = !cut;
+    document.getElementById("exportGo").textContent =
+      exportSet ? "Write this set's folder" : "Write the folder";
+    document.getElementById("exportOpen").hidden = true;
   }
+  document.getElementById("exportSet").addEventListener("change", function () {
+    exportSet = this.value;
+    renderExport();
+  });
 
   document.getElementById("exportGo").addEventListener("click", function () {
     var b = this, note = document.getElementById("exportNote");
     b.disabled = true; b.textContent = "Writing…";
-    post(API + "/export").then(function (job) {
+    post(API + "/export", { set: exportSet }).then(function (job) {
       exportJob = job.id;
       (function watch() {
         j("/api/jobs/" + exportJob).then(function (s) {
@@ -561,10 +619,11 @@
             setTimeout(watch, 350);
             return;
           }
-          b.disabled = false; b.textContent = "Write the folder again";
+          b.disabled = false; b.textContent = "Write it again";
           if (s.state === "failed") { note.textContent = "⚠️ " + s.error; return; }
           var r = s.result || {};
-          note.innerHTML = "<b>Done.</b> " + r.pieces + " piece" + (r.pieces === 1 ? "" : "s") +
+          note.innerHTML = "<b>Done.</b> " + (r.set ? esc(r.set) + ": " : "") +
+            r.pieces + " piece" + (r.pieces === 1 ? "" : "s") +
             (r.spare ? ", and " + r.spare + " set aside" : "") +
             (r.laser ? ", and cut files for " + r.laser + " sheet" + (r.laser === 1 ? "" : "s") : "") +
             ". " + (r.unnamed ? r.unnamed + " had no name. " : "");
@@ -574,7 +633,9 @@
     });
   });
   document.getElementById("exportOpen").addEventListener("click", function () {
-    post(API + "/reveal", { what: "export" }).then(function (r) {
+    // ⚠️ the set has to travel with the ask, or this opens the whole game's
+    // folder while the pieces just written sit in another one
+    post(API + "/reveal", { what: "export", set: exportSet }).then(function (r) {
       if (!r.ok) flash("The folder is at " + r.path);
     });
   });

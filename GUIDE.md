@@ -298,6 +298,10 @@ It says, set by set:
   counts are **links**: press one and the Pieces tab opens with just those
   pieces in front of you.
 
+⭐️ **Take away** above the button offers the whole game or **one set of
+sheets** — a box, a supplement, whichever you want on its own. A set goes into
+a folder of its own, so taking one never touches another.
+
 Then press **Write the folder**. You get:
 
 | | |

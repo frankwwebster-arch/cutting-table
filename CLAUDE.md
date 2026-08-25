@@ -93,11 +93,18 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 533 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 547 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**26 August**: *"I'd like to be able to just export a set of cut pieces, rather
+than everything in one project folder."* Built — **Take away** offers the whole
+game or one box of sheets, and a set goes into a folder of its own. See fault
+78, whose careful part is that an export folder is replaced **whole**, so a set
+written into `export/` would have silently destroyed the export of everything
+else.
 
 **25 August, and the other half of the same message**: *"one quick tool that
 would be useful would be the ability to mask off a section of any given sheet,
@@ -1596,6 +1603,47 @@ rather than by reading the code.
     which this template had already been bitten by four times), so the check
     **measures the button** rather than believing the flag.
 
+78. ⭐️⭐️ **ONE SET OUT OF THE GAME, RATHER THAN THE WHOLE PROJECT FOLDER.**
+    The designer, 26 August 2026: *"I'd like to be able to just export a set of
+    cut pieces, rather than everything in one project folder."*
+    ⭐️ **A box is the right unit**, and it was already the room's own: Sheets,
+    Pieces, Match and the Checklist all gather by it (fault 42), boxes can be
+    named (fault 62), made in one go (fault 65) and put by (fault 68). A game
+    of 161 sheets and four boxes wants one of them far more often than all
+    four, so this is the normal case rather than a special one.
+    ⚠️⚠️ **AN EXPORT FOLDER IS REPLACED WHOLE**, on purpose — a half-old export
+    listing pieces that are no longer there would be worse than no export. So
+    a set written into `export/` would have **destroyed the export of
+    everything else**, silently, and been noticed only by somebody later
+    hunting for a piece that used to be in it. Each set goes into
+    `export-<set>/` of its own.
+    ⚠️ **One rule for that folder's name** (`export_dir`), because two things
+    ask: the writing of it, and the button that opens it afterwards. Two
+    spellings would show one folder and fill another — and the PAGE must not
+    work the name out either, which is why the project payload carries it.
+    Fault 24 for the ninth time.
+    ⭐️ **The check against the contents list goes with the set and is about
+    the set** — its pieces, and only the checklist sections whose `book` was
+    set outright (fault 64). ⚠️ Fault 51's inferred box is **not** used here:
+    it orders and never hides, and using a guess to decide what a report is
+    about would break that. ⚠️ And the headline figure had to be worked out
+    again from the bands actually in the report, or a folder holding one set
+    would have been headed *44 of 221*, which is a lie by arithmetic.
+    ⚠️ **The checklist itself stays with the whole game.** A page headed *what
+    is still to cut* listing three other boxes, sitting in a folder holding
+    one, sends somebody hunting for pieces that were never meant to be there.
+    ⚠️ **And the folder says it is part of something.** A set's README says
+    plainly that this is one set out of the game and that the others are
+    exported separately — otherwise anybody checking it against a printed
+    contents list finds most of the game missing and concludes the room lost
+    it.
+    ⭐️⭐️ **Its check needed a second box before it meant anything.** Written
+    against the bench as it stood — one box, one piece — every one of these
+    checks passed over code that exported the lot and called it a set. That is
+    **fault 54**, the easy question in place of the real one, and the bench now
+    grows a piece in another box and puts itself back afterwards. Teeth tried:
+    with the filter removed, three go red.
+
 ---
 
 ## Architecture
@@ -1693,6 +1741,7 @@ and hands the finished pieces over with a button.
 | `manifest.json` | what each piece IS: name, kind, note, turn, component, **its back** (another piece), **how many copies the game needs** | ⭐️ **NO** |
 | `wanted.json` | the checklist | ⭐️ **NO** |
 | `cache/` | thumbnails, suggestions, piece statistics | yes |
+| `export-<set>/` | ⭐️ the same, for ONE box of sheets taken away on its own — a folder per set, because an export is replaced whole and a set written into `export/` would destroy it. See fault 78 | yes, whole, every time |
 | `export/` | ⭐️ what leaves the room: the pictures, the inventory, the contact sheet, the printable checklist, the cut files, and **the cut checked against the contents list** — as a page to print and as JSON for whatever ingests the pieces | yes, whole, every time |
 | `history/` | ⭐️ the last 60 copies of each of the three stores above that cannot be rebuilt, kept automatically before every save that changes anything — see fault 49 | it IS the rebuild |
 
@@ -1727,7 +1776,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 533 checks, about a minute
+check/check.sh          # 547 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1798,6 +1847,16 @@ thing by hand in the browser — a shape kept off one sheet, **laid down twice
 on another**, read back off the disk at the printed size it was kept at, and a
 shape belonging to a different game found by search and brought over with a
 star.
+
+It takes **one set away on its own**: a set the game does not have is refused,
+a set is written into a folder of its own, the whole game's folder is still
+there beside it, the pieces from another box are left out — ⭐️ which needed the
+bench to grow a second box before it meant anything (fault 54) — the inventory
+and the README say which set it is and that the others are exported separately,
+and the whole game's checklist does not travel with it while the check against
+the contents list does. Then in the browser: the way out offers the whole game
+or one set, choosing one names the folder it will go into, and **pressing the
+button writes that set's folder** rather than the game's.
 
 It works **masking a part of a sheet off**: the whole sheet masked suggests
 nothing, taking the mask off puts every suggestion back — which is the check

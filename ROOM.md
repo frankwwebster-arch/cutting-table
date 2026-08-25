@@ -842,6 +842,30 @@ Press **Take it away**. The room writes a folder beside the project called
 | `still-to-cut.html` | the checklist, to print and take to the table with a scalpel |
 | `laser/` | one pair of files per outlined sheet: a **cut file** at true size in millimetres, and the **printable sheet** to go with it |
 
+### ⭐️⭐️ One set at a time, rather than the whole game
+
+**Take away** offers *everything in this game* or **one set of sheets** — the
+box, the supplement, whichever run of sheets you want on its own. It holds
+what you would expect: the pieces cut from that set, their inventory, their
+contact sheet and their cut files.
+
+- ⭐️ **Each set goes into a folder of its own**, `export-<the set>`, so taking
+  one away never touches another. That matters more than it sounds: an export
+  folder is **replaced whole** every time, so a set written into `export/`
+  would have quietly destroyed the export of everything else.
+- ⭐️ **The check against the contents list travels with it, and is about
+  that set** — its pieces, and the checklist sections that answer to that box.
+  A report saying *44 of 221* over a folder holding one set would be a lie by
+  arithmetic.
+- ⚠️ **The checklist itself stays with the whole game.** A page headed *what is
+  still to cut* listing three other boxes, sitting in a folder holding one,
+  would send somebody hunting for pieces that were never meant to be in it.
+- ⚠️ **The README says plainly that this is one set out of a bigger game**, and
+  that the others are exported separately — so nobody checking the folder
+  against a printed contents list thinks the room has lost most of it.
+- A set the room has no pieces for says so, rather than writing an empty
+  folder.
+
 **None of it is shaped for any particular program**, and that is deliberate.
 The same folder is what a Tabletop Simulator or Tabletopia mod wants, what a
 VASSAL module wants, what somebody reprinting a lost counter at true size

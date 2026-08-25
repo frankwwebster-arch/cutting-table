@@ -746,6 +746,44 @@ class Project:
     # has always worked this out on the page (`bookOf()` in project.html) —
     # the same rule, which is the part that matters: the box is the sheet id
     # with the page number taken off (fault 42).
+    # ⭐️⭐️ ONE BOX OUT OF THE GAME, RATHER THAN THE WHOLE GAME. The designer,
+    # 26 August 2026: "I'd like to be able to just export a set of cut pieces,
+    # rather than everything in one project folder."
+    #
+    # ⭐️ A box is the room's own unit of work — it is what Sheets, Pieces,
+    # Match and the Checklist all gather by (fault 42) — so it is the right
+    # thing to be able to hand over on its own. A game is 161 sheets and four
+    # boxes; wanting one of them is the normal case, not a special one.
+    def book_label(self, book):
+        """What a box of sheets is CALLED. ⚠️ One reading of it, because the
+        folder is named from it and the README says it — two would disagree
+        the moment somebody renamed a box."""
+        told = (self.meta.get("books") or {}).get(book)
+        return str(told).strip() if told and str(told).strip() else str(book or "")
+
+    def books(self):
+        """Every box in this game, in order, with its name and how many
+        sheets it holds."""
+        out, seen = [], {}
+        for s in self.sheets:
+            b = self.book_of(s.get("id"))
+            if b not in seen:
+                seen[b] = {"id": b, "name": self.book_label(b), "sheets": 0}
+                out.append(seen[b])
+            seen[b]["sheets"] += 1
+        return out
+
+    def pieces_of_book(self, book):
+        """The stems cut from one box of sheets.
+
+        ⚠️ A piece the index knows nothing about belongs to NO box (fault 39 —
+        a project's pieces folder may hold files the room did not put there),
+        so it is left out of a set rather than swept into one.
+        """
+        idx = self.index().get("pieces", {})
+        return {st for st, meta in idx.items()
+                if self.book_of(meta.get("sheet") or "") == book}
+
     def book_of(self, sid):
         # ⭐️ A SET CAN BE SAID RATHER THAN DERIVED. The designer, 25 August 2026:
         # "I just imported 12 new files... assuming they would all stay
@@ -1051,6 +1089,13 @@ class Project:
             # and the room has been calling the box that ever since — see the
             # `book` route for why the id itself is never touched.
             "books": self.meta.get("books") or {},
+            # ⭐️ where each box of sheets would be written if it were taken
+            # away on its own. ⚠️ The page must not work this name out for
+            # itself: the room owns it (export_dir), and two spellings of it
+            # would show one folder and fill another (fault 24).
+            "sets": [{"id": b["id"],
+                      "folder": os.path.basename(export_dir(self, b["id"]))}
+                     for b in self.books()],
             # ⭐️ the sets put by for later — "book:<id>" for a box of sheets,
             # "set:<id>" for a set of components with no box. See later_keys().
             "later": sorted(self.later_keys()),
@@ -1244,13 +1289,29 @@ class Project:
     # ⚠️ IT REPORTS; IT NEVER FIXES. The same rule as the kinds, the
     # look-alikes and the splitting: it says what it sees and leaves every
     # decision to the person, because every one of these is a judgement.
-    def cut_review(self):
+    def cut_review(self, book=None):
+        """⭐️ `book` narrows the whole report to one box of sheets — its
+        pieces, and the checklist sets that answer to it — so a set handed
+        over on its own carries a check about itself and not about the game.
+
+        ⚠️ ONLY A BOX SOMEBODY HAS ACTUALLY PICKED counts here. Fault 51 works
+        out which set a box answers to from the links already made, for
+        ORDERING, and its rule is that it orders and never hides; using that
+        guess to decide what a report is about would break it. So a set counts
+        as this box's only if its `book` was set outright (fault 64).
+        """
         man = self.manifest().get("pieces", {})
         idx = self.index().get("pieces", {})
         st = self.wanted_status(man=man)
         items = st["items"]
         names = {g.get("id"): (g.get("name") or g.get("id"))
                  for g in (st.get("groups") or [])}
+        mine = None
+        if book:
+            ours = {g.get("id") for g in (st.get("groups") or [])
+                    if str(g.get("book") or "") == book}
+            items = [it for it in items if it.get("group", "") in ours]
+            mine = self.pieces_of_book(book)
 
         def about(it):
             return {"id": it.get("id", ""), "name": it.get("name") or it.get("id"),
@@ -1321,6 +1382,8 @@ class Project:
         # as the Pieces page, so the two cannot disagree about what exists.
         stems = sorted(set(idx) | set(self.piece_files()) |
                        set(k for k, v in man.items() if v.get("spare")))
+        if mine is not None:
+            stems = [st_ for st_ in stems if st_ in mine]
         spoken_for = set()
         for it in items:
             spoken_for.update(it["pieces"])
@@ -1361,13 +1424,23 @@ class Project:
             if rec.get("w_in"):
                 row["w_in"], row["h_in"] = rec["w_in"], rec["h_in"]
         s = st["summary"]
+        # ⚠️ THE HEADLINE FIGURE IS WORKED OUT OVER THE WHOLE GAME, and for a
+        # report about ONE box that would be a plain lie — "44 of 221" over a
+        # folder holding one set. Work it out again from the bands that are
+        # actually in this report.
+        live_total, live_done, live_pct = (
+            s["live_total"], s["live_done"], s["live_pct"])
+        if mine is not None:
+            live_total = sum(x["total"] for x in live_sets)
+            live_done = sum(x["accounted"] for x in live_sets)
+            live_pct = (round(100.0 * live_done / live_total) if live_total else 100)
         return {"has_list": has_list, "sets": live_sets, "put_by": put_by,
                 "orphans": orphans,
                 "aside": aside, "unnamed": unnamed, "held": held,
                 "loose_decks": loose,
                 "summary": {
-                    "components": s["live_total"], "accounted": s["live_done"],
-                    "pct": s["live_pct"],
+                    "components": live_total, "accounted": live_done,
+                    "pct": live_pct,
                     "later_sets": len(put_by),
                     "later_components": sum(x["total"] for x in put_by),
                     "later_left": sum(x["total"] - x["accounted"] for x in put_by),
@@ -2575,10 +2648,25 @@ def laser_svg(pieces, sheet, dpi, title):
                esc_html(COPYRIGHT_LINE), "\n".join(body)))
 
 
-def export_laser(pr, root, progress=None):
-    """One cut file and one printable sheet per outlined sheet."""
+def export_dir(pr, book=None):
+    """Where an export goes: `export/` for the whole game, `export-<set>/`
+    for one box of sheets.
+
+    ⚠️ ONE RULE FOR THE NAME, because two things ask — the writing of it and
+    the button that opens the folder afterwards. Written out twice they would
+    disagree the moment a box was renamed, and the button would open an empty
+    folder while the pieces sat in another (fault 24).
+    """
+    return os.path.join(pr.path, "export" if not book
+                        else "export-" + file_slug(book, "set", cap=60))
+
+
+def export_laser(pr, root, progress=None, only=None):
+    """One cut file and one printable sheet per outlined sheet.
+    ⭐️ `only` holds it to one box of sheets, for a set handed over alone."""
     book = pr.outlines().get("sheets", {})
-    outlined = [s for s in pr.sheets if (book.get(s["id"]) or {}).get("pieces")]
+    outlined = [s for s in pr.sheets if (book.get(s["id"]) or {}).get("pieces")
+                and (only is None or pr.book_of(s["id"]) == only)]
     if not outlined:
         return 0
     out = os.path.join(root, "laser")
@@ -2625,9 +2713,23 @@ you cut anything: if the print is not true size, nothing will line up.
     return made
 
 
-def export_project(pr, progress=None):
-    """Write the plain folder. Returns a summary of what came out."""
-    root = os.path.join(pr.path, "export")
+def export_project(pr, progress=None, book=None):
+    """Write the plain folder. Returns a summary of what came out.
+
+    ⭐️⭐️ `book` writes ONE BOX OF SHEETS instead of the whole game. The
+    designer, 26 August 2026: "I'd like to be able to just export a set of cut
+    pieces, rather than everything in one project folder." A box is what every
+    list in the room gathers by (fault 42), so it is the natural thing to hand
+    over on its own — and on a game of 161 sheets and four boxes, wanting one
+    of them is the normal case rather than a special one.
+
+    ⚠️ IT GOES IN A FOLDER OF ITS OWN. Writing a set into `export/` would
+    destroy the whole-game folder that was there — the export is replaced
+    wholesale each time, on purpose — so somebody exporting one box would
+    silently lose the export of everything else. One folder per box, named
+    after it.
+    """
+    root = export_dir(pr, book)
     # Everything here is made by the room and can be made again, so it is
     # replaced wholesale rather than merged — a half-old export listing pieces
     # that are no longer there would be worse than no export at all.
@@ -2651,6 +2753,9 @@ def export_project(pr, progress=None):
     if os.path.isdir(pr.spare_dir()):
         aside = {f[:-4] for f in os.listdir(pr.spare_dir()) if f.endswith(".png")}
     stems = sorted(set(idx) | set(pr.piece_files()) | aside)
+    if book:
+        mine = pr.pieces_of_book(book)
+        stems = [st for st in stems if st in mine]
     dpi = pr.dpi
     rows, taken, unnamed = [], {}, 0
     # stem -> the file it was written as, so a piece can point at another one
@@ -2731,6 +2836,19 @@ def export_project(pr, progress=None):
                  "\n%d of them have not been given a name yet and are filed under "
                  "the number they were cut as." % unnamed))
     game = pr.meta.get("game") or pr.meta.get("name") or pr.id
+    if book:
+        # ⚠️ SAY THAT THIS IS PART OF SOMETHING. A folder of one box that did
+        # not say so reads as the whole game, and somebody checking it against
+        # a printed contents list would find most of the game missing and
+        # think the room had lost it.
+        counts += ("\n\nThis folder holds ONE SET out of %s — the pieces cut "
+                   "from %s. The game's other sets are exported separately, "
+                   "each into a folder of its own; nothing here is missing."
+                   % (game, pr.book_label(book)))
+    # ⭐️ What this FOLDER is about, said once and used by everything that
+    # names it — the README, the contact sheet, the check. A set's folder that
+    # called itself by the game's name would look exactly like the whole game.
+    subject = game if not book else ("%s — %s" % (game, pr.book_label(book)))
 
     def readme(made_files, spares, has_tick, laser_sheets):
         # ⚠️ Describe the folder that was ACTUALLY written. A README naming a
@@ -2777,7 +2895,8 @@ def export_project(pr, progress=None):
     with open(os.path.join(root, "COPYRIGHT.txt"), "w") as fh:
         fh.write(COPYRIGHT_NOTICE)
     write_json(os.path.join(root, "inventory.json"),
-               {"game": game, "dpi": dpi,
+               {"game": game, "set": pr.book_label(book) if book else "",
+                "dpi": dpi,
                 "made": "the Cutting Room",
                 "pieces": rows}, indent=1)
     cols = ["file", "name", "kind", "component", "copies", "back", "sheet",
@@ -2796,9 +2915,13 @@ def export_project(pr, progress=None):
     if progress:
         progress(len(stems), len(stems), "the contact sheet")
     with open(os.path.join(root, "contact-sheet.html"), "w") as fh:
-        fh.write(contact_sheet(rows, game))
+        fh.write(contact_sheet(rows, subject))
     made.append("contact-sheet.html")
-    tick = checklist_page(pr, game)
+    # ⚠️ THE CHECKLIST IS ABOUT THE WHOLE GAME, so it goes with the whole
+    # game. A page headed "what is still to cut" listing three other boxes,
+    # sitting in a folder holding one, would send somebody looking for pieces
+    # that were never meant to be in it.
+    tick = None if book else checklist_page(pr, game)
     if tick:
         with open(os.path.join(root, "still-to-cut.html"), "w") as fh:
             fh.write(tick)
@@ -2806,22 +2929,26 @@ def export_project(pr, progress=None):
     # ⭐️⭐️ THE CHECK AGAINST THE CONTENTS LIST, beside the pieces it is about.
     # ⚠️ It reports and never fixes, so it cannot fail the export: a report
     # that stopped the folder being written would be worse than no report.
-    review = pr.cut_review()
+    # ⭐️ For one box it is a check about THAT box — its pieces, and the sets
+    # that answer to it — because a report saying "44 of 221" over a folder
+    # holding one set is a lie by arithmetic.
+    review = pr.cut_review(book)
     with open(os.path.join(root, "check-against-the-list.html"), "w") as fh:
-        fh.write(review_page(pr, game, review))
+        fh.write(review_page(pr, subject, review))
     write_json(os.path.join(root, "check-against-the-list.json"),
-               dict(review, game=game), indent=1)
+               dict(review, game=subject), indent=1)
     made += ["check-against-the-list.html", "check-against-the-list.json"]
-    cuts = export_laser(pr, root, progress)
+    cuts = export_laser(pr, root, progress, book)
     if cuts:
         made.append("laser/ (%d sheet%s)" % (cuts, "" if cuts == 1 else "s"))
     with open(os.path.join(root, "README.txt"), "w") as fh:
         fh.write(EXPORT_README % {
-            "game": game, "dpi": dpi, "counts": counts,
+            "game": subject, "dpi": dpi, "counts": counts,
             "copyright": COPYRIGHT_NOTICE,
             "contents": readme(made, len(rows) - len(live), bool(tick), cuts)})
     return {"folder": root, "pieces": len(live), "spare": len(rows) - len(live),
-            "unnamed": unnamed, "laser": cuts, "files": made}
+            "unnamed": unnamed, "laser": cuts, "files": made,
+            "book": book or "", "set": pr.book_label(book) if book else ""}
 
 
 # ------------------------------------------------- closing the room safely
@@ -3895,8 +4022,13 @@ class Room(BaseHTTPRequestHandler):
         if head == "export" and method == "POST":
             # A big project is hundreds of pieces to turn, crop and write, so
             # it runs as a job with a count, like the import and the cut do.
+            # ⭐️ `set` names one box of sheets to write on its own.
+            d = self.body_json()
+            want = str(d.get("set") or "").strip()
+            if want and want not in [b["id"] for b in pr.books()]:
+                return self.send_json({"error": "no such set of sheets"}, 400)
             job = start_job("Writing the export folder",
-                            lambda prog: export_project(pr, prog))
+                            lambda prog: export_project(pr, prog, want or None))
             return self.send_json(job)
 
         if head == "cut-all" and method == "POST":
@@ -4323,9 +4455,13 @@ class Room(BaseHTTPRequestHandler):
         if head == "reveal" and method == "POST":
             d = self.body_json()
             what = str(d.get("what") or "project")
+            # ⭐️ a set is written into a folder of its own, so the button
+            # that opens it has to be told which one (fault 24: one rule for
+            # the folder's name, in export_project, and this asks for it)
+            out = export_dir(pr, str(d.get("set") or "").strip() or None)
             path = {"project": pr.path, "pieces": pr.p("pieces"),
                     "sheets": pr.p("sheets"),
-                    "export": os.path.join(pr.path, "export")}.get(what, pr.path)
+                    "export": out}.get(what, pr.path)
             os.makedirs(path, exist_ok=True)
             return self.send_json({"ok": open_folder(path), "path": path})
 

@@ -2489,6 +2489,47 @@ const SHAPE = `(function () {
         body: JSON.stringify({ name: "" }) });
     }
 
+    /* ⭐️⭐️ ONE SET TAKEN AWAY ON ITS OWN, FROM THE BUTTON. The designer, 26
+       August 2026: "I'd like to be able to just export a set of cut pieces,
+       rather than everything in one project folder." What the room writes is
+       checked through the API in check.sh; what is checked HERE is the wire —
+       that the set chosen on the page is the set that gets written. Fault 61:
+       a check through the API is a green light over a button that does
+       nothing. */
+    if (BED) {
+      console.log("\ntaking one set away, from the button");
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=export`);
+      await sleep(1800);
+      const picker = await page.val(`(function () {
+        var s = document.getElementById("exportSet");
+        return { has: !!s, n: s ? s.options.length : 0,
+                 all: s && s.options[0] ? s.options[0].textContent : "" }; })()`);
+      check("the way out offers the whole game, or one set of it",
+            picker && picker.has && picker.n >= 2 &&
+            /everything in this game/.test(picker.all || ""), picker);
+      const chose = await page.val(`(function () {
+        var s = document.getElementById("exportSet");
+        s.value = "proving-ground-sheets";
+        s.dispatchEvent(new Event("change"));
+        return { where: document.getElementById("exportWhere").textContent,
+                 says: document.getElementById("exportGo").textContent }; })()`);
+      // ⚠️ the folder's name comes from the room, not worked out in the page:
+      // two spellings of it would show one folder and fill another
+      check("choosing one names the folder it will go into, and says so on the button",
+            chose && /export-proving-ground-sheets$/.test(chose.where || "")
+            && /this set/.test(chose.says || ""), chose);
+      const out = path.join(BED, "export-proving-ground-sheets");
+      fs.rmSync(out, { recursive: true, force: true });
+      await page.val(`document.getElementById("exportGo").click(); true`);
+      for (let i = 0; i < 80; i++) {
+        if (fs.existsSync(path.join(out, "inventory.csv"))) break;
+        await sleep(400);
+      }
+      check("and pressing it writes THAT set's folder",
+            fs.existsSync(path.join(out, "inventory.csv")), fs.existsSync(out));
+      fs.rmSync(out, { recursive: true, force: true });
+    }
+
     // ---------------------------------------------------- the offline page
     if (BAKED) {
       console.log("\nthe same editor, baked and opened from a file");

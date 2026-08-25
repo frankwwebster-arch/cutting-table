@@ -1362,7 +1362,7 @@ say "taking the pieces out of the room"
 curl -s -o "$TMP/export.json" -X POST -H "Content-Type: application/json" -d "{}" \
      "http://127.0.0.1:$PORT/api/p/proving-ground/export"
 $PY - "$TMP" "$PORT" <<'PY5' || code=1
-import csv, json, os, sys, time, urllib.request
+import csv, json, os, sys, time, urllib.error, urllib.request
 tmp, port = sys.argv[1], sys.argv[2]
 jid = json.load(open(os.path.join(tmp, "export.json")))["id"]
 for _ in range(120):
@@ -1442,6 +1442,111 @@ if want in svgs:
           'width="152.400mm"' in svg and 'height="203.200mm"' in svg,
           svg.split("width=")[1][:40] if "width=" in svg else svg[:60])
     check("with one closed path per piece", svg.count("<path ") == 1, svg.count("<path "))
+
+# ⭐️⭐️ ONE SET OUT OF THE GAME, RATHER THAN THE WHOLE PROJECT FOLDER. The
+# designer, 26 August 2026: "I'd like to be able to just export a set of cut
+# pieces, rather than everything in one project folder." A box is what every
+# list in the room gathers by, so it is the natural thing to hand over alone.
+print("")
+print("  one set of it, taken away on its own")
+API = "http://127.0.0.1:%s/api/p/proving-ground" % port
+
+
+def call(path, body=None):
+    req = urllib.request.Request(API + path, data=json.dumps(body or {}).encode(),
+                                 headers={"Content-Type": "application/json"},
+                                 method="POST")
+    try:
+        return 200, json.load(urllib.request.urlopen(req))
+    except urllib.error.HTTPError as e:
+        return e.code, json.load(e)
+
+
+# ⚠️ a set the game does not have is refused, rather than writing an empty
+# folder that looks like a set with nothing in it
+code, d = call("/export", {"set": "no-such-set"})
+check("a set the game does not have is refused, with a reason",
+      code == 400 and "set of sheets" in d.get("error", ""), [code, d])
+
+# ⚠️⚠️ A BENCH WITH ONE BOX IN IT CANNOT SHOW THAT A SET LEAVES ANYTHING OUT
+# — the check would pass over code that exported the lot and called it a set.
+# That is fault 54: the easy question in place of the real one. So give the
+# game a piece in a SECOND box first, and put the bench back afterwards.
+bed = os.path.join(tmp, "home", "proving-ground")
+idx_file = os.path.join(bed, "pieces", "index.json")
+idx = json.load(open(idx_file))
+idx["pieces"]["zz_other_box"] = {"sheet": "second-book-of-tests-01"}
+json.dump(idx, open(idx_file, "w"))
+man_file = os.path.join(bed, "manifest.json")
+man = json.load(open(man_file))
+man.setdefault("pieces", {})["zz_other_box"] = {"name": "In the other box"}
+json.dump(man, open(man_file, "w"))
+import shutil
+shutil.copyfile(os.path.join(root, "pieces", pieces[0]),
+                os.path.join(bed, "pieces", "zz_other_box.png"))
+
+code, job = call("/export", {"set": "proving-ground-sheets"})
+for _ in range(120):
+    time.sleep(0.25)
+    st = json.load(urllib.request.urlopen("http://127.0.0.1:%s/api/jobs/%s" % (port, job["id"])))
+    if st["state"] != "running":
+        break
+r = st.get("result") or {}
+one = r.get("folder") or ""
+check("a set is written into a folder of its own",
+      os.path.basename(one).startswith("export-") and os.path.isdir(one),
+      os.path.basename(one))
+# ⚠️⚠️ AND THE WHOLE GAME'S FOLDER IS STILL THERE. An export folder is
+# replaced whole every time, so a set written into `export/` would have
+# destroyed the export of everything else — silently, and only noticed by
+# somebody who went looking for a piece that used to be in it.
+check("and the whole game's folder is untouched beside it",
+      os.path.isdir(root) and os.path.exists(os.path.join(root, "inventory.csv")))
+mine = sorted(f for f in os.listdir(os.path.join(one, "pieces")) if f.endswith(".png"))
+check("with the pieces cut from that set in it", mine == pieces, mine)
+# ⚠️⚠️ AND THE ONE FROM THE OTHER BOX LEFT OUT, which is the whole point
+check("and the piece cut from another box left out of it",
+      "in-the-other-box.png" not in mine, mine)
+inv = json.load(open(os.path.join(one, "inventory.json")))
+check("and the inventory says which set it is about", bool(inv.get("set")), inv.get("set"))
+# ⚠️ SAY THAT THIS IS PART OF SOMETHING. A folder of one box that did not say
+# so reads as the whole game, and anybody checking it against a printed
+# contents list would find most of the game missing.
+readme = " ".join(open(os.path.join(one, "README.txt")).read().split())
+check("and the README says plainly that this is one set out of a bigger game",
+      "ONE SET out of" in readme and "nothing here is missing" in readme)
+# ⚠️ the checklist is about the WHOLE game, so it stays with the whole game
+check("the whole game's checklist does not travel with one set",
+      not os.path.exists(os.path.join(one, "still-to-cut.html")))
+# ⭐️ but the CHECK does, and it is a check about this set
+check("while the check against the contents list does, and goes with it",
+      os.path.exists(os.path.join(one, "check-against-the-list.html")))
+
+# ⭐️ and the other box, on its own, holds exactly the other piece
+code, job = call("/export", {"set": "second-book-of-tests"})
+for _ in range(120):
+    time.sleep(0.25)
+    st = json.load(urllib.request.urlopen("http://127.0.0.1:%s/api/jobs/%s" % (port, job["id"])))
+    if st["state"] != "running":
+        break
+two = (st.get("result") or {}).get("folder") or ""
+theirs = sorted(f for f in os.listdir(os.path.join(two, "pieces")) if f.endswith(".png"))
+check("a second set goes into a second folder, holding only its own piece",
+      two != one and theirs == ["in-the-other-box.png"], [os.path.basename(two), theirs])
+check("and the first set's folder is still there, untouched",
+      os.path.exists(os.path.join(one, "pieces", pieces[0])))
+
+# put the bench back exactly as it was found
+idx = json.load(open(idx_file))
+idx["pieces"].pop("zz_other_box", None)
+json.dump(idx, open(idx_file, "w"))
+man = json.load(open(man_file))
+man["pieces"].pop("zz_other_box", None)
+json.dump(man, open(man_file, "w"))
+os.remove(os.path.join(bed, "pieces", "zz_other_box.png"))
+shutil.rmtree(two, ignore_errors=True)
+shutil.rmtree(one, ignore_errors=True)
+
 sys.exit(1 if bad else 0)
 PY5
 

@@ -789,6 +789,27 @@ anything that speeds up cutting.
 
 ## Done
 
+### 26 August 2026 — one set taken away on its own
+
+- `[x]` ⭐️⭐️ **Take away offers the whole game or one set of sheets.** The
+  designer: *"I'd like to be able to just export a set of cut pieces, rather
+  than everything in one project folder."* A box is what every list in the room
+  already gathers by, so it is the natural thing to hand over alone.
+- `[x]` ⚠️⚠️ **A folder of its own, `export-<set>/`.** An export folder is
+  replaced **whole** every time, so a set written into `export/` would have
+  silently destroyed the export of everything else.
+- `[x]` ⚠️ **One rule for the folder's name**, because the writing of it and
+  the button that opens it both ask — and the page is told the name rather
+  than working it out (fault 24, ninth time).
+- `[x]` ⭐️ **The check against the contents list goes with the set and is
+  about the set**, with its headline figure worked out again — *44 of 221* over
+  a folder holding one set would be a lie by arithmetic. The checklist itself
+  stays with the whole game, and the README says this is one set out of it.
+- `[x]` **14 new checks** — 533 to 547. ⭐️ The bench had to **grow a second
+  box** before any of them meant anything: written against one box and one
+  piece, every check passed over code that exported the lot (fault 54). Teeth
+  tried: three go red.
+
 ### 25 August 2026 — a part of a sheet the automatic pass leaves alone
 
 - `[x]` ⭐️⭐️ **Mask off**, `M` at the table. The designer: *"one quick tool
