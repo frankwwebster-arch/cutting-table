@@ -1072,6 +1072,54 @@ rather than by reading the code.
     ⚠️ It still only ORDERS — fault 51's rule is untouched, and a piece cut
     from one box may perfectly well be another box's component.
 
+65. ⭐️⭐️ **FILES IMPORTED IN ONE GO ARE ONE SET.** The designer, 25 August 2026: *"I
+    just imported 12 new files into the project, assuming they would all stay
+    together as a single set of 12 sheets, but they've all turned into
+    separate sets, which is highly inefficient. I think it is a reasonable
+    view that files imported in one go will form a single set."*
+    It is a reasonable view, and it was not what happened: a sheet's id is
+    made from the file it arrived in, so twelve files made **twelve sets of
+    one sheet each** — twelve headings, twelve entries in every *Show* list,
+    and nothing to work through a box at a time with (fault 42, arriving from
+    the other end).
+    ⭐️ The name is taken from what the person has already said, in this order:
+    **the folder they dropped**, then **the part of the file names they all
+    share** (`sail-01`, `sail-02` → *sail*), and only failing both, the day it
+    arrived. All of them can be renamed on the heading (fault 62).
+    ⚠️ One file is left alone — it is its own set already, and a prefix would
+    invent a heading for a single sheet. ⚠️ And a set that already has a name
+    keeps it: dropping more sheets into an existing set must not rename it
+    back to its file names.
+    ⭐️⭐️ **And the ones that came in before that was true.** *Put these N into
+    one set…* on Sheets gathers **the sheets shown** — so the search box is
+    how they are chosen: type *sail*, see twelve, press once. It works by
+    writing `book` on each sheet, so **not one id changes**: pieces are named
+    from those ids and the outlines are filed under them. That also makes it
+    undoable — the same press with an empty name puts them back in the sets
+    their file names give them.
+    ⚠️ `bookOf()` now asks the sheet first and falls back to the id, in the
+    page and in the room. It is still ONE rule in each (fault 42).
+
+66. ⚠️⚠️⚠️ **A SECOND DEFINITION OF A NAME DOES NOT CLASH IN PYTHON, IT
+    SILENTLY REPLACES THE FIRST** — for the whole module, including code
+    written hundreds of lines above it. `cutting_room.py` had **two functions
+    called `slug`**: one at the top that makes an id, one further down that
+    makes a readable file name, with different second parameters. Every
+    `slug(...)` in the file was reaching the second one, whichever its author
+    meant — so `slug(x, 40)`, written for *keep 40 characters*, was passing 40
+    as the **fallback**.
+    ⭐️ It surfaced as a set of sheets called **40**, which is the sort of
+    thing you can stare at for a long time. The two really are different jobs
+    and now say so: `slug()` makes an ID and drops a file extension,
+    `file_slug()` makes a file name.
+    ⚠️ Sheet ids made under the old shadowing kept the extension in them
+    (`a-scan-pdf-01`) and those sheets are on people's disks, so
+    `sheet_title()` accepts **either spelling** when deciding whether a label
+    is still the file's own name.
+    ⭐️ There is a check now: **nothing in any of the room's modules may be
+    defined twice**, top level. It reads the AST of all four, and its teeth
+    were tried by adding a second `slug` and watching it name both lines.
+
 ---
 
 ## Architecture
@@ -1191,7 +1239,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 391 checks, about a minute
+check/check.sh          # 406 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

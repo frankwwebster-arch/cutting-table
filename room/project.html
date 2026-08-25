@@ -64,6 +64,11 @@
         <button data-f="done" title="Sheets you have ticked as done with. The tick is set by hand — only you can know when a sheet is finished.">Finished</button>
       </div>
       <input id="sFind" placeholder="find a sheet…" style="min-width:170px" data-tip="Find a sheet by its name or its page number.">
+      <!-- ⭐️⭐️ ONE DRAG, ONE SET — and a way to put right the ones that came
+           in before that was true. The sheets SHOWN are the sheets acted on,
+           so a search is how you choose them: type “sail”, and the twelve
+           sheets in front of you become one set in a press. -->
+      <button id="sJoin" data-tip="Gather the sheets shown above into one set, under a name of your own. Nothing is renamed and nothing moves: a sheet only says which set it is in, so the pieces cut from it keep their names and this can be undone at any time by putting the same sheets back with an empty name.">Put these into one set…</button>
       <span class="spacer" style="flex:1"></span>
       <button id="cutAll" data-tip="Cut every sheet that has outlines on it and has not been cut yet, one after another. Safe to press again later: cutting a sheet a second time keeps the names you have already given its pieces.">Cut every outlined sheet</button>
       <span class="tiny muted" id="cutAllNote"></span>
@@ -529,6 +534,7 @@
     return j(API).then(function (p) {
       if (p.error) { document.getElementById("title").textContent = p.error; return; }
       project = p;
+      SAID = null;                 // the sets the sheets say they are in
       if (!document.getElementById("tab-export").hidden) renderExport();
       document.title = p.name + " — the Cutting Room";
       document.getElementById("title").textContent = p.name;
@@ -706,11 +712,12 @@
   });
   document.getElementById("sFind").addEventListener("input", debounce(function () { renderSheets(); }, 180));
 
-  function renderSheets() {
-    var box = document.getElementById("sheets");
-    box.innerHTML = "";
+  /* ⚠️ ONE RULE FOR WHAT IS SHOWN, in one place: the list is drawn from it and
+     "put these into one set" acts on it, and if those two ever disagreed the
+     button would gather sheets that are not in front of the person. */
+  function shownSheets() {
     var q = document.getElementById("sFind").value.trim().toLowerCase();
-    var list = project.sheets.filter(function (s) {
+    return (project && project.sheets || []).filter(function (s) {
       if (q && ((s.label || "") + " " + (s.name || "") + " " + (s.source || "") + " " + s.id).toLowerCase().indexOf(q) < 0) return false;
       /* ⚠️ A SHEET YOU HAVE FINISHED WITH IS NOT A SHEET STILL TO OUTLINE,
          even though nothing was ever outlined on it. The designer, 23 August 2026:
@@ -725,6 +732,12 @@
       if (sheetFilter === "done") return !!s.done;
       return true;
     });
+  }
+  function renderSheets() {
+    var box = document.getElementById("sheets");
+    box.innerHTML = "";
+    var q = document.getElementById("sFind").value.trim().toLowerCase();
+    var list = shownSheets();
     document.getElementById("noSheets").hidden = list.length > 0 || !project.sheets.length;
     if (!list.length && project.sheets.length) {
       /* ⭐️ The commonest way to see this is now a GOOD one — the room opens
@@ -746,6 +759,9 @@
       });
       return;
     }
+    var jb = document.getElementById("sJoin");
+    jb.textContent = "Put these " + list.length + " into one set…";
+    jb.disabled = list.length < 2;
     var uncut = project.sheets.filter(function (s) { return s.outlines > 0 && !s.cut; }).length;
     document.getElementById("cutAllNote").textContent = uncut ? uncut + " not cut yet" : "";
     // group by prefix, so a forty-page book stays together
@@ -841,6 +857,48 @@
   }
 
 
+  /* ⭐️⭐️ THE SHEETS SHOWN, GATHERED INTO ONE SET. The designer, 25 August 2026: "I
+     just imported 12 new files into the project, assuming they would all stay
+     together as a single set of 12 sheets, but they've all turned into
+     separate sets, which is highly inefficient."
+     Twelve files dropped at once now arrive as one set (see the import
+     below), and this is how the ones that came in before that was true are
+     put right — and how any sheets at all can be gathered, whatever they were
+     called when they arrived.
+     ⚠️ NOTHING IS RENAMED. A sheet says which set it is in; its id, which
+     every piece cut from it is named after, does not change. So this can be
+     undone by doing it again with an empty name. */
+  document.getElementById("sJoin").addEventListener("click", function () {
+    var shown = shownSheets();
+    if (shown.length < 2) return;
+    var books = {};
+    shown.forEach(function (s) { books[bookOf(s.id)] = 1; });
+    var already = Object.keys(books);
+    var guess = already.length === 1 ? bookLabel(already[0])
+      : (window.RoomDrop ? window.RoomDrop.common(
+          shown.map(function (s) { return String(s.label || s.id); })) : "");
+    var said = window.prompt(
+      "Put these " + shown.length + " sheets into one set, called what?\n\n" +
+      "They are the " + shown.length + " sheets shown — narrow them with the " +
+      "search box first if that is not what you want." +
+      (already.length > 1 ? "\n\nThey are in " + already.length +
+        " separate sets at the moment; this makes them one." : "") +
+      "\n\nNothing is renamed and nothing is cut again: a sheet only says which " +
+      "set it belongs to. Leave this empty to put them back into the sets " +
+      "their file names give them.",
+      guess);
+    if (said === null) return;
+    post(API + "/sheets/book", { ids: shown.map(function (s) { return s.id; }),
+                                 name: said.trim() })
+      .then(function (r) {
+        if (r.error) { flash(r.error, true); return; }
+        flash(said.trim()
+          ? r.sheets + " sheets are now “" + said.trim() + "”."
+          : r.sheets + " sheets are back in their own sets.");
+        piecesData = null;
+        load();
+      }, function () { flash("The room did not answer. Nothing was changed.", true); });
+  });
   /* ----------------------------------------------------------- import */
   var drop = document.getElementById("drop"), files = document.getElementById("files");
   document.getElementById("pick").addEventListener("click", function (e) { e.preventDefault(); files.click(); });
@@ -858,6 +916,9 @@
   function takeFiles(list) {
     var arr = Array.prototype.slice.call(list || []);
     if (!arr.length) return;
+    // ⭐️ one drag, one set — the rule lives in room/drop.js, which both
+    // ways in use (see setFor there)
+    var batch = window.RoomDrop ? window.RoomDrop.setFor(arr) : null;
     var prog = document.getElementById("progress");
     var q = document.getElementById("queue");
     q.innerHTML = "";
@@ -878,7 +939,10 @@
       chain = chain.then(function () {
         mark(i, "busy", "sending…");
         prog.textContent = "Importing " + (i + 1) + " of " + arr.length + " — " + f.name;
-        return fetch(API + "/import", { method: "POST", headers: { "X-Filename": encodeURIComponent(f.name) }, body: f })
+        var head = { "X-Filename": encodeURIComponent(f.name) };
+        // every file of one drag under one prefix, so they are one set
+        if (batch) head["X-Prefix"] = batch.prefix;
+        return fetch(API + "/import", { method: "POST", headers: head, body: f })
           .then(function (r) { return r.json(); })
           .then(function (r) {
             if (r.error) throw new Error(r.error);
@@ -894,8 +958,16 @@
     });
     chain.then(function () {
       prog.textContent = n + " sheet" + (n === 1 ? "" : "s") + " added from " + done +
-        " file" + (done === 1 ? "" : "s") + (bad ? ", " + bad + " could not be read" : "") + ".";
-      load();
+        " file" + (done === 1 ? "" : "s") + (bad ? ", " + bad + " could not be read" : "") +
+        (batch && n ? ", as one set — “" + batch.name + "”. Rename it on its heading." : ".");
+      // ⚠️ a set that already has a name keeps it: dropping more sheets into
+      // an existing set must not rename it back to its file names
+      if (batch && n && !((project && project.books) || {})[batch.prefix]) {
+        post(API + "/book/" + encodeURIComponent(batch.prefix), { name: batch.name })
+          .then(function () { load(); });
+      } else {
+        load();
+      }
     });
   }
 
@@ -1811,8 +1883,22 @@
      person works in — never "sheet 27". The box is taken off the sheet's own
      id, which is how the Sheets page has always grouped them, so every page
      in the room agrees about what a box is. */
+  /* ⭐️ WHICH SET A SHEET IS IN. Normally the id it was filed under with the
+     page number taken off — but a sheet may SAY which set it belongs to, and
+     then that wins. The designer, 25 August 2026: "I just imported 12 new files…
+     assuming they would all stay together as a single set of 12 sheets, but
+     they've all turned into separate sets."
+     ⚠️ Saying it is how sheets are gathered into one set WITHOUT their ids
+     changing — and pieces are named from those ids, so nothing else may. */
+  var SAID = null;
   function bookOf(sid) {
-    return (String(sid || "").match(/^(.+)-\d+$/) || [0, sid || ""])[1];
+    if (!SAID) {
+      SAID = {};
+      ((project && project.sheets) || []).forEach(function (x) {
+        if (x.book) SAID[x.id] = x.book;
+      });
+    }
+    return SAID[sid] || (String(sid || "").match(/^(.+)-\d+$/) || [0, sid || ""])[1];
   }
 
   /* ⭐️ WHAT THIS BOX IS CALLED. The designer, 25 August 2026: "I need to rename them
@@ -2883,7 +2969,9 @@
      out — so the group carries `book`, and the ordering is right before a
      single piece has been linked. */
   function slugish(t) {
-    return String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    // the same rule as room/drop.js uses for a dropped set's prefix
+    return window.RoomDrop ? window.RoomDrop.slug(t)
+      : String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   }
   function boxesWithNoSet() {
     var spoken = {};

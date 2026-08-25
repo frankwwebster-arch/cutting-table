@@ -15,6 +15,33 @@ as when you finish. The full version of all of that is in CLAUDE.md under
 
 ## NOW
 
+### `[x]` ⭐️⭐️ Files imported in one go are one set — **built**
+
+The designer, 25 August 2026: *"I just imported 12 new files into the project, assuming
+they would all stay together as a single set of 12 sheets, but they've all
+turned into separate sets, which is highly inefficient. I think it is a
+reasonable view that files imported in one go will form a single set."*
+
+- `[x]` **One drag, one set**, named after the folder dropped, or the part of
+  the file names they share (`sail-01`, `sail-02` → *sail*), or failing both
+  the day it arrived. Renameable on its heading like any other.
+- `[x]` ⭐️ **And the ones that came in before**: *Put these N into one set…*
+  on Sheets gathers **the sheets shown**, so the search box is how they are
+  chosen — type *sail*, press once. ⚠️ Not one id changes (pieces are named
+  from those), so the same press with an empty name undoes it.
+- `[x]` ⚠️ The rule lives in `room/drop.js`, because both ways in use it.
+
+See CLAUDE.md 65.
+
+### `[x]` ⚠️⚠️⚠️ Two functions called `slug` — **fixed**
+
+A second definition of a name silently replaces the first for the whole
+module, so every `slug(...)` in `cutting_room.py` was reaching the one at the
+bottom, whichever its author meant — and `slug(x, 40)` was passing 40 as a
+*fallback*. It surfaced as a set of sheets called **40**. They are `slug()`
+(an id) and `file_slug()` (a file name) now, and ⭐️ **a check reads the AST of
+all four modules and fails on anything defined twice**. See CLAUDE.md 66.
+
 ### `[x]` ⭐️⭐️ A whole box of sheets out again, in one press — **built**
 
 The designer, 25 August 2026: *"I'd like to be able to remove a full set of imported
@@ -444,7 +471,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 391 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 406 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -555,6 +582,11 @@ anything that speeds up cutting.
   other said twenty-one, and it was missing the last five faults. That is the
   fault this codebase warns about most, arriving in the documents themselves.
 - `[x]` **1 new check** — 321 to 322.
+- `[x]` **15 new checks** — 391 to 406: nothing defined twice in any of the
+  four modules, what a handful of dropped files is called (folder, shared
+  name, the day it arrived, and one file left alone), and the sheets shown
+  gathered into one set — the ids untouched, the name kept, and an empty name
+  putting them back.
 - `[x]` **16 new checks** — 375 to 391: a whole box removed in one call (and
   only that box, its scans off the disk, its outlines still in the room's own
   history, and a box that is not there refused in a sentence), the question

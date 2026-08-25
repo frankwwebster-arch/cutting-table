@@ -83,6 +83,34 @@ $PY -c "import ast; ast.parse(open('check/names_across_a_recut.py').read())"
 $PY -c "import sys; sys.path.insert(0,'.'); import cutting_room; cutting_room.table_template()"
 echo "  ok   the room's Python parses and every editor patch still matches"
 
+# ⚠️⚠️ A SECOND DEFINITION OF A NAME DOES NOT CLASH IN PYTHON, IT SILENTLY
+# REPLACES THE FIRST — for the whole module, including code written hundreds
+# of lines above it. `cutting_room.py` had two functions called `slug`, taking
+# different second arguments, and every call in the file was reaching the
+# second one whichever its author meant. It surfaced as a set of sheets
+# called "40", which is what `slug(x, 40)` gives you when 40 lands in the
+# parameter named `fallback`.
+say "is anything in here defined twice?"
+$PY - <<'PYTWICE' || code=1
+import ast, sys
+bad = []
+for mod in ("cutting_room.py", "cutting_table.py", "cut.py", "sheets.py"):
+    tree = ast.parse(open(mod, encoding="utf-8").read(), mod)
+    seen = {}
+    for node in tree.body:            # top level only: a method may share a name
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if node.name in seen:
+                bad.append("%s: %s is defined at line %d and again at line %d"
+                           % (mod, node.name, seen[node.name], node.lineno))
+            seen[node.name] = node.lineno
+    print(("  ok   " if not bad else "  WRONG ") +
+          "nothing in %s is defined twice" % mod +
+          ("" if not bad else "   — saw " + "; ".join(bad)))
+    if bad:
+        break
+sys.exit(1 if bad else 0)
+PYTWICE
+
 # ⭐️ A GOOGLE DOC IS NOT A FILE, IT IS A THING GOOGLE WILL MAKE A FILE OUT OF.
 # The designer, 24 August 2026, trying one: a document has no download at its own
 # address, so what came back was the editor's web page — and the room reported

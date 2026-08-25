@@ -184,5 +184,63 @@
     });
   }
 
-  window.RoomDrop = { install: install, TAKE: TAKE };
+  /* ⭐️⭐️ WHAT SET A HANDFUL OF FILES MAKES. The designer, 25 August 2026: "I just
+     imported 12 new files into the project, assuming they would all stay
+     together as a single set of 12 sheets, but they've all turned into
+     separate sets, which is highly inefficient. I think it is a reasonable
+     view that files imported in one go will form a single set."
+     It is, and it was not what happened: a sheet's id is made from the file
+     it arrived in, so twelve files made twelve sets of one sheet each.
+
+     ⭐️ The name is taken from what the person has already said, in this
+     order: the folder they dropped, then the part of the file names they all
+     share ("sail-01", "sail-02" → "sail"), and only failing both, the day it
+     arrived. Every one of them can be renamed on its heading afterwards.
+     ⚠️ ONE file is left alone — it is its own set already, and a prefix would
+     invent a heading for a single sheet.
+     ⚠️ It lives HERE because both ways in use it: a drop on a project's page
+     and a drop on the front page that makes the project. Written twice they
+     would drift, and the two doors would file the same twelve files
+     differently (fault 24). */
+  var MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+                "August", "September", "October", "November", "December"];
+
+  function slugish(t) {
+    return String(t || "").toLowerCase().replace(/\.[a-z0-9]+$/, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+
+  /* the front that a set of names all share, tidied of trailing numbers and
+     separators — "" when there is not enough of it to be a name */
+  function common(names) {
+    if (!names || !names.length) return "";
+    var same = names.reduce(function (a, b) {
+      var i = 0;
+      while (i < a.length && i < b.length && a[i].toLowerCase() === b[i].toLowerCase()) i++;
+      return a.slice(0, i);
+    });
+    same = String(same).replace(/[\s\-_.0-9]+$/, "").trim();
+    return same.length >= 3 ? same : "";
+  }
+
+  function setFor(files) {
+    var arr = Array.prototype.slice.call(files || []);
+    if (arr.length < 2) return null;
+    var paths = arr.map(function (f) { return String(f._path || f.name || ""); });
+    var folder = paths[0].indexOf("/") > 0 ? paths[0].split("/")[0] : "";
+    if (folder && paths.every(function (p) { return p.split("/")[0] === folder; })) {
+      return { prefix: slugish(folder), name: folder };
+    }
+    var same = common(arr.map(function (f) {
+      return String(f.name || "").replace(/\.[a-z0-9]+$/i, ""); }));
+    if (same) return { prefix: slugish(same), name: same };
+    var d = new Date();
+    var two = function (n) { return (n < 10 ? "0" : "") + n; };
+    return { prefix: "imported-" + d.getFullYear() + two(d.getMonth() + 1) +
+                     two(d.getDate()) + "-" + two(d.getHours()) + two(d.getMinutes()),
+             name: "Imported " + d.getDate() + " " + MONTHS[d.getMonth()] };
+  }
+
+  window.RoomDrop = { install: install, TAKE: TAKE,
+                      setFor: setFor, common: common, slug: slugish };
 })();

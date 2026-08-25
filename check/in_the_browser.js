@@ -1761,6 +1761,89 @@ const SHAPE = `(function () {
             left.sheets.map((x) => x.id));
     }
 
+    /* ⭐️⭐️ ONE DRAG, ONE SET. The designer, 25 August 2026: "I just imported 12 new
+       files into the project, assuming they would all stay together as a
+       single set of 12 sheets, but they've all turned into separate sets,
+       which is highly inefficient. I think it is a reasonable view that files
+       imported in one go will form a single set."
+       ⭐️ Two halves: what a handful of dropped files is CALLED (one rule, in
+       room/drop.js, because both ways in use it), and putting right the ones
+       that came in before that was true. */
+    {
+      console.log("\nfiles dropped in one go make one set");
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=sheets`);
+      const named = await page.val(`(function () {
+        function fake(n, p) { return { name: n, _path: p }; }
+        return {
+          folder: RoomDrop.setFor([fake("a.pdf", "The Core Box/a.pdf"),
+                                   fake("b.pdf", "The Core Box/b.pdf")]),
+          shared: RoomDrop.setFor([fake("sail-01.png"), fake("sail-02.png"),
+                                   fake("sail-03.png")]),
+          nothing: RoomDrop.setFor([fake("scan001.png"), fake("qq.png")]),
+          alone: RoomDrop.setFor([fake("just-the-one.pdf")]) }; })()`);
+      check("a dropped folder gives its name to the set",
+            named.folder && named.folder.name === "The Core Box" &&
+            named.folder.prefix === "the-core-box", named.folder);
+      // ⭐️ the commonest case of all: a dozen scans named alike
+      check("and files named alike are gathered under the part they share",
+            named.shared && named.shared.prefix === "sail", named.shared);
+      check("with nothing to go on, the set is the day it arrived, not nonsense",
+            named.nothing && /^Imported \d/.test(named.nothing.name || ""), named.nothing);
+      // ⚠️ one file is its own set already; a prefix would invent a heading
+      check("and one file on its own is left exactly as it was",
+            named.alone === null, named.alone);
+    }
+
+    /* ⭐️⭐️ AND PUTTING RIGHT WHAT CAME IN BEFORE. The sheets SHOWN are the
+       sheets acted on, so the search box is how they are chosen. */
+    {
+      console.log("\ngathering sheets that are already in the game into one set");
+      await page.go(`${ROOM}/p/the-spare-room/?tab=sheets`);
+      const joined = await page.val(`(function () {
+        var f = document.querySelector('#sFilter button[data-f=""]');
+        if (f) f.click();
+        document.getElementById("sFind").value = "keepers";
+        document.getElementById("sFind").dispatchEvent(new Event("input"));
+        return true; })()`);
+      await sleep(700);
+      const asked = await page.val(`(function () {
+        var said = null;
+        window.prompt = function (t, guess) { said = { t: t, guess: guess }; return "The Sail Sheets"; };
+        var b = document.getElementById("sJoin");
+        var says = b.textContent;
+        b.click();
+        return { says: says, said: said }; })()`);
+      check("the button says how many sheets it would gather",
+            /Put these 2 into one set/.test(asked.says || ""), asked.says);
+      check("and it offers a name made from what they are called already",
+            asked.said && /keepers/i.test(asked.said.guess || ""), asked.said && asked.said.guess);
+      check("and says plainly that nothing is renamed",
+            asked.said && /Nothing is renamed/.test(asked.said.t || ""),
+            asked.said && (asked.said.t || "").slice(0, 60));
+      await sleep(1600);
+      const after = await (await fetch(`${ROOM}/api/p/the-spare-room`)).json();
+      const mine = (after.sheets || []).filter((x) => x.id.indexOf("keepers") === 0);
+      check("the sheets shown are gathered into one set",
+            mine.length === 2 && mine.every((x) => x.book === "the-sail-sheets"),
+            mine.map((x) => [x.id, x.book]));
+      // ⚠️⚠️ AND NOT ONE ID CHANGED. Pieces are named from the sheet id and
+      // the outlines are filed under it; a set is a label, not a move.
+      check("and not one sheet id changed, which is what pieces are named from",
+            mine.map((x) => x.id).join(",") === "keepers-01,keepers-02",
+            mine.map((x) => x.id));
+      check("the room calls that set by the name it was given",
+            (after.books || {})["the-sail-sheets"] === "The Sail Sheets", after.books);
+      // ⭐️ and it undoes: the same press with an empty name
+      await page.val(`(function () {
+        window.prompt = function () { return ""; };
+        document.getElementById("sJoin").click(); return true; })()`);
+      await sleep(1600);
+      const back = await (await fetch(`${ROOM}/api/p/the-spare-room`)).json();
+      check("and an empty name puts them back in the sets their files gave them",
+            (back.sheets || []).filter((x) => x.id.indexOf("keepers") === 0)
+              .every((x) => !x.book), (back.sheets || []).map((x) => [x.id, x.book]));
+    }
+
     /* ⭐️⭐️ NAMING THE BOX A SET OF SHEETS CAME OUT OF. The designer, 25 August
        2026: "Ability to rename imported sections... I need to rename them from
        their current file names (which are lots of nonsense)." */

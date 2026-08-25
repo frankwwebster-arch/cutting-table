@@ -116,6 +116,13 @@ Each file gets a row: *waiting*, *reading*, and then how many sheets it made —
 or why it could not be read. **One bad file no longer stops the rest.**
 Anything that is not a kind the room reads is left alone and counted.
 
+⭐️⭐️ **Everything dropped in one go becomes one set.** Twelve files dragged in
+together are twelve sheets of one set, not twelve sets of one sheet. The set
+takes its name from the folder you dropped, or from the part of the file names
+they all share (`sail-01`, `sail-02` → *sail*), or failing both from the day
+it arrived — and you can rename it on its heading. A single file is left
+alone: it is its own set already.
+
 ⭐️ **A folder from Google Drive or Dropbox:** download it — Drive hands you a
 ZIP, Dropbox and Drive for Desktop give you a real folder — and drop **that**.
 One gesture, whole game. If you drop a folder on the *front* page with no name
@@ -156,6 +163,15 @@ rail at the cutting table.
 the outlines are filed under it, so the id never changes — this is only what
 the box is *called*. Empty the name and every sheet goes straight back to its
 file name. A sheet you have named yourself is never touched.
+
+⭐️⭐️ **Gathering sheets that are already in.** Sheets imported one at a time,
+or before the room did this, end up in a set each. **Put these N into one
+set…**, beside the search box, gathers **the sheets shown** — so the search
+box is how you choose them: type *sail*, see the twelve, press once and name
+them. ⚠️ Nothing is renamed and nothing is cut again: a sheet only says which
+set it is in, and its id — which every piece cut from it is named after — does
+not change. The same press with an **empty name** puts them back into the sets
+their file names give them.
 
 ⚠️⚠️ **Remove this set** — beside it — takes the whole box out of the game.
 It is the one thing in the room that really deletes, so it asks first and the

@@ -207,6 +207,7 @@
     prog.textContent = "making “" + name + "”…";
     var bar = document.getElementById("homeBar");
     if (bar) { bar.hidden = false; bar.classList.add("unsure"); }
+    var batch = window.RoomDrop ? window.RoomDrop.setFor(arr) : null;
     fetch(api, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name }) })
       .then(function (r) { return r.json(); })
       .then(function (jj) {
@@ -217,8 +218,12 @@
             rows[i].className = "q busy";
             rows[i].querySelector(".s").textContent = "reading…";
             prog.textContent = "importing " + (i + 1) + " of " + arr.length + "…";
+            var head = { "X-Filename": encodeURIComponent(f.name), "X-Wait": "1" };
+            // ⭐️ one drop, one set — the same rule as a project's own page,
+            // which is why it lives in room/drop.js
+            if (batch) head["X-Prefix"] = batch.prefix;
             return fetch("/api/p/" + encodeURIComponent(pid) + "/import", {
-              method: "POST", headers: { "X-Filename": encodeURIComponent(f.name), "X-Wait": "1" }, body: f })
+              method: "POST", headers: head, body: f })
               .then(function (r) { return r.json(); })
               .then(function (res) {
                 if (res.error) throw new Error(res.error);
@@ -234,7 +239,15 @@
               });
           });
         });
-        return chain.then(function () { location.href = "/p/" + encodeURIComponent(pid) + "/"; });
+        return chain.then(function () {
+          if (!batch || !n) return null;
+          // give the set the name the files themselves suggest; it can be
+          // renamed on its heading like any other
+          return fetch("/api/p/" + encodeURIComponent(pid) + "/book/" +
+                       encodeURIComponent(batch.prefix), {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: batch.name }) });
+        }).then(function () { location.href = "/p/" + encodeURIComponent(pid) + "/"; });
       })
       .catch(function (e) {
         if (bar) bar.hidden = true;

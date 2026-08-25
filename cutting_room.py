@@ -769,6 +769,16 @@ class Project:
     # the same rule, which is the part that matters: the box is the sheet id
     # with the page number taken off (fault 42).
     def book_of(self, sid):
+        # ⭐️ A SET CAN BE SAID RATHER THAN DERIVED. The designer, 25 August 2026:
+        # "I just imported 12 new files... assuming they would all stay
+        # together as a single set of 12 sheets, but they've all turned into
+        # separate sets." A sheet may now carry the set it belongs to, and the
+        # id it was filed under is only the fallback — which means sheets can
+        # be gathered into one set WITHOUT their ids changing, and pieces are
+        # named from those ids.
+        told = str((self.sheet(sid) or {}).get("book") or "").strip()
+        if told:
+            return told
         m = re.match(r"^(.+)-\d+$", str(sid or ""))
         return m.group(1) if m else str(sid or "")
 
@@ -793,7 +803,12 @@ class Project:
             return label
         m = re.match(r"^(.*?)(\s(?:p\.\d+|·\s*picture\s*\d+))$", label)
         front = m.group(1) if m else label
-        if slug(front, 40) == self.book_of(s.get("id")):
+        # ⚠️ BOTH SPELLINGS. Sheet ids made before the two slug functions were
+        # untangled kept the file's extension in them ("a-scan-pdf-01"), and
+        # those sheets are on people's disks. Either reading counts as "this
+        # label is still the file's own name".
+        book = self.book_of(s.get("id"))
+        if slug(front, 40) == book or file_slug(front) == book:
             return named + (m.group(2) if m else "")
         return label
 
@@ -2027,7 +2042,17 @@ def open_folder(path):
 _SLUG_BAD = re.compile(r"[^a-z0-9]+")
 
 
-def slug(text, fallback="piece", cap=60):
+# ⚠️⚠️ THIS WAS CALLED `slug`, AND SO IS THE ONE AT THE TOP OF THIS FILE.
+# A second definition of a name does not clash in Python, it silently REPLACES
+# the first — for the whole module, including code written hundreds of lines
+# above it. So every `slug(...)` in here was reaching this one, whichever its
+# author meant, and the two take different second arguments: `slug(x, 40)`
+# meant "keep 40 characters" and was quietly passing 40 as the FALLBACK. It
+# came out as a sheet whose set was literally called "40".
+# ⭐️ The two really are different jobs and now say so: `slug()` makes an ID
+# (and drops a file extension), `file_slug()` makes a FILE NAME a person can
+# read. Nothing in here may define either name twice again.
+def file_slug(text, fallback="piece", cap=60):
     """A file name a person can read, out of a name a person typed."""
     s = _SLUG_BAD.sub("-", str(text or "").lower()).strip("-")
     if len(s) > cap:                     # cut at a word, not mid-word
@@ -2416,7 +2441,7 @@ def export_laser(pr, root, progress=None):
                         "%s — %s" % (game, s.get("label") or sid))
         if not svg:
             continue
-        stem = slug(sid, "sheet", cap=70)      # the id is unique and stable
+        stem = file_slug(sid, "sheet", cap=70)  # the id is unique and stable
         with open(os.path.join(out, stem + "-cut.svg"), "w") as fh:
             fh.write(svg)
         # the same sheet as a picture, so the cut lines have something to
@@ -2492,7 +2517,7 @@ def export_project(pr, progress=None):
         # ⭐️ Named by WHAT IT IS. Two pieces may honestly share a name — the
         # two identical terrain tiles — so the second gets a number rather than
         # quietly overwriting the first.
-        base = slug(name or stem)
+        base = file_slug(name or stem)
         key = ("spare/" if spare else "") + base
         taken[key] = taken.get(key, 0) + 1
         fname = base + ("" if taken[key] == 1 else "-%d" % taken[key]) + ".png"
@@ -3522,6 +3547,45 @@ class Room(BaseHTTPRequestHandler):
                 pr.meta["books"] = books
                 pr.save_meta()
             return self.send_json({"ok": True, "books": books})
+
+        # ⭐️⭐️ PUTTING SHEETS INTO ONE SET. The designer, 25 August 2026, having dragged
+        # twelve files in at once: "assuming they would all stay together as a
+        # single set of 12 sheets, but they've all turned into separate sets,
+        # which is highly inefficient."
+        # ⚠️ NOTHING IS RENAMED and no file moves: this writes `book` on each
+        # sheet, which is only what SET it belongs to. The id every piece is
+        # named from, every outline is filed under, and every mask and
+        # thumbnail is stored as, is untouched — so this is completely
+        # reversible, and an empty book puts them back where they were.
+        if head == "sheets" and len(rest) == 2 and rest[1] == "book" and method == "POST":
+            d = self.body_json()
+            ids = [str(x) for x in (d.get("ids") or [])]
+            # ⚠️ EMPTY MEANS EMPTY. `slug()` answers "sheet" for nothing at
+            # all, which is a sensible id and a terrible answer here: it would
+            # file every sheet under a set called "sheet" instead of putting
+            # them back where they were.
+            raw = str(d.get("book") or d.get("name") or "").strip()
+            book = slug(raw, 40) if raw else ""
+            name = str(d.get("name") or "").strip()[:80]
+            if not ids:
+                return self.send_json({"error": "no sheets given"}, 400)
+            with pr.lock:
+                n = 0
+                for sid in ids:
+                    s = pr.sheet(sid)
+                    if s is None:
+                        continue
+                    if book:
+                        s["book"] = book
+                    else:
+                        s.pop("book", None)
+                    n += 1
+                if book and name:
+                    books = dict(pr.meta.get("books") or {})
+                    books[book] = name
+                    pr.meta["books"] = books
+                pr.save_meta()
+            return self.send_json({"ok": True, "sheets": n, "book": book})
 
         if head == "sheet" and len(rest) == 2:
             s = pr.sheet(rest[1])
