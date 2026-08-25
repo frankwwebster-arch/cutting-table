@@ -15,6 +15,28 @@ as when you finish. The full version of all of that is in CLAUDE.md under
 
 ## NOW
 
+### `[x]` ⭐️⭐️ A whole box of sheets out again, in one press — **built**
+
+The designer, 25 August 2026: *"I'd like to be able to remove a full set of imported
+sheets in one click (after a confirmation). The [two of these books] are
+irrelevant here."* **Remove this set** sits on every box heading on Sheets.
+
+⚠️ It is the one thing in the room that really deletes, so the question says
+everything before it is answered: how many sheets, how many outlines go with
+them, that cut pieces are kept — and, if there are any, a second question
+about those. ⚠️ And it says only what is **true** about getting it back: the
+scans have to be imported again, but the outlines are in the room's own
+history. See CLAUDE.md 63.
+
+### `[x]` ⭐️⭐️ A set takes its name from the box it belongs to — **built**
+
+The designer, 25 August 2026: *"the +add a new box should surely take its cue from the
+headings I've provided in #import? Otherwise how will it differentiate?"*
+Every set picker offers the game's boxes by the names given them, so picking
+one is the whole job — and the set then **knows which box it answers to**,
+which is the question fault 51 had to infer from the links already made. The
+ordering is right from the first component. See CLAUDE.md 64.
+
 ### `[x]` ⚠️⚠️ "Add them" did nothing at all — **fixed**
 
 The designer, 25 August 2026: *"I have the contents list for the core box, pasted it
@@ -422,7 +444,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 375 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 391 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -533,6 +555,12 @@ anything that speeds up cutting.
   other said twenty-one, and it was missing the last five faults. That is the
   fault this codebase warns about most, arriving in the documents themselves.
 - `[x]` **1 new check** — 321 to 322.
+- `[x]` **16 new checks** — 375 to 391: a whole box removed in one call (and
+  only that box, its scans off the disk, its outlines still in the room's own
+  history, and a box that is not there refused in a sentence), the question
+  the page asks before it read rather than assumed, and the boxes of sheets
+  offered as sets by name — the set knowing which box it answers to. ⭐️ Teeth
+  tried: the faults put back turn ten of them red.
 - `[x]` **17 new checks** — 358 to 375: a box named and every sheet in it
   called by that name (and the ids untouched, and a typed label left alone,
   and all of it undone by emptying the name), and the checklist's paste panel

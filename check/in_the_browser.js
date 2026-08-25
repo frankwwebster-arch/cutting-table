@@ -1674,6 +1674,93 @@ const SHAPE = `(function () {
             (kept.items || []).length);
     }
 
+    /* ⭐️⭐️ A SET TAKES ITS NAME FROM THE BOX IT BELONGS TO. The designer, 25
+       August 2026: "the +add a new box should surely take its cue from the
+       headings I've provided in #import? Otherwise how will it
+       differentiate?" By then they had named the boxes their scans came in
+       as, and the room was asking them to type those names a second time and
+       hoping the two matched. */
+    {
+      console.log("\na set of components takes its name from a box of sheets");
+      await fetch(`${ROOM}/api/p/the-spare-room/book/keepers`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "The Keepers Box" }) });
+      await page.go(`${ROOM}/p/the-spare-room/?tab=wanted`);
+      const offered = await page.val(`(function () {
+        document.getElementById("wStart").click();
+        var sel = document.getElementById("wImportGroup");
+        return Array.prototype.map.call(sel.options, function (o) {
+          return o.value + " = " + o.textContent; }); })()`);
+      check("the boxes of sheets in this game are offered as sets, by the names given them",
+            offered.some((o) => /^__book:keepers = The Keepers Box/.test(o)), offered);
+      await page.val(`(function () {
+        document.getElementById("wText").value =
+          ["8 Skeletons", "2 Doors"].join(String.fromCharCode(10));
+        document.getElementById("wImportGroup").value = "__book:keepers";
+        document.getElementById("wImportGo").click(); return true; })()`);
+      await sleep(1800);
+      const book = await (await fetch(`${ROOM}/api/p/the-spare-room/wanted`)).json();
+      const set = (book.groups || []).filter((g) => g.name === "The Keepers Box")[0];
+      check("picking one makes a set of that name, without anybody typing it again",
+            !!set, book.groups);
+      /* ⭐️ and it SAYS which box it answers to, which is the question the room
+         otherwise has to infer from the links already made (fault 51) — right
+         from the first component, before any piece has been linked at all. */
+      check("and the set knows which box of sheets it belongs to",
+            set && set.book === "keepers", set);
+      check("with the pasted components in it",
+            (book.items || []).filter((i) => i.group === (set || {}).id).length === 2,
+            (book.items || []).length);
+    }
+
+    /* ⭐️⭐️ A WHOLE BOX OF SHEETS OUT AGAIN, IN ONE PRESS. The designer, 25 August
+       2026: "I'd like to be able to remove a full set of imported sheets in
+       one click (after a confirmation)."
+       ⚠️ This one really deletes, so it is done in the game kept aside for
+       it, on the box kept aside for the browser. */
+    {
+      console.log("\ntaking a whole box of sheets out, from the page");
+      await page.go(`${ROOM}/p/the-spare-room/?tab=sheets`);
+      const asked = await page.val(`(function () {
+        var f = document.querySelector('#sFilter button[data-f=""]');
+        if (f) f.click();
+        var said = null;
+        window.confirm = function (t) { said = t; return false; };
+        var rows = document.querySelectorAll(".boxrow");
+        for (var i = 0; i < rows.length; i++) {
+          if (/browser-fodder/.test(rows[i].querySelector(".fold .what").textContent)) {
+            rows[i].querySelectorAll("button")[2].click();
+            return { said: said, heads: rows.length };
+          }
+        }
+        return { said: null, heads: rows.length }; })()`);
+      // ⚠️ EVERYTHING IT WILL DO, BEFORE IT IS ANSWERED — this is the one
+      // action in the room that really deletes
+      check("removing a box asks first, and says how many sheets would go",
+            /Take all 2 sheets/.test(asked.said || ""), asked.said);
+      check("and says what it cannot put back, rather than promising an undo",
+            /imported again/.test(asked.said || "") &&
+            /outlines drawn on them are kept/.test(asked.said || ""), asked.said);
+      check("and saying no leaves every sheet where it was",
+            (await (await fetch(`${ROOM}/api/p/the-spare-room`)).json())
+              .sheets.filter((x) => x.id.indexOf("browser-fodder") === 0).length === 2);
+      await page.val(`(function () {
+        window.confirm = function () { return true; };
+        var rows = document.querySelectorAll(".boxrow");
+        for (var i = 0; i < rows.length; i++) {
+          if (/browser-fodder/.test(rows[i].querySelector(".fold .what").textContent)) {
+            rows[i].querySelectorAll("button")[2].click(); return true; } }
+        return false; })()`);
+      await sleep(2000);
+      const left = await (await fetch(`${ROOM}/api/p/the-spare-room`)).json();
+      check("and saying yes takes the whole box out in one press",
+            !left.sheets.filter((x) => x.id.indexOf("browser-fodder") === 0).length,
+            left.sheets.map((x) => x.id));
+      check("while the other boxes are left exactly as they were",
+            left.sheets.filter((x) => x.id.indexOf("keepers") === 0).length === 2,
+            left.sheets.map((x) => x.id));
+    }
+
     /* ⭐️⭐️ NAMING THE BOX A SET OF SHEETS CAME OUT OF. The designer, 25 August
        2026: "Ability to rename imported sections... I need to rename them from
        their current file names (which are lots of nonsense)." */

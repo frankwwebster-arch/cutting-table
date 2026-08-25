@@ -778,6 +778,23 @@
                     "their own names and nothing already cut is touched.";
         ren.addEventListener("click", function () { renameBook(g); });
         row.appendChild(ren);
+        /* ⭐️⭐️ A WHOLE BOX OUT AGAIN, IN ONE PRESS. The designer, 25 August 2026:
+           "I'd like to be able to remove a full set of imported sheets in one
+           click (after a confirmation). The [two of these books] are
+           irrelevant here." Thirty sheets taken out one × at a time is thirty
+           questions, and nobody reads the fourth — which is worse for the one
+           that matters than a single question that says everything. */
+        var rm = document.createElement("button");
+        rm.type = "button";
+        rm.className = "quiet danger";
+        rm.textContent = "Remove this set";
+        rm.title = "Take every sheet in this set out of the game, after asking. " +
+                   "THIS REALLY DELETES: the sheets go and the outlines drawn on " +
+                   "them go with them. Pieces already cut from them are kept. The " +
+                   "scans would have to be imported again, but the outlines drawn " +
+                   "on them are kept in the room's own history under Settings.";
+        rm.addEventListener("click", function () { removeBook(g); });
+        row.appendChild(rm);
         box.appendChild(row);
       }
       gs.forEach(function (s) {
@@ -1328,6 +1345,16 @@
      ⚠️ A wrong answer costs nothing, because this only ORDERS the list. */
   function boxSet(book) {
     if (!piecesData) return "";
+    /* ⭐️ SOMEBODY SAYING SO OUTRANKS ANYTHING THE ROOM CAN INFER. The designer,
+       25 August 2026: "the +add a new box should surely take its cue from the
+       headings I've provided in #import? Otherwise how will it
+       differentiate?" A set made by picking a box of sheets carries that
+       box's id, and that is the answer this whole function was written to
+       guess at — right from the first component, before any piece has been
+       linked to anything. */
+    var told = ((piecesData.groups) || (wantedData && wantedData.groups) || [])
+      .filter(function (g) { return g.book === book; })[0];
+    if (told) return told.id;
     if (!piecesData._boxSet) {
       var byId = {}, tally = {};
       (piecesData.wanted || []).forEach(function (w) { byId[w.id] = w; });
@@ -1831,6 +1858,62 @@
       });
   }
 
+  /* ⚠️⚠️ THE ONE THING IN THE ROOM THAT REALLY DELETES, so the question has
+     to say everything before it is answered: what goes, what stays, and how
+     to get it back. Everything else here sets things aside instead (fault
+     19), but a set of sheets that should never have been imported has
+     nothing worth keeping — and the OUTLINES drawn on them are the work, so
+     this is the one action that can lose any.
+     ⭐️ What makes it safe enough to offer at all: the room keeps the last
+     sixty copies of outlines.json by itself (fault 49), and the question
+     says so. */
+  function removeBook(book) {
+    var mine = (project.sheets || []).filter(function (s) { return bookOf(s.id) === book; });
+    if (!mine.length) return;
+    var drawn = mine.reduce(function (n, s) { return n + (s.outlines || 0); }, 0);
+    var cut = mine.reduce(function (n, s) { return n + (s.cut || 0); }, 0);
+    var what = bookLabel(book);
+    if (!window.confirm(whatWouldGo(mine.length, drawn, cut, what))) return;
+    var alsoPieces = false;
+    if (cut) {
+      // ⚠️ A SECOND QUESTION, and only when there is something to ask about.
+      // The pieces are kept unless somebody says otherwise, because nothing
+      // else in the room throws a cut piece away.
+      alsoPieces = window.confirm(
+        "Delete the " + cut + " piece" + (cut === 1 ? "" : "s") + " cut from these sheets as well?\n\n" +
+        "OK deletes them — the pictures are removed from the disk and that " +
+        "cannot be undone.\n\nCancel keeps them, which is the usual answer: " +
+        "they stay in the project as pieces off no sheet the room knows, and " +
+        "you can set them aside from Pieces at your leisure.");
+    }
+    fetch(API + "/book/" + encodeURIComponent(book) + (alsoPieces ? "?pieces=1" : ""),
+          { method: "DELETE" })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (r.error) { flash(r.error, true); return; }
+        flash(r.sheets + " sheet" + (r.sheets === 1 ? "" : "s") + " removed" +
+              (r.outlines ? ", and " + r.outlines + " outline" + (r.outlines === 1 ? "" : "s") : "") +
+              (r.pieces ? ", and " + r.pieces + " piece" + (r.pieces === 1 ? "" : "s") + " deleted" : "") +
+              (r.outlines ? ". Settings keeps a copy of those outlines." : "."));
+        piecesData = null; wantedData = null;
+        load();
+      }, function () { flash("The room did not answer. Nothing was removed.", true); });
+  }
+  /* the question itself, written out where it can be read */
+  function whatWouldGo(n, drawn, cut, what) {
+    return "Take all " + n + " sheet" + (n === 1 ? "" : "s") + " of “" + what +
+      "” out of this game?\n\n" +
+      "• The " + n + " sheet" + (n === 1 ? "" : "s") + " go" + (n === 1 ? "es" : "") +
+      (drawn ? ", and the " + drawn + " outline" + (drawn === 1 ? "" : "s") +
+               " drawn on them go too" : ", and nothing is outlined on them") + ".\n" +
+      (cut ? "• The " + cut + " piece" + (cut === 1 ? "" : "s") +
+             " already cut from them STAY in the project — you are asked about " +
+             "those separately.\n" : "") +
+      "• Nothing else in the game is touched.\n\n" +
+      "If this turns out to be a mistake, the scans themselves have to be " +
+      "imported again — but the outlines drawn on them are kept in the room's " +
+      "own history (Settings), so the work is not lost with them.";
+  }
   function sheetLabel(sid) {
     var s = project && project.sheets.filter(function (x) { return x.id === sid; })[0];
     return s ? s.label + (s.name ? " — " + s.name : "") : sid;
@@ -2513,11 +2596,10 @@
       var kinds = {}; d.items.forEach(function (i) { kinds[i.kind || "other"] = 1; });
       var ks = document.getElementById("wKind"); var keepK = ks.value; ks.innerHTML = '<option value="">any</option>' + Object.keys(kinds).sort().map(function (k) { return "<option>" + esc(k) + "</option>"; }).join(""); ks.value = keepK;
       var gs = document.getElementById("wGroup"); var keepG = gs.value; gs.innerHTML = '<option value="">any</option>' + (d.groups || []).map(function (g) { return '<option value="' + esc(g.id) + '">' + esc(g.name) + "</option>"; }).join(""); gs.value = keepG;
+      // the same list as a component's own Set box: the sets there are, the
+      // boxes of sheets that have none yet, and a name of your own
       var ig = document.getElementById("wImportGroup");
-      ig.innerHTML = ((d.groups || []).map(function (g) {
-          return '<option value="' + esc(g.id) + '">' + esc(g.name) + "</option>";
-        }).join("") || '<option value="core">the box</option>') +
-        '<option value="__new">+ a new set…</option>';
+      ig.innerHTML = setOptions("");
       renderWanted();
     });
   }
@@ -2571,15 +2653,8 @@
            [the other box]?" There was no way at all — a component's set was
            fixed when it was made, and there was no way to make a new set
            either. Both are this one dropdown. */
-        '<td><select data-k="group" class="setpick" title="Which box this component belongs to — the core game, or one of its supplements. Everything in the room groups by it.">' +
-          (wantedData.groups || []).map(function (g) {
-            return '<option value="' + esc(g.id) + '"' +
-              ((it.group || "") === g.id ? " selected" : "") + ">" + esc(g.name) + "</option>";
-          }).join("") +
-          ((wantedData.groups || []).some(function (g) { return g.id === (it.group || ""); })
-            ? "" : '<option value="' + esc(it.group || "") + '" selected>' +
-                   esc(it.group || "\u2014 none \u2014") + "</option>") +
-          '<option value="__new">+ a new set…</option></select></td>' +
+        '<td><select data-k="group" class="setpick" title="Which box this component belongs to — the core game, or one of its supplements. The sets of sheets you have imported are offered here by name, so the two agree. Everything in the room groups by it.">' +
+          setOptions(it.group || "") + "</select></td>" +
         '<td><input data-k="kind" value="' + esc(it.kind || "") + '" style="width:8em"></td>' +
         '<td><input data-k="qty" class="qty" value="' + esc(it.qty || "") + '">' +
           // ⭐️ ONE IS ENOUGH, UNLESS EVERY ONE IS DIFFERENT. Nothing in a
@@ -2646,8 +2721,8 @@
         var pick = this;
         var now = mine();
         if (!now) { flash("That component is not on the list any more.", true); return; }
-        if (pick.value === "__new") {
-          var gid = newSet();
+        if (pick.value === "__new" || pick.value.indexOf("__book:") === 0) {
+          var gid = chooseSet(pick.value);
           pick.value = now.group || "";
           if (!gid) return;
           now.group = gid;
@@ -2795,6 +2870,72 @@
       return true;
     });
   }
+  /* ⭐️⭐️ A SET TAKES ITS NAME FROM THE BOX OF SHEETS IT BELONGS TO. The
+     designer, 25 August 2026: "the +add a new box should surely take its cue from the
+     headings I've provided in #import? Otherwise how will it differentiate?"
+     Quite so — by then they had named the boxes their scans came in as, and
+     the room was asking them to type those names a second time and hoping the
+     two matched. The boxes are offered here, so picking one is the whole job.
+
+     ⭐️ And picking one SAYS which box that set answers to, which is the
+     question fault 51 had to infer from the links already made. A person
+     saying it outright is better evidence than anything the room can work
+     out — so the group carries `book`, and the ordering is right before a
+     single piece has been linked. */
+  function slugish(t) {
+    return String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+  function boxesWithNoSet() {
+    var spoken = {};
+    ((wantedData && wantedData.groups) || []).forEach(function (g) {
+      if (g.book) spoken[g.book] = 1;
+      spoken["name:" + String(g.name || "").toLowerCase()] = 1;
+    });
+    var seen = {}, out = [];
+    ((project && project.sheets) || []).forEach(function (x) {
+      var b = bookOf(x.id);
+      if (!b || seen[b]) return;
+      seen[b] = 1;
+      if (spoken[b] || spoken["name:" + bookLabel(b).toLowerCase()]) return;
+      out.push({ book: b, name: bookLabel(b) });
+    });
+    return out;
+  }
+  function setOptions(chosen) {
+    var gs = (wantedData && wantedData.groups) || [];
+    var html = gs.map(function (g) {
+      return '<option value="' + esc(g.id) + '"' +
+        (chosen === g.id ? " selected" : "") + ">" + esc(g.name) + "</option>";
+    }).join("");
+    if (chosen && !gs.some(function (g) { return g.id === chosen; })) {
+      html += '<option value="' + esc(chosen) + '" selected>' +
+              esc(chosen || "\u2014 none \u2014") + "</option>";
+    }
+    var boxes = boxesWithNoSet();
+    if (boxes.length) {
+      html += '<optgroup label="a box of sheets in this game">' +
+        boxes.map(function (b) {
+          return '<option value="__book:' + esc(b.book) + '">' + esc(b.name) + "</option>";
+        }).join("") + "</optgroup>";
+    }
+    return html + '<option value="__new">+ a set of some other name…</option>';
+  }
+  /* What a picked value means. Returns the set's id, or "" if they changed
+     their mind. Makes the set where one has to be made. */
+  function chooseSet(value) {
+    if (String(value).indexOf("__book:") === 0) {
+      var book = String(value).slice(7);
+      var name = bookLabel(book);
+      var gid = slugish(name) || book;
+      if (!((wantedData.groups || []).some(function (g) { return g.id === gid; }))) {
+        wantedData.groups = (wantedData.groups || [])
+          .concat([{ id: gid, name: name, book: book }]);
+      }
+      return gid;
+    }
+    if (value === "__new") return newSet();
+    return value;
+  }
   /* ⭐️ ONE PLACE THAT KNOWS HOW TO MAKE A SET, because two places now offer
      it — a component's own Set box, and the panel that pastes a whole
      contents list in. Written twice they would disagree about what a set id
@@ -2831,16 +2972,15 @@
     var text = document.getElementById("wText").value;
     if (!text.trim()) { document.getElementById("wText").focus(); return; }
     var pick = document.getElementById("wImportGroup");
-    var into = pick.value;
-    if (into === "__new") {
-      into = newSet();
-      pick.value = into || (wantedData.groups || [{}])[0].id || "core";
-      if (!into) return;                    // changed their mind: nothing added
-    }
+    var into = chooseSet(pick.value);
+    if (!into) return;                      // changed their mind: nothing added
+    pick.value = into;
     var tick = document.getElementById("wImportEach");
-    var named = ((wantedData && wantedData.groups || []).filter(function (g) {
-      return g.id === into; })[0] || {}).name || "";
-    post(API + "/wanted/import", { text: text, group: into, group_name: named,
+    var set = ((wantedData && wantedData.groups || []).filter(function (g) {
+      return g.id === into; })[0] || {});
+    post(API + "/wanted/import", { text: text, group: into,
+                                   group_name: set.name || "",
+                                   group_book: set.book || "",
                                    each: !!(tick && tick.checked) }).then(function (d) {
       // ⚠️ AND THE ANSWER IS READ. This took whatever came back as the list
       // itself, so a refusal would have been installed as the checklist.

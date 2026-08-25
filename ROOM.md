@@ -157,6 +157,14 @@ the outlines are filed under it, so the id never changes — this is only what
 the box is *called*. Empty the name and every sheet goes straight back to its
 file name. A sheet you have named yourself is never touched.
 
+⚠️⚠️ **Remove this set** — beside it — takes the whole box out of the game.
+It is the one thing in the room that really deletes, so it asks first and the
+question says everything: how many sheets go, how many outlines go with them,
+and that pieces already cut from them are **kept** (you are asked about those
+separately). ⚠️ Getting it back is not an undo: the scans have to be imported
+again. The **outlines** are kept in the room's own history under Settings, so
+the work is not lost with them.
+
 ⭐️ **The sheet list opens on the work still to do.** With a hundred sheets
 imported, the ones already cut and filed are the ones in the way — so *Sheets*
 opens on **To outline**, and whichever filter you choose is remembered for that
@@ -601,8 +609,14 @@ A leading or trailing number becomes the quantity; the third field after a
 `|` sets the kind. Everything can be edited afterwards.
 
 ⭐️⭐️ **One box at a time.** The panel asks which set the lines belong to, and
-offers **+ a new set…** — so paste the core box's contents list into *Core
-box*, then the supplement's into a set of its own. Everything in the room
+⭐️ **offers the boxes of sheets you have already named** — so paste the core
+box's contents list into *Core box*, then the supplement's into the set named
+after the supplement, without typing either name twice. (*+ a set of some
+other name…* is there for a set that is not a box of sheets at all.)
+
+⭐️ Picking a box that way also tells the room which set that box's pieces
+answer to, so every component list puts the right box first from the very
+first piece — rather than working it out from the links you have made so far. Everything in the room
 groups by that set afterwards: the checklist, Match, and the end-of-job
 report, which counts each box separately.
 

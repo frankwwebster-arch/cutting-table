@@ -1032,6 +1032,46 @@ rather than by reading the code.
     list asked `bookLabel()` — so a renamed box would have gone on being
     called by its file name everywhere else. **Fault 24, sixth time.**
 
+63. ⭐️⭐️ **A WHOLE BOX OUT AGAIN, IN ONE PRESS — AND ONE QUESTION THAT SAYS
+    EVERYTHING.** The designer, 25 August 2026: *"I'd like to be able to remove a full
+    set of imported sheets in one click (after a confirmation). The [two of
+    these books] are irrelevant here."* Thirty sheets taken out one × at a
+    time is thirty questions, and **nobody reads the fourth** — which is worse
+    for the one that matters than a single question that says the lot.
+    ⚠️⚠️ This is **the one thing in the room that really deletes** (fault 19
+    is the rule everywhere else), and what it deletes includes OUTLINES, which
+    are the work. So the question says what goes, what stays, and what can be
+    got back — and the second of those is asked separately: **cut pieces are
+    kept unless somebody says otherwise**, because nothing else in the room
+    throws a piece away.
+    ⚠️⚠️ **And it says only what is TRUE about getting it back.** The first
+    wording said Settings would put it back, which is half a lie: the outlines
+    are kept in the room's history (fault 49) but the sheet records and the
+    scans themselves are gone, so the scans have to be imported again. **A
+    promise the room cannot keep is worse than no promise** — the check reads
+    that sentence, so it cannot quietly drift into the comfortable version.
+    ⭐️ One `remove_sheets()`, called by both doors — one sheet's × and a whole
+    box — because a second copy of a deletion is a second copy that will drift
+    (fault 24).
+
+64. ⭐️⭐️ **A SET OF COMPONENTS TAKES ITS NAME FROM THE BOX OF SHEETS IT
+    BELONGS TO.** The designer, 25 August 2026, minutes after naming their boxes: *"the
+    +add a new box should surely take its cue from the headings I've provided
+    in #import? Otherwise how will it differentiate?"* Quite so. The room had
+    just been given those names and was asking for them again, by hand,
+    hoping the two would match — a set called *Terror in the Dark* and a box
+    of sheets called *Terror in the Dark* with nothing at all between them.
+    Every set picker now offers **the game's boxes**, by the names given them,
+    and picking one is the whole job.
+    ⭐️⭐️ And it answers a question the room had been **inferring**: fault 51
+    works out which set a box of sheets answers to from the links already
+    made, which is good evidence once there are links and no help at all
+    before. A person picking the box says it outright, so the group carries
+    `book` and `boxSet()` believes that first. The ordering is right from the
+    first component, before a single piece has been linked.
+    ⚠️ It still only ORDERS — fault 51's rule is untouched, and a piece cut
+    from one box may perfectly well be another box's component.
+
 ---
 
 ## Architecture
@@ -1151,7 +1191,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 375 checks, about a minute
+check/check.sh          # 391 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

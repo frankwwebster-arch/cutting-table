@@ -411,7 +411,30 @@ json.dump({"id": "the-supplement", "name": "The Supplement", "game": "nothing re
 json.dump({"game": "nothing real", "note": "", "kinds": [], "groups": [], "items": []},
           open(os.path.join(other, "wanted.json"), "w"), indent=1)
 json.dump({"pieces": {}}, open(os.path.join(other, "manifest.json"), "w"), indent=1)
-json.dump({"projects": [bed, other]},
+# ⭐️ a third game, for taking a whole box of sheets out again: two books, one
+# of them outlined, and nothing else in the run reading it — because that
+# check DELETES, and it should not be able to spoil anything else.
+spare = os.path.join(tmp, "home", "the-spare-room")
+os.makedirs(os.path.join(spare, "sheets"))
+spare_sheets = []
+# ⚠️ THREE books, and the third is the browser's: the page presses the button
+# for real further down, and the two checks must not be able to spoil each
+# other — least of all when the browser is skipped for want of Chrome, which
+# would otherwise change what this one counts.
+for book, pages in (("keepers", 2), ("throwaways", 3), ("browser-fodder", 2)):
+    for n in range(1, pages + 1):
+        sid = "%s-%02d" % (book, n)
+        shutil.copyfile("demo/demo-sheet.png", os.path.join(spare, "sheets", sid + ".png"))
+        spare_sheets.append({"id": sid, "label": "%s p.%d" % (book, n),
+                             "name": "", "w": 1800, "h": 2400})
+json.dump({"id": "the-spare-room", "name": "The Spare Room", "game": "nothing real",
+           "dpi": 300, "notes": "", "paths": {}, "hooks": [], "sheets": spare_sheets},
+          open(os.path.join(spare, "project.json"), "w"), indent=1)
+json.dump({"sheets": {"throwaways-01": {"pieces": [{"pts": [[0, 0], [10, 0], [10, 10]]},
+                                                   {"pts": [[0, 0], [5, 0], [5, 5]]}],
+                                        "stamp": 1}}},
+          open(os.path.join(spare, "outlines.json"), "w"), indent=1)
+json.dump({"projects": [bed, other, spare]},
           open(os.path.join(tmp, "home", "projects.json"), "w"), indent=1)
 print("   %d sheets out of %d books" % (len(sheets), len(books)))
 PY
@@ -1232,6 +1255,77 @@ check("and the shape that settles nothing is passed over in silence",
 os.remove(spare)
 sys.exit(1 if bad else 0)
 PY6
+
+# ⭐️⭐️ A WHOLE BOX OF SHEETS OUT AGAIN, IN ONE PRESS. The designer, 25 August
+# 2026: "I'd like to be able to remove a full set of imported sheets in one
+# click (after a confirmation). The [two of these books] are irrelevant here."
+# ⚠️ This is the one thing in the room that really deletes, so what it must
+# NOT do is most of what is checked here.
+say "taking a whole box of sheets out of a game"
+$PY - "$TMP" "$PORT" <<'PY15' || code=1
+import json, os, sys, urllib.error, urllib.request
+tmp, port = sys.argv[1], sys.argv[2]
+API = "http://127.0.0.1:%s/api/p/the-spare-room" % port
+bed = os.path.join(tmp, "home", "the-spare-room")
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+def get():
+    return json.load(urllib.request.urlopen(API))
+
+
+def drop(book, pieces=False):
+    req = urllib.request.Request(API + "/book/" + book + ("?pieces=1" if pieces else ""),
+                                 method="DELETE")
+    try:
+        return json.load(urllib.request.urlopen(req))
+    except urllib.error.HTTPError as e:
+        return json.load(e)
+
+
+def book_of(sid):
+    return sid.rsplit("-", 1)[0]
+
+
+was = get()
+check("the game has the two boxes this check is about",
+      len([s for s in was["sheets"] if book_of(s["id"]) == "throwaways"]) == 3 and
+      len([s for s in was["sheets"] if book_of(s["id"]) == "keepers"]) == 2,
+      [s["id"] for s in was["sheets"]])
+gone = drop("throwaways")
+check("a whole box goes in one call, and says what went",
+      gone.get("sheets") == 3 and gone.get("outlines") == 2, json.dumps(gone))
+now = get()
+check("and only that box went",
+      not [s for s in now["sheets"] if book_of(s["id"]) == "throwaways"] and
+      len([s for s in now["sheets"] if book_of(s["id"]) == "keepers"]) == 2,
+      [s["id"] for s in now["sheets"]])
+check("its scans are off the disk too, not left lying about",
+      not any(f.startswith("throwaways") for f in os.listdir(os.path.join(bed, "sheets"))),
+      sorted(os.listdir(os.path.join(bed, "sheets"))))
+book = json.load(open(os.path.join(bed, "outlines.json")))
+check("and the outlines drawn on them are out of the outline file",
+      "throwaways-01" not in (book.get("sheets") or {}), sorted(book.get("sheets") or {}))
+# ⭐️⭐️ AND THE WORK IS STILL RECOVERABLE, which is the only reason this is
+# safe enough to offer at all: outlines.json is one of the three stores the
+# room keeps its own copies of (fault 49), so the outlines survive a box
+# removed by mistake even though the scans have to be imported again.
+kept = json.load(urllib.request.urlopen(API + "/history"))
+outs = (kept.get("kept") or {}).get("outlines") or []
+check("the outlines that went are still in the room's own history",
+      any("2 outlines" in (c.get("says") or "") for c in outs),
+      [c.get("says") for c in outs])
+# ⚠️ and a box that is not there is a plain answer, not a stack trace
+check("a box the game does not have is refused in a sentence",
+      "no such" in (drop("no-such-book").get("error") or ""), drop("no-such-book"))
+sys.exit(1 if bad else 0)
+PY15
 
 # ⭐️⭐️ WHAT A BOX OF SHEETS IS CALLED. The designer, 25 August 2026: "Ability to
 # rename imported sections... I need to rename them from their current file

@@ -3541,28 +3541,28 @@ class Room(BaseHTTPRequestHandler):
                 return self.send_json({"ok": True, "sheet": s})
             if method == "DELETE":
                 with pr.lock:
-                    pr.meta["sheets"] = [x for x in pr.sheets if x["id"] != s["id"]]
+                    gone = remove_sheets(pr, [s["id"]], bool(query.get("pieces")))
+                return self.send_json(dict({"ok": True}, **gone))
+
+        # ⭐️⭐️ A WHOLE BOX AT ONCE. The designer, 25 August 2026: "I'd like to be able
+        # to remove a full set of imported sheets in one click (after a
+        # confirmation). The [two of these books] are irrelevant here."
+        # Thirty sheets removed one × at a time is thirty confirmations, and
+        # somebody will stop reading them by the fourth — which is worse for
+        # the one that matters than a single question that says everything.
+        # ⚠️ It is the same removal, not a second one that will drift from it
+        # (fault 24): both doors call `remove_sheets()`.
+        if head == "book" and len(rest) == 2 and method == "DELETE":
+            ids = [x["id"] for x in pr.sheets if pr.book_of(x["id"]) == rest[1]]
+            if not ids:
+                return self.send_json({"error": "no such set of sheets"}, 404)
+            with pr.lock:
+                gone = remove_sheets(pr, ids, bool(query.get("pieces")))
+                books = dict(pr.meta.get("books") or {})
+                if books.pop(rest[1], None) is not None:
+                    pr.meta["books"] = books      # nothing left to call anything
                     pr.save_meta()
-                    book = pr.outlines()
-                    book.get("sheets", {}).pop(s["id"], None)
-                    pr.save_outlines(book)
-                    for path in (pr.sheet_png(s["id"]),
-                                 os.path.join(pr.p("cache"), s["id"] + ".jpg"),
-                                 os.path.join(pr.p("thumbs"), s["id"] + ".jpg"),
-                                 os.path.join(pr.p("cache"), s["id"] + ".suggest.json"),
-                                 os.path.join(pr.p("masks"), s["id"] + ".png")):
-                        if os.path.exists(path):
-                            os.remove(path)
-                    if query.get("pieces"):
-                        stem = stem_of(s["id"])
-                        idx = pr.index()
-                        for st in [k for k, v in idx.get("pieces", {}).items() if v.get("sheet") == s["id"]]:
-                            idx["pieces"].pop(st, None)
-                            for path in (pr.piece_path(st), pr.spare_path(st)):
-                                if os.path.exists(path):
-                                    os.remove(path)
-                        pr.save_index(idx)
-                return self.send_json({"ok": True})
+            return self.send_json(dict({"ok": True}, **gone))
 
         # ⭐️ The shape of a piece already cut. The outline it came off is
         # still on file, so this lifts the line that was drawn rather than
@@ -3920,7 +3920,8 @@ class Room(BaseHTTPRequestHandler):
                 added = import_wanted_text(pr, str(d.get("text") or ""),
                                            str(d.get("group") or "core"),
                                            bool(d.get("each")),
-                                           str(d.get("group_name") or ""))
+                                           str(d.get("group_name") or ""),
+                                           str(d.get("group_book") or ""))
                 return self.send_json(dict(added=added, **pr.wanted_status()))
 
         if head == "wanted" and len(rest) == 2 and rest[1] == "split" and method == "POST":
@@ -4057,7 +4058,58 @@ class Room(BaseHTTPRequestHandler):
         return 0
 
 
-def import_wanted_text(pr, text, group, each=False, group_name=None):
+# ⚠️⚠️ THE ONE PLACE IN THE ROOM THAT REALLY DELETES, and it is called from
+# two doors: one sheet's × and a whole box at once. Everything else in here
+# sets things aside rather than destroying them (fault 19) — but a sheet that
+# should never have been imported has nothing worth keeping, and its OUTLINES
+# are the work, so this is the one action that can lose real work.
+#
+# ⭐️ What makes it safe enough to offer: `outlines.json` keeps its last sixty
+# copies automatically (fault 49), so the WORK survives a box removed by
+# mistake even though the scans have to be imported again — and the page says
+# exactly that in the question it asks, rather than the comfortable version.
+# ⚠️ Do not let that sentence drift into "Settings will put it back": the
+# sheet records and the scan files go, and a promise the room cannot keep is
+# worse than no promise.
+#
+# ⚠️ The cut pieces are NOT touched unless asked. A piece is a finished thing
+# in its own right; the sheet it came off is only where it came from, and
+# nothing else in the room throws a piece away.
+# ⚠️ The caller holds `pr.lock`.
+def remove_sheets(pr, ids, with_pieces=False):
+    ids = [sid for sid in ids if pr.sheet(sid) is not None]
+    if not ids:
+        return {"sheets": 0, "outlines": 0, "pieces": 0}
+    book = pr.outlines()
+    drawn = sum(len((book.get("sheets", {}).get(sid) or {}).get("pieces") or [])
+                for sid in ids)
+    pr.meta["sheets"] = [x for x in pr.sheets if x["id"] not in ids]
+    pr.save_meta()
+    for sid in ids:
+        book.get("sheets", {}).pop(sid, None)
+    pr.save_outlines(book)
+    for sid in ids:
+        for path in (pr.sheet_png(sid),
+                     os.path.join(pr.p("cache"), sid + ".jpg"),
+                     os.path.join(pr.p("thumbs"), sid + ".jpg"),
+                     os.path.join(pr.p("cache"), sid + ".suggest.json"),
+                     os.path.join(pr.p("masks"), sid + ".png")):
+            if os.path.exists(path):
+                os.remove(path)
+    took = 0
+    if with_pieces:
+        idx = pr.index()
+        for st in [k for k, v in idx.get("pieces", {}).items() if v.get("sheet") in ids]:
+            idx["pieces"].pop(st, None)
+            for path in (pr.piece_path(st), pr.spare_path(st)):
+                if os.path.exists(path):
+                    os.remove(path)
+            took += 1
+        pr.save_index(idx)
+    return {"sheets": len(ids), "outlines": drawn, "pieces": took}
+
+
+def import_wanted_text(pr, text, group, each=False, group_name=None, group_book=None):
     """Lines like `26 Damage counters`, `Turning template x2`, `Long range ruler`,
     or `9 | Large templates | template` become wanted items.
 
@@ -4072,8 +4124,15 @@ def import_wanted_text(pr, text, group, each=False, group_name=None):
         w = pr.wanted()
         groups = w.setdefault("groups", [])
         if group and not any(g.get("id") == group for g in groups):
-            groups.append({"id": group,
-                           "name": (group_name or "").strip()[:80] or group})
+            new = {"id": group, "name": (group_name or "").strip()[:80] or group}
+            # ⭐️ WHICH BOX OF SHEETS THIS SET ANSWERS TO, when somebody has
+            # said so outright by picking it. Fault 51 has to infer that from
+            # the links already made, which is fine once there are some and
+            # useless before — and a person saying it is better evidence than
+            # anything the room can work out.
+            if (group_book or "").strip():
+                new["book"] = str(group_book).strip()[:80]
+            groups.append(new)
         have = {it.get("id") for it in w["items"]}
         for raw in text.splitlines():
             line = raw.strip().strip("-•*· ").strip()
