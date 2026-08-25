@@ -91,7 +91,23 @@ fix is to write it down here, not to put it in the next prompt.
 
 ---
 
-## Status (24 August 2026)
+## Status (25 August 2026)
+
+⭐️ **Where it stands.** The room is built, checked by 414 checks, documented
+end to end, and in daily use on two games. There is **nothing outstanding that
+anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
+worth rather than a complaint waiting to be answered. That has not been true
+before, and it is why *NOW* is now numbered — see the rule above.
+
+**25 August** was a day of the designer importing rather than cutting, and every
+complaint was about **sets of sheets**: twelve files that arrived as twelve sets
+of one (fault 65), a box that could not be named or removed (faults 62 and 63),
+a set of components that would not take its name from the box it belonged to
+(fault 64), and *Add them* doing nothing at all because it read a tick box that
+had never been in the page (fault 61). ⭐️ It also turned up **two functions
+called `slug`** (fault 66) — a name silently replacing another for a whole
+module, surfacing as a set of sheets called *40*. The day ended with the pieces
+**held back** becoming a list you can open (fault 67).
 
 The room is **built and in daily use** on two games, and 24 August was a day of
 the designer cutting a real game with it and saying what was wrong — twenty-one
@@ -132,23 +148,28 @@ file. The room's product is a plain folder of named, measured pictures, and
 step 6 (*Take it away*) is what proves it. Anything shaped like a particular
 game belongs in that game's own repository.
 
-**Next up, in this order** — and BACKLOG's *NOW* is the live list:
+⚠️⚠️ **WHAT IS NEXT IS IN `BACKLOG.md`, AND IT IS NOT WRITTEN HERE.** This
+file used to carry its own numbered *next up* list beside BACKLOG's *NOW*, and
+by 25 August the two disagreed: the first item here was a user guide that had
+been built and photographed two days earlier. **That is fault 24, in the
+documents rather than the code**, and it is the one this codebase warns about
+most. So there is one list, it lives in `BACKLOG.md` under *NOW*, it is
+numbered in the order the work is worth doing, and the answer to *what next* is
+**the first thing on it**.
 
-1. ⭐️ **A user guide, written properly.** There is a first cut of one, made
-   from this day's work; BACKLOG says what it should become.
-2. **A lighter ground** — *"I'd like to consider some different displays (eg
-   white background rather than the black)."* Read the reason the ground is
-   dark before changing it; it is written in the editor's `:root` block.
-3. **No terminal window at all** — a minimal `.app` bundle. All that is left
-   of *"a simpler way to open and quit"*: opening, quitting and **starting it
-   again** are all a press on the page now (24 August), so what remains is
-   only that the window exists at all.
-4. ⭐️ **A way in from the report to the piece** — `?tab=pieces&piece=<stem>`.
-   ⭐️ Half of this is built (25 August, fault 67): the report's counts of
-   *held back* and *no name* are links into the matching chip on Pieces. What
-   is left is the **single piece** — the report names pieces by their stem and
-   still cannot open one, and it is the same door a game engine would want in
-   order to say *this one is wrong*.
+⭐️ **What does belong here is the rule the order was made with**, because a
+list can be re-sorted and a rule cannot:
+
+1. ⭐️⭐️ **Naming is what is expensive, not cutting.** A feature that removes a
+   step from naming beats one that speeds up cutting, every time. It is said
+   three times in this file and reading the real game's data has proved it
+   twice.
+2. **Then what the designer has asked for and not yet got** — an ask that keeps
+   slipping behind cleverer work is an ask being quietly refused.
+3. **Then what a stranger meets.** This repository is public and the room is
+   for far more people than the one who commissioned it; a thing nobody can try
+   without owning a board game first is a thing most people never see.
+4. **Cosmetic last**, and never before something that is silently broken.
 
 Built that day, in order:
 

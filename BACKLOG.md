@@ -4,16 +4,302 @@ The live list. `CLAUDE.md` is how the thing works and why — **and the house
 rules for working on it, which is where to start**; `ROOM.md` is how to use it.
 This is what happens next.
 
-⭐️ **Take one thing from *NOW*, say which and why, and see it through** — code,
-documents, checks, commit, push. Run `check/check.sh` before you begin as well
-as when you finish. The full version of all of that is in CLAUDE.md under
-*Picking the work up*.
+⭐️ **Take the FIRST thing in *NOW*, say which and why, and see it through** —
+code, documents, checks, commit, push. *NOW* is numbered and in the order the
+work is worth doing, so there is nothing to choose between. Run
+`check/check.sh` before you begin as well as when you finish. The full version
+of all of that is in CLAUDE.md under *Picking the work up*.
 
-**Legend:** `[ ]` not started · `[~]` part done · `[x]` done · ⭐️ next up
+**How to read this file:**
+
+| | |
+|---|---|
+| **NOW** | the live work, numbered, best first. Start at 1. |
+| **Standing** | not tasks — the things that outrank the tasks, chiefly that the designer is using it and what they say next wins |
+| **Recently finished** | what came out of *NOW*, kept for a moment because a session often needs to know what has just changed under it |
+| **Known gaps** | true, not scheduled |
+| **Ideas** | not decisions yet |
+| **Done** | the whole history, newest first |
+
+**Legend:** `[ ]` not started · `[~]` part done · `[x]` done · ⭐️ worth more
+than its neighbours · ⚠️ a trap written down before somebody falls in it
 
 ---
 
 ## NOW
+
+⭐️ **This list is in the order it is worth doing, not the order it arrived.**
+Take the first thing on it, say which you have taken and why, and see it
+through — code, documents, checks, commit, push.
+
+⚠️ **The designer's most recent words outrank all of it.** If they have said
+something in this session, that is the work; this list is what to do when they
+have not.
+
+⭐️ **How it was ordered**, so it can be argued with rather than merely
+inherited: *what is expensive is naming, not cutting* (CLAUDE.md says so three
+times, and reading the real game's data has proved it twice). So the one thing
+that makes a checklist appear without anybody finding a rules manual is first.
+After that, things the designer has asked for and not yet got. After those, the
+things a stranger meets — this repository is public and the room is meant for
+far more people than the one who commissioned it. Cosmetic last.
+
+---
+
+### 1. `[ ]` ⭐️⭐️ Learn the checklist from what is cut
+
+The inverse of Match, for a game with **no contents list at all** — which is
+most games, and certainly any game whose list nobody has bothered to type out.
+Rather than reading a component list in and ticking pieces off against it,
+**group the cut pieces by look-alike and printed size, show each group, and let
+the person name the group once.** Twenty identical damage counters become one
+line of the checklist in one typing.
+
+Everything it needs is already built and already on the screen somewhere else:
+the 144-bit look-alike hash and mean colour that the review uses to cluster,
+the printed measurements, and the **kind the room offers from those
+measurements** — so a group can arrive pre-labelled *counter* and only want its
+name. The work is the interface, not the arithmetic.
+
+⭐️ **Why it is first.** Naming is the expensive part, and it is expensive
+because it comes from outside the room — *"3rd party lists etc, or rules
+manuals which may be tricky to comprehend."* This is the only idea left on the
+list that removes a step from naming rather than from cutting. A second game is
+loaded with its sheets imported and no checklist typed; this is what that game
+wants.
+
+⚠️ **It must not become an automatic checklist.** The room may propose the
+groups; what a group is *called* is a judgement and stays the person's, exactly
+as with the kinds (fault 25), the look-alikes (fault 18) and the splitting
+(fault 34). A confident wrong answer spread over three hundred pieces is the
+failure mode.
+
+⚠️ Read fault 36 before writing the counts: *one is enough, unless every one is
+different* is not something a group of look-alikes can decide for itself, and
+`each` is the person's answer.
+
+⭐️ **Done looks like**: a game with an empty checklist, a page that offers its
+cut pieces in groups, and a checklist with real lines on it that nobody read
+out of a manual — with the pieces already linked to the components they made.
+
+### 2. `[ ]` ⭐️ A light ground — the half that can be finished, offered as a choice
+
+The designer, 22 August 2026: *"I'd like to consider some different displays (eg white
+background rather than the black)."* It has been on the list since, behind
+work they asked for more loudly, and it should not slip a fifth time.
+
+⚠️ **Read the reason for the dark ground before changing it.** The editor's own
+stylesheet says it: *"A workbench that commits to one look on purpose: the
+printed sheet is the only thing on the page whose colour must be judged, so
+everything round it is a quiet dark ground in both host themes."* A scanned
+counter is being looked at against that ground while it is outlined, and a
+white surround changes how its colour and its edges read. That is an argument
+for care, **not** for refusing — their eye is the instrument, and if a light
+ground suits them better it wins.
+
+⭐️ **So split it, and do the half that does not need their eye first:**
+
+- ⭐️ **The room's own pages** (home, project, pieces, match, checklist,
+  settings) are text and thumbnails. A light ground here is uncontroversial,
+  and it is the visible answer to what they asked. **Offer it as a choice, and
+  remember it** — beside the projects, the way the shelf of shapes is kept, so
+  it is not per-game.
+- ⚠️ **The Cutting Table itself** is where a sheet is judged, and that half
+  should be **put in front of them on a real counter sheet before it is
+  decided**. Build the mechanism so it *can* go light; do not swap it.
+- ⚠️ **The baked offline page** shares the template and has no server behind
+  it, so whatever carries the choice must survive being opened off a disk.
+
+There is no theme mechanism at all today: `room/room.css` and the template's
+`:root` block each hard-code one palette. ⚠️ That is two places, so it is fault
+24 waiting to happen — one set of names for the colours, read by both.
+
+⭐️ **Done looks like**: a control that says what it does, a light room that is
+legible in every screen the guide photographs, and the table unchanged until
+they have looked at it.
+
+### 3. `[ ]` ⭐️ A report you can act on
+
+The end-of-job check names pieces and cannot open them. Half of the way in was
+built on 25 August (CLAUDE.md 67) — the panel's counts of *pieces held back*
+and *pieces with no name* are links into the matching chip on Pieces. Three
+things finish it, and they are one afternoon between them:
+
+- `[~]` ⭐️ **Open a single piece from the report.** Every line names a stem;
+  clicking it should land on that piece. `?tab=pieces&piece=<stem>` does it,
+  and ⚠️ the address is read in **one** place already (`fromHash`, fault 24) —
+  add it there, not in a second chain of `if`s.
+  ⭐️ It is also **the door a game engine wants**: `cut_from` in
+  `inventory.csv`/`.json` carries the stem, which is the one name the room and
+  a game can both say, so *"this one is wrong, go and fix it"* becomes a link.
+- `[ ]` ⭐️ **Say what a piece measures beside the orphans.** A piece that
+  answers to nothing on the list is often recognisable from its size alone, and
+  the measurements are already cached in `cache/stats.json`. Cheap, and it
+  turns a list of stems into a list somebody can read.
+- `[ ]` **Fold the report by set**, once a game has more sets than fit a
+  screen. The game it was built on has four and it is fine, so this is last.
+
+⚠️ The report **reports**; it fixes nothing. That rule does not change because
+its lines became links — see fault 52.
+
+### 4. `[ ]` No terminal window at all
+
+The last of the designer's *"a simpler way to open and quit. I don't like
+terminal at the best of times."* Quitting, and starting the room again, are
+both a press on the page now; **opening still shows a terminal window.**
+
+A minimal `.app` bundle — a folder with an `Info.plist` and a shell script in
+`MacOS/` — launches with none, and can carry an icon.
+
+⚠️ Whatever is built must still work when the room is started the old way, and
+must not need anything installed. ⚠️ And it must not become a second place that
+knows where this copy was cloned to: `--install-launcher` already works that
+out, so the bundle should be written by the same code.
+
+### 5. `[ ]` A demo sheet, so a stranger can try it with nothing
+
+`demo/make_demo_sheet.py` already draws a pretend sheet — deliberately awkward
+in the one way that matters, with the same colour inside a piece as outside it.
+**Wire a *Try it with a demo sheet* button into the first-run welcome** that
+makes a project, imports the demo, and lands on the table.
+
+⭐️ **Why it is above the cosmetic items.** This repository is public and the
+room's whole argument is that it is useful to far more people than one game's
+author. Today somebody who finds it has to own a board game, scan it, and read
+a guide before anything happens. ⚠️ Nothing in the demonstration sheet is
+anybody's artwork, so this is safe to ship.
+
+### 6. `[ ]` ⚠️ The two places it is macOS-only, needlessly
+
+- `doc_to_docx()` shells out to **`textutil`**, which exists only on a Mac. On
+  anything else an old binary `.doc` should say so plainly rather than fail
+  with a confusing error. LibreOffice (`soffice --convert-to docx`) is the
+  obvious fallback where it is installed.
+- *Open the folder* uses `open`, guarded by `sys.platform == "darwin"`, so it
+  quietly does nothing elsewhere. `xdg-open` and `explorer` are one line each.
+
+Everything else — the server, the cutting, the editor — is portable already,
+which is what makes these two worth an hour. ⚠️ A button that silently does
+nothing is fault 58's shape: half working reads as broken and teaches you to
+stop trusting the room.
+
+### 7. `[ ]` The guide's last mile
+
+- `[ ]` **Arrows on the pictures.** The designer's original point was *"one
+  screenshot with an arrow on it"*; they are honest screenshots with no arrows
+  yet. ⚠️ They are made, not taken — `docs/make_guide_pictures.sh` — so an
+  arrow has to be drawn by that script, or the next screen change loses it.
+- `[ ]` **An Artifact of it**, for reading on a phone or handing to somebody.
+  ⚠️ Generated FROM `GUIDE.md`, never written twice (fault 24).
+
+### 8. `[ ]` Two small known faults, cheap to clear
+
+- `[ ]` **The suggestion cache is not invalidated by a new mask.**
+  `cache/<sheet>.suggest.json` is written once, so if a `-starter.png` mask
+  appears in `masks/` afterwards the old flood-based suggestions are still
+  served. Delete the cache file when the masks folder changes.
+- `[ ]` **A sheet's prefix cannot be fixed.** A sheet's id is
+  `<prefix>-<page>` and is the key its outlines are filed under, so renaming
+  one would strand them — the right constraint, but there is no way at all to
+  correct a bad prefix chosen at import except to delete and re-import, losing
+  the outlines. A rename that moves the outlines with it is a small job.
+  ⭐️ Note this is **not** the same as naming a box, which is built: that
+  writes a label and touches no id.
+
+---
+
+## Standing — not tasks, but they outrank the tasks
+
+### ⭐️ The designer is using it, and feedback comes back in new chats
+
+Two games are loaded and they are cutting. **What they say next outranks
+everything on this list.** Still worth their eye:
+
+1. **The outlining itself**, which is where the hours go. *Add the suggested
+   outlines* on a counter sheet either saves the whole evening or wastes it,
+   and nobody has watched them use it on a fresh set.
+2. **Whether the checklist is worth keeping.** 209 components was compiled for
+   one game by reading three printed contents lists. Whether that is a
+   pleasure or a chore for the next game is not yet known.
+
+### `[~]` Cut a real game's counters — the set that proves the loop
+
+Core sheets 1, 2, 4 and 6. They are the easiest kind (rectangles and circles on
+a plain ground, so the flood finds them) and the most valuable, because the
+game draws stand-ins for every counter it has not been given. **One of each
+design** — the game repeats it for ever.
+
+- `[x]` **Sheet 1 is cut**, 22 August 2026, and came through clean: *"all
+  checks out well… generally excellent."*
+- `[ ]` Sheets 2, 4 and 6.
+
+⭐️ **The fiddly part is naming, and it is not a tool problem.** The designer: *"naming
+is always going to be the fiddly bit here as it will tend to rely on 3rd party
+lists etc, or rules manuals which may be tricky to comprehend."* The room can
+cut a sheet in a press; **what a piece is called comes from outside** — a
+contents list, a rules manual, somebody's forum post. That is the real cost of
+a new game, and it is what the two ideas below are aimed at:
+
+- `[x]` **Guess the kind** from size and shape — built, 22 August 2026. See
+  *Done*, below.
+- ⭐️ **Learn the checklist from what is cut** — its own entry below; it is now
+  the best of the three.
+- **A shared folder of checklists**, since a game's contents list is public
+  knowledge and only has to be typed once by anybody.
+
+### `[ ]` ⭐️ The other end of the check — the game ingesting the pieces
+
+The designer, 24 August 2026: *"there's validation which can be fed back by the game
+engine into which I drop all the components. Surely any game I build will
+have to have its own library of pieces, and will need to know in
+advance what those pieces will be, having digested the rulebook. So not only
+should there be a secondary [check], but there should be a smart input process
+into a game, so that all the pieces can be practically catalogued by the game
+engine as it ingests them — which can include user verifying each one (and
+thereby learning of any missing or wrongly attributed — and then go back to the
+cutting-table to make fixes)."*
+
+⚠️⚠️ **Most of that is the GAME's, not the room's** — see the top of
+`CLAUDE.md`. A library derived from a rulebook, and a screen for walking
+through it saying yes or no, are shaped like one particular game, and every
+such thing belongs in that game's own repository. The room's job ends at the
+folder of named, measured pictures with an inventory beside it, and that is
+what the great majority of its users want.
+
+⭐️ **What is the room's, and is worth doing here:**
+
+- `[x]` The **end-of-job report** above — **built**, and it is written as
+  JSON beside the printable page for exactly this reason: the engine gets the
+  room's own account of what is missing without re-deriving it.
+- ⭐️⭐️ **And the game already holds the answers.** The designer, 24 August 2026:
+  *"if you talk to the game project, I think you'll see that it's
+  been able - in advance of me formally handing anything over - to determine
+  the value/wording/rules attached to cards still in cutting-table."* Quite
+  so: `data/cards/*.json` there holds 225 cards across twelve decks, each with
+  its name, its casting value and its printed effect, transcribed before a
+  single card was cut. So the traffic runs BOTH ways, and the room's side of
+  it already exists: `PUT /api/p/<id>/wanted` takes a whole contents list, so
+  **the game can write the room's checklist** rather than anybody typing it
+  twice — with `each` and `qty` right, which is what makes the counts mean
+  anything. ⚠️ That script is the GAME's: it knows what a card deck is.
+- ⭐️ **The way back in.** `cut_from` in `inventory.csv`/`inventory.json`
+  already carries the piece's stem, which is the one name the room and the
+  game can both say. That is what makes *"this one is wrong, go and fix it"*
+  possible at all, so **it must not be dropped**, and it should be easy to
+  open the room straight at a piece — `?tab=pieces&piece=<stem>` — so the
+  engine can link to it.
+- ⭐️ **Pieces that answer to nothing on the list** — the inverse in the
+  report, and precisely their *"wrongly attributed"*.
+
+Nothing here should know what a rulebook is.
+
+---
+
+## Recently finished
+
+⭐️ Moved out of *NOW* so the live list stays a list. The full account of
+each of these, with the faults it turned up, is in *Done* at the foot of
+this file and in `CLAUDE.md`.
 
 ### `[x]` ⭐️⭐️ The pieces held back, as a list — **built**
 
@@ -245,12 +531,7 @@ again whenever a screen changes — a guide illustrated with last month's
 screens is worse than one with no pictures. ⚠️ Nothing in those pictures is
 anybody's artwork, which is why they may sit in a public repository.
 
-What is left of it:
-
-- `[ ]` **An Artifact of it**, for reading on a phone or handing to somebody.
-  ⚠️ Generated FROM `GUIDE.md`, never written twice.
-- `[ ]` **Arrows on the pictures.** The designer's original point was *"one screenshot
-  with an arrow on it"*; they are honest screenshots with no arrows yet.
+What is left of it is in *NOW*, above.
 
 ### `[x]` ⭐️⭐️ Check the cut against the contents list, at the end — **built**
 
@@ -260,67 +541,9 @@ check to ensure we have every piece cut. Is that possible?"* It is, and it is
 on **Take it away**, above the button, and in the exported folder twice — see
 *Done*, below, and ROOM.md for what it says.
 
-What is left of it, none of it urgent:
+What is left of it is in *NOW*, above.
 
-- `[~]` **A way in from the report to the piece.** ⭐️ Half built, 25 August
-  (CLAUDE.md 67): the panel's counts of *pieces held back* and *pieces with no
-  name* are links that open Pieces with that chip already chosen. What is left
-  is the **single piece** — every line of the printed report names a stem, and
-  clicking it should open that piece. `?tab=pieces&piece=<stem>` would do it,
-  and it is the same door a game engine would want (see the item below).
-- `[ ]` **Fold the report by set**, once a game has more sets than fit a
-  screen. The game it was built on has four and it is fine.
-- `[ ]` ⭐️ **Say what a piece measures beside the orphans.** A piece that
-  answers to nothing on the list is often recognisable from its size alone,
-  and the measurements are already cached.
-
-### `[ ]` ⭐️ The other end of the check — the game ingesting the pieces
-
-The designer, 24 August 2026: *"there's validation which can be fed back by the game
-engine into which I drop all the components. Surely any game I build will
-have to have its own library of pieces, and will need to know in
-advance what those pieces will be, having digested the rulebook. So not only
-should there be a secondary [check], but there should be a smart input process
-into a game, so that all the pieces can be practically catalogued by the game
-engine as it ingests them — which can include user verifying each one (and
-thereby learning of any missing or wrongly attributed — and then go back to the
-cutting-table to make fixes)."*
-
-⚠️⚠️ **Most of that is the GAME's, not the room's** — see the top of
-`CLAUDE.md`. A library derived from a rulebook, and a screen for walking
-through it saying yes or no, are shaped like one particular game, and every
-such thing belongs in that game's own repository. The room's job ends at the
-folder of named, measured pictures with an inventory beside it, and that is
-what the great majority of its users want.
-
-⭐️ **What is the room's, and is worth doing here:**
-
-- `[x]` The **end-of-job report** above — **built**, and it is written as
-  JSON beside the printable page for exactly this reason: the engine gets the
-  room's own account of what is missing without re-deriving it.
-- ⭐️⭐️ **And the game already holds the answers.** The designer, 24 August 2026:
-  *"if you talk to the game project, I think you'll see that it's
-  been able - in advance of me formally handing anything over - to determine
-  the value/wording/rules attached to cards still in cutting-table."* Quite
-  so: `data/cards/*.json` there holds 225 cards across twelve decks, each with
-  its name, its casting value and its printed effect, transcribed before a
-  single card was cut. So the traffic runs BOTH ways, and the room's side of
-  it already exists: `PUT /api/p/<id>/wanted` takes a whole contents list, so
-  **the game can write the room's checklist** rather than anybody typing it
-  twice — with `each` and `qty` right, which is what makes the counts mean
-  anything. ⚠️ That script is the GAME's: it knows what a card deck is.
-- ⭐️ **The way back in.** `cut_from` in `inventory.csv`/`inventory.json`
-  already carries the piece's stem, which is the one name the room and the
-  game can both say. That is what makes *"this one is wrong, go and fix it"*
-  possible at all, so **it must not be dropped**, and it should be easy to
-  open the room straight at a piece — `?tab=pieces&piece=<stem>` — so the
-  engine can link to it.
-- ⭐️ **Pieces that answer to nothing on the list** — the inverse in the
-  report, and precisely their *"wrongly attributed"*.
-
-Nothing here should know what a rulebook is.
-
-### `[~]` Opening and quitting without a terminal
+### `[x]` Opening and quitting without a terminal — **built**, bar the window
 
 The designer, 22 August 2026: *"a simpler way to open and quit. I don't like terminal
 at the best of times."*
@@ -338,10 +561,8 @@ at the best of times."*
   (`/usr/bin/python3` where that will do, because a command-line-tools path
   moves when Xcode is updated). An existing launcher is kept as `.was` rather
   than overwritten. The designer's own hard-coded one is no longer special.
-- `[ ]` **No terminal window at all.** A minimal `.app` bundle — a folder with
-  an `Info.plist` and a shell script in `MacOS/` — launches with no visible
-  terminal and can carry an icon. This is all that is left of the complaint:
-  quitting no longer needs the window, but opening still shows one.
+⭐️ **What is left** — opening still shows a terminal window — is in *NOW*,
+above, as its own item.
 
 ⚠️ Whatever is built must still work when the room is started the old way, and
 must not need anything installed.
@@ -382,114 +603,9 @@ fix, and the next one is the one to stop. What is left:
 - `[ ]` **A first-run walk through the six steps**, rather than the welcome
   panel that only appears on an empty room.
 
-### ⭐️ A light ground, and displays generally
-
-The designer, 22 August 2026: *"I'd like to consider some different displays (eg white
-background rather than the black)."* **Next up.**
-
-⚠️ **Read the reason for the dark ground before changing it.** The editor's own
-stylesheet says it: *"A workbench that commits to one look on purpose: the
-printed sheet is the only thing on the page whose colour must be judged, so
-everything round it is a quiet dark ground in both host themes."* A scanned
-counter is being looked at against that ground while it is outlined, and a
-white surround changes how its colour and its edges read. That is an argument
-for care, **not** an argument for refusing — their eye is the instrument, and if
-a light ground suits them better it wins. Worth separating:
-
-- **The room's own pages** (home, project, checklist, match) — mostly text and
-  thumbnails. A light ground here is uncontroversial and is the easy half.
-- **The Cutting Table itself** — where the sheet is judged. If this goes light,
-  offer it as a *choice* rather than a swap, and look at a real counter sheet on
-  both before deciding.
-- **The baked offline page** shares the template, so whatever is done must work
-  with no server behind it.
-
-There is no theme mechanism at all today: `room/room.css` and the template's
-`:root` block each hard-code one palette.
-
-### ⭐️ The designer is using it, and feedback comes back in new chats
-
-Two games are loaded and they are cutting. **What they say next outranks
-everything on this list.** Still worth their eye:
-
-1. **The outlining itself**, which is where the hours go. *Add the suggested
-   outlines* on a counter sheet either saves the whole evening or wastes it,
-   and nobody has watched them use it on a fresh set.
-2. **Whether the checklist is worth keeping.** 209 components was compiled for
-   one game by reading three printed contents lists. Whether that is a
-   pleasure or a chore for the next game is not yet known.
-
-### `[~]` Cut a real game's counters — the set that proves the loop
-
-Core sheets 1, 2, 4 and 6. They are the easiest kind (rectangles and circles on
-a plain ground, so the flood finds them) and the most valuable, because the
-game draws stand-ins for every counter it has not been given. **One of each
-design** — the game repeats it for ever.
-
-- `[x]` **Sheet 1 is cut**, 22 August 2026, and came through clean: *"all
-  checks out well… generally excellent."*
-- `[ ]` Sheets 2, 4 and 6.
-
-⭐️ **The fiddly part is naming, and it is not a tool problem.** The designer: *"naming
-is always going to be the fiddly bit here as it will tend to rely on 3rd party
-lists etc, or rules manuals which may be tricky to comprehend."* The room can
-cut a sheet in a press; **what a piece is called comes from outside** — a
-contents list, a rules manual, somebody's forum post. That is the real cost of
-a new game, and it is what the two ideas below are aimed at:
-
-- `[x]` **Guess the kind** from size and shape — built, 22 August 2026. See
-  *Done*, below.
-- ⭐️ **Learn the checklist from what is cut** — its own entry below; it is now
-  the best of the three.
-- **A shared folder of checklists**, since a game's contents list is public
-  knowledge and only has to be typed once by anybody.
-
-### `[ ]` ⭐️ Learn the checklist from what is cut
-
-The inverse of Match, for a game with **no contents list at all** — which is
-most games, and certainly any game whose list nobody has bothered to type out.
-Rather than reading a component list in and ticking pieces off against it,
-**group the cut pieces by look-alike and printed size, show each group, and let
-the person name the group once.** Twenty identical damage counters become one
-line of the checklist in one typing.
-
-Everything it needs is already built and already on the screen somewhere else:
-the 144-bit look-alike hash and mean colour that the review uses to cluster,
-the printed measurements, and now the **kind the room offers from those
-measurements** — so a group can arrive pre-labelled *counter* and only want its
-name. The work is the interface, not the arithmetic.
-
-⭐️ **Why this one is worth more than anything that speeds up cutting:** naming
-is the expensive part, and it is expensive because it comes from outside the
-room. This is the only idea on the list that makes a checklist appear without
-anybody having to find a rules manual first.
-
-⚠️ It must not become an automatic checklist. The room may propose the groups;
-what a group is *called* is a judgement and stays the person's, exactly as with
-the kinds and the look-alikes.
-
-### `[ ]` A demo project, so a stranger can try it with nothing
-
-`demo/make_demo_sheet.py` already draws a pretend sheet — deliberately awkward
-in the one way that matters, with the same colour inside a piece as outside it.
-**Wire a "Try it with a demo sheet" button into the first-run welcome** that
-makes a project, imports the demo, and lands on the table. Today somebody who
-finds this repository has to own a board game before they can see what it does.
-
 ---
 
 ## Known gaps
-
-### `[ ]` ⚠️ It is macOS-only in two places, and needlessly
-
-- `doc_to_docx()` shells out to **`textutil`**, which exists only on a Mac. On
-  anything else an old binary `.doc` should say so plainly rather than fail
-  with a confusing error. LibreOffice (`soffice --convert-to docx`) is the
-  obvious fallback where it is installed.
-- *Open the folder* uses `open`, guarded by `sys.platform == "darwin"`, so it
-  quietly does nothing elsewhere. `xdg-open` and `explorer` are one line each.
-
-Everything else — the server, the cutting, the editor — is portable already.
 
 ### `[x]` The way out — **built**, and it is generic
 
@@ -535,19 +651,6 @@ Still wanted:
    NO MOVEMENT and NO FIRING the same counter). Worth knowing: a bright flag
    in one corner is enough to push two otherwise identical cards past the
    threshold, which is how the fixture for the variants work was built.
-
-### `[ ]` The suggestion cache is not invalidated by a new mask
-
-`cache/<sheet>.suggest.json` is written once. If a `-starter.png` mask appears
-in `masks/` afterwards, the old flood-based suggestions are still served.
-Delete the cache file when the masks folder changes.
-
-### `[ ]` Sheets cannot be re-ordered, re-prefixed or merged
-
-A sheet's id is `<prefix>-<page>` and is the key its outlines are filed under,
-so renaming one would strand them. That is the right constraint, but there is
-no way at all to fix a bad prefix chosen at import — you delete and re-import,
-losing the outlines. A rename that moves the outlines with it is a small job.
 
 ### `[ ]` Google Drive is a dead end and should perhaps say so louder
 
