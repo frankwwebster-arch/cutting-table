@@ -221,11 +221,22 @@ Press **Outline** on a sheet. The table opens with that sheet loaded.
 | `V` | step through sheet / cut / shapes |
 | `[` `]` | turn the sheet a quarter, to fit a wide screen |
 | `S` | lay a kept shape down — one click each, or drag out a size |
+| `M` | **mask off** a part of the sheet, so the automatic pass leaves it alone — drag a box over it, click the box to take it off again |
 | `+` | duplicate the chosen piece, for a shape that repeats off-grid. `⌘D` does the same |
 | `X` | take the chosen piece off the sheet. `⌘Z` puts it back, and nothing already cut is touched |
 | `O` | work on the chosen piece **on its own** — every other outline is hidden so nothing else can be grabbed by accident. Press it again to bring them back; nothing is ever deleted |
 | `⌘Z` | undo, sixty steps deep |
 | `esc` | abandon what you are drawing |
+
+⭐️⭐️ **Mask off** is the answer when part of a sheet is not components at all
+— a page of printed rules, a title panel, a bar of colour down the margin, the
+shadow the scanner cast down one edge. Drag a box over it and the automatic
+pass leaves that part alone; the suggestions come back for everything else.
+⚠️ **Nothing is deleted and nothing is cropped.** The scan is untouched, the cut
+pays it no attention, and you can still outline inside the box by hand. A box in
+the wrong place costs a suggestion, never a piece — click it to take it off.
+⚠️ It is a room tool: a baked offline page has its suggestions worked out
+already and no room behind it to ask again, so the tool is not offered there.
 
 **Add the suggested outlines** does the easy sheets for you. ⭐️ It throws its
 own rubbish away first: a hairline crack between two counters, a speck of dirt,
@@ -968,7 +979,7 @@ tool four times on the way past.
 |---|---|---|
 | Table | `T` `A` `R` `E` | outline · adjust · rectangle · ellipse |
 | Table | `G` `V` `[` `]` | guides · change the view · turn the sheet |
-| Table | `S` | lay a kept shape down, one click each |
+| Table | `S` `M` | lay a kept shape down · mask a part off the automatic pass |
 | Table | `⏎` `esc` `⌘Z` | close the outline · abandon · undo |
 | Table | `+` `X` `O` | duplicate the chosen piece · take it off the sheet · work on it alone |
 | Pieces | `←` `→` | the piece before / after |

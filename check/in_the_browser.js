@@ -415,6 +415,64 @@ const SHAPE = `(function () {
       await sleep(1000);
     }
 
+    /* ⭐️⭐️ MASKING OFF A PART OF A SHEET. The designer, 25 August 2026: "one
+       quick tool that would be useful would be the ability to mask off a
+       section of any given sheet, so that it doesn't get run for
+       suggestions." What the room does with a region is checked through the
+       API in check.sh; what is checked HERE is the wire — that dragging a box
+       on the sheet really reaches the room's own file. Fault 61: a check
+       through the API is a green light over a button that does nothing. */
+    if (BED) {
+      console.log("\nmasking off a part of a sheet");
+      const MSID = "proving-ground-sheets-35";
+      const meta = () => JSON.parse(fs.readFileSync(path.join(BED, "project.json"), "utf8"))
+        .sheets.filter((x) => x.id === MSID)[0] || {};
+      await page.val(`document.querySelectorAll(".tab")[34].click(); true`);
+      await sleep(1200);
+      const tool = await page.val(`(function () {
+        var b = document.getElementById("tSkip");
+        return { has: !!b, seen: !!b && b.offsetWidth > 0,
+                 sheet: document.querySelector(".tab.on") ?
+                        document.querySelector(".tab.on").textContent : "" }; })()`);
+      check("the table the room serves offers a Mask off tool",
+            tool && tool.has && tool.seen, tool);
+      const box = await page.val(`(function(){ var r = document.getElementById("cv").getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, h: r.height }; })()`);
+      await page.press("m");
+      const armed = await page.val(`document.getElementById("tSkip").getAttribute("aria-pressed")`);
+      check("and the M key puts it in hand", armed === "true", armed);
+      const m1 = { x: box.x + box.w * 0.30, y: box.y + box.h * 0.28 };
+      const m2 = { x: box.x + box.w * 0.62, y: box.y + box.h * 0.55 };
+      await page.mouse("mousePressed", m1.x, m1.y, 1);
+      for (let i = 1; i <= 10; i++) {
+        await page.mouse("mouseMoved", m1.x + (m2.x - m1.x) * i / 10,
+                         m1.y + (m2.y - m1.y) * i / 10, 1);
+      }
+      await page.mouse("mouseReleased", m2.x, m2.y, 0);
+      await sleep(900);
+      const wrote = meta();
+      check("a box dragged over the sheet reaches the room's own file",
+            (wrote.skip || []).length === 1, wrote.skip);
+      // ⚠️ and it says what it did, because a mask is a thing you must be
+      // able to see you did — a sheet that comes back with nothing suggested
+      // on half of it otherwise reads as a fault in the room
+      const said = await page.val(`document.getElementById("hint").textContent`);
+      check("and the table says nothing was deleted and how to take it off",
+            /Masked off/.test(said || "") && /nothing is deleted/.test(said || ""), said);
+      /* ⚠️ A REGION NOTHING CAN CLEAR IS FAULT 50's SHAPE. It hides part of
+         the sheet from the automatic pass, so taking one off has to be as
+         easy as putting it on. */
+      const mid = { x: (m1.x + m2.x) / 2, y: (m1.y + m2.y) / 2 };
+      await page.mouse("mousePressed", mid.x, mid.y, 1);
+      await page.mouse("mouseReleased", mid.x, mid.y, 0);
+      await sleep(900);
+      check("and clicking the box takes it off again, in the room too",
+            (meta().skip || []).length === 0, meta().skip);
+      await page.press("t");
+      await page.val(`document.querySelectorAll(".tab")[0].click(); true`);
+      await sleep(800);
+    }
+
     // ------------------------------------ a shape kept, and laid down again
     // ⭐️ the designer, 23 August 2026, on a game printed on one die: "I will need to cut a
     // number of pieces that are different, but also EXACTLY the same shape —
@@ -2443,6 +2501,18 @@ const SHAPE = `(function () {
       check("its sheet is drawn out of the page's own data", o.inked > 0, o.inked);
       check("it has no room fittings on it",
             (await page.val(`!document.getElementById("roomCut")`)) === true);
+      /* ⚠️ AND NO MASK OFF TOOL EITHER. A baked page cannot re-draft itself —
+         its suggestions were worked out when it was made and there is no room
+         behind it to ask again — so the tool would be a control that quietly
+         does nothing, which is fault 58 exactly. It is not offered where it
+         cannot work. ⚠️ `hidden` alone does not hide a button whose CSS sets
+         `display` (fault 23), so this measures the button rather than
+         believing the flag. */
+      const noMask = await page.val(`(function () {
+        var b = document.getElementById("tSkip");
+        return { there: !!b, seen: !!b && b.offsetWidth > 0 }; })()`);
+      check("and no Mask off tool, which needs a room to re-draft the sheet",
+            noMask && noMask.there && !noMask.seen, noMask);
       await page.shot("baked.png");
     }
 

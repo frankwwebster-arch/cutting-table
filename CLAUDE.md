@@ -93,11 +93,17 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 521 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 533 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**25 August, and the other half of the same message**: *"one quick tool that
+would be useful would be the ability to mask off a section of any given sheet,
+so that it doesn't get run for suggestions."* Built — **Mask off**, `M`. See
+fault 77, whose interesting part is that the kept draft had to learn what
+question it was an answer to.
 
 **25 August, after that**: *"the suggested outline feature is improved, still
 rough though. It sometimes creates insanely small artefacts."* Right on both
@@ -1548,6 +1554,48 @@ rather than by reading the code.
     ⚠️ `SUGGEST_VERSION` bumped, or every sheet already drafted goes on being
     offered the old answer.
 
+77. ⭐️⭐️ **A PART OF THE SHEET THE AUTOMATIC PASS IS TOLD TO LEAVE ALONE.**
+    The designer, 25 August 2026: *"one quick tool that would be useful would
+    be the ability to mask off a section of any given sheet, so that it doesn't
+    get run for suggestions."*
+    ⭐️ It is worth more than it looks. The flood is right about cards and
+    counters on a plain ground and hopeless about a page of printed rules, a
+    title panel, a bar of colour down the margin or the shadow the scanner cast
+    down one edge — and **one** such region is enough to fill a sheet with
+    suggestions nobody wants, which is the work the button exists to save. The
+    person can see at a glance which part that is; **no measurement can**, and
+    that is the whole argument for a tool rather than a cleverer rule.
+    ⚠️⚠️ **THE KEPT DRAFT HAD TO LEARN WHAT QUESTION IT WAS AN ANSWER TO.**
+    `/suggest` keeps its answer per sheet, so a mask drawn *after* a sheet had
+    been drafted changed nothing whatever: the old suggestions were served for
+    ever and the new tool looked as though it did nothing at all. That is fault
+    58 — half working reads as broken — and the fix is that the cached record
+    now carries the regions it was made with and re-drafts when they differ.
+    ⭐️ Its teeth were tried, and it is the whole feature: take that one
+    comparison out and *"the automatic pass then suggests nothing at all inside
+    it"* goes red on its own.
+    ⚠️ **IT MASKS THE SUGGESTIONS AND NOTHING ELSE.** Not a crop, not a delete.
+    The scan is untouched, the cut pays it no attention, and an outline drawn
+    inside one by hand is as good as any other — so a region put in the wrong
+    place costs a **suggestion**, never a piece, which is why it needs no
+    confirming and no undo of its own. It is painted with the sheet's own
+    colour rather than cut out, because a hole of black would be the biggest
+    piece on the sheet.
+    ⚠️ **And it can be taken off by clicking it**, or it would be fault 50's
+    shape — a mark nothing can clear — over a control that hides part of the
+    sheet from the room.
+    ⚠️ **The regions live on the sheet record, not in `outlines.json`.** A
+    masked region can be drawn again in a moment; an outline cannot. The three
+    stores that keep their own history are the three that cannot be rebuilt
+    (fault 49), and this is not one of them.
+    ⚠️⚠️ **The tool is not offered in a baked page at all.** An offline page's
+    suggestions were worked out when it was made and there is no room behind it
+    to ask again, so the control would quietly do nothing — fault 58 again, by
+    the door of a feature that cannot work rather than one that is broken. ⚠️
+    And `hidden` does not hide a button whose CSS sets `display` (fault 23,
+    which this template had already been bitten by four times), so the check
+    **measures the button** rather than believing the flag.
+
 ---
 
 ## Architecture
@@ -1578,9 +1626,12 @@ cut.py                   cuts pieces from a sheet + mask, standalone
 sheets.py                the image work: flood, label, separate, draft — and
                          ⭐️ the AUTOMATIC PASS: `local_field()` (the ground as
                          it falls on this sheet), `outline_of()` and
-                         `regular_outline()` (a rectangle drawn as a rectangle).
+                         `regular_outline()` (a rectangle drawn as a rectangle),
+                         `trace_all()` (WHICH blobs become suggestions) and
+                         `worth_offering()` (⭐️ the floor under it, in printed
+                         inches, read off a real game — fault 76).
                          ⚠️ The room and the baked table both use these; there
-                         is no second copy. Fault 71.
+                         is no second copy. Faults 71 and 76.
 demo/make_demo_sheet.py  a pretend sheet, so the repo needs nobody's artwork
 docs/make_guide_pictures.sh  photographs the room for GUIDE.md — a throwaway
                          game in a home of its own, on a port of its own, off
@@ -1676,7 +1727,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 521 checks, about a minute
+check/check.sh          # 533 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1747,6 +1798,17 @@ thing by hand in the browser — a shape kept off one sheet, **laid down twice
 on another**, read back off the disk at the printed size it was kept at, and a
 shape belonging to a different game found by search and brought over with a
 star.
+
+It works **masking a part of a sheet off**: the whole sheet masked suggests
+nothing, taking the mask off puts every suggestion back — which is the check
+that holds the kept draft to knowing what it was an answer to — a nonsense
+region and one too small to mean anything are dropped, and what survives is
+written down on the sheet rather than merely answered. Then in the browser,
+because a check through the API is a green light over a button that does
+nothing (fault 61): the tool is in the served table, `M` puts it in hand, a box
+dragged on the sheet **reaches the room's own file**, the table says nothing was
+deleted, clicking the box takes it off again — and the baked offline page does
+not offer the tool at all, measured rather than believed.
 
 It gives the automatic pass a **grubby scan** — a hairline crack, a speck and
 a scratch across the glass, each of which cleared every test the room used to

@@ -129,7 +129,13 @@ tools down the left.
   little crooked) or as a true circle, so there is nothing left to tidy.
   Anything else it traces as a curve and leaves you to correct — and it will
   not manage an island with a lagoon in it, which is what the rest of these
-  tools are for.
+  tools are for. ⭐️ It throws its own rubbish away first: anything too small
+  or too thin to be a piece of a board game never reaches you.
+- ⭐️ **Mask off** — for the part of a sheet that is not components at all: a
+  page of printed rules, a title panel, the shadow down one edge of the scan.
+  Drag a box over it and the automatic pass leaves that part alone. ⚠️ Nothing
+  is deleted and nothing is cropped — you can still outline in there by hand,
+  and clicking the box takes it off again.
 
 Your work is saved **to the game's folder, a moment after every change**. There
 is no Save button and there does not need to be one.

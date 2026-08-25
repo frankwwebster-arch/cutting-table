@@ -789,6 +789,26 @@ anything that speeds up cutting.
 
 ## Done
 
+### 25 August 2026 — a part of a sheet the automatic pass leaves alone
+
+- `[x]` ⭐️⭐️ **Mask off**, `M` at the table. The designer: *"one quick tool
+  that would be useful would be the ability to mask off a section of any given
+  sheet, so that it doesn't get run for suggestions."* The flood is hopeless
+  about a page of printed rules or a title panel, and one such region fills a
+  sheet with suggestions nobody wants.
+- `[x]` ⚠️⚠️ **The kept draft learnt what question it was an answer to.**
+  `/suggest` keeps its answer per sheet, so a mask drawn afterwards changed
+  nothing at all and the tool looked broken (fault 58). Teeth tried: take that
+  one comparison out and the whole feature goes dead, and the check says so.
+- `[x]` ⚠️ **It masks the suggestions and nothing else** — not a crop, not a
+  delete. The scan is untouched, the cut ignores it, and you can still outline
+  inside one by hand. Click a box to take it off.
+- `[x]` ⚠️ **Not offered in a baked page**, which has no room to re-draft it —
+  and the check measures the button rather than believing `hidden` (fault 23).
+- `[x]` **12 new checks** — 521 to 533, six through the API and six in a real
+  browser, because a check through the API is a green light over a button that
+  does nothing (fault 61).
+
 ### 25 August 2026 — the automatic pass throws its own rubbish away
 
 - `[x]` ⭐️⭐️ **Nothing insanely small is offered any more.** The designer:

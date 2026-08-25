@@ -288,6 +288,55 @@ def paint_mask(pieces, size):
 
 # --------------------------------------------------- suggestions (ported)
 
+# ⭐️⭐️ A PART OF THE SHEET THE AUTOMATIC PASS IS TOLD TO LEAVE ALONE. The
+# designer, 25 August 2026: "one quick tool that would be useful would be the
+# ability to mask off a section of any given sheet, so that it doesn't get run
+# for suggestions."
+#
+# ⭐️ Why it is worth more than it looks: the flood is right about cards and
+# counters on a plain ground and hopeless about a printed rulebook page, a
+# title panel, a colour bar down the margin or the scanner's own shadow — and
+# ONE such region is enough to fill a sheet with suggestions nobody wants. The
+# person can see at a glance which part that is; no measurement can.
+#
+# ⚠️ IT MASKS THE SUGGESTIONS AND NOTHING ELSE. It is not a crop, it does not
+# touch the scan, it does not stop anybody outlining there by hand, and the
+# cut pays it no attention whatever. A region drawn in the wrong place costs
+# a suggestion, never a piece.
+MAX_SKIPS = 40          # more than anybody would draw; a guard, not a rule
+
+
+def sheet_skips(s, shape=None):
+    """The masked-off regions of a sheet, as whole pixels inside the picture.
+
+    ⚠️ ONE READING OF THEM, because three things ask: the drafting, the record
+    kept beside the draft so a changed region re-drafts, and the route that
+    hands them to the editor. Written out three times they would disagree
+    about the scaling, which is the sort of fault that shows as a mask sitting
+    an inch from where it was drawn.
+    """
+    out = []
+    for r in (s or {}).get("skip") or []:
+        try:
+            x1, y1, x2, y2 = (float(r[0]), float(r[1]), float(r[2]), float(r[3]))
+        except (TypeError, ValueError, IndexError):
+            continue
+        if shape:
+            # the editor works in the sheet's own pixels; the PNG on disk is
+            # normally the same size, but never assume it
+            h, w = shape[:2]
+            sx = w / float((s.get("w") or w) or w)
+            sy = h / float((s.get("h") or h) or h)
+            x1, x2, y1, y2 = x1 * sx, x2 * sx, y1 * sy, y2 * sy
+            x1, x2 = max(0, min(w, x1)), max(0, min(w, x2))
+            y1, y2 = max(0, min(h, y1)), max(0, min(h, y2))
+        lo_x, hi_x = int(round(min(x1, x2))), int(round(max(x1, x2)))
+        lo_y, hi_y = int(round(min(y1, y2))), int(round(max(y1, y2)))
+        if hi_x - lo_x < 2 or hi_y - lo_y < 2:
+            continue
+        out.append([lo_x, lo_y, hi_x, hi_y])
+    return out[:MAX_SKIPS]
+
 # ⚠️ ONE COPY OF THE TRACING, in `sheets.py`, because the baked Cutting Table
 # has to do exactly the same thing to exactly the same sheets and two copies
 # would drift (fault 24). What is left here is only which blobs to trace.
@@ -3249,6 +3298,7 @@ def table_page(project, sheet_ids=None):
             "w": s.get("w"), "h": s.get("h"),
             "src": "/p/%s/sheet/%s.jpg" % (project.id, s["id"]),
             "suggested": None, "done": bool(s.get("done")), "rot": int(s.get("rot") or 0),
+            "skip": sheet_skips(s),
         })
     saved = {sid: book[sid] for sid in book if any(x["id"] == sid for x in sheets)}
     room = {"project": project.id, "api": "/api/p/%s" % project.id,
@@ -3724,6 +3774,13 @@ class Room(BaseHTTPRequestHandler):
                         s["done"] = bool(d["done"])
                     if "rot" in d:
                         s["rot"] = int(d["rot"]) % 4
+                    # ⚠️ Kept on the sheet beside its turn, and NOT in
+                    # outlines.json: a masked-off region can be drawn again in
+                    # a moment, while an outline cannot, and the three stores
+                    # that keep their own history are the three that cannot be
+                    # rebuilt (fault 49).
+                    if "skip" in d:
+                        s["skip"] = sheet_skips({"skip": d["skip"]})
                     pr.save_meta()
                 return self.send_json({"ok": True, "sheet": s})
             if method == "DELETE":
@@ -3802,13 +3859,29 @@ class Room(BaseHTTPRequestHandler):
             # so. Bump this whenever the drafting changes.
             if got is not None and got.get("v") != SUGGEST_VERSION:
                 got = None
+            # ⭐️ A MASKED-OFF REGION IS PART OF THE QUESTION, so it is part of
+            # what the kept answer is an answer TO. Without this the draft made
+            # before the mask was drawn would be served for ever, and the tool
+            # would look as though it had done nothing at all — which is fault
+            # 58's shape, half working reading as broken.
+            skips = sheet_skips(pr.sheet(sid))
+            if got is not None and (got.get("skip") or []) != skips:
+                got = None
             if got is None:
                 rgb = np.asarray(Image.open(pr.sheet_png(sid)).convert("RGB"))
+                if skips:
+                    # ⚠️ Painted with the sheet's own colour rather than cut
+                    # out, so the ground reads as paper right across it: a hole
+                    # of black would be the biggest piece on the sheet.
+                    rgb = rgb.copy()
+                    ground = sheetlib.flat_colour(rgb)
+                    for x1, y1, x2, y2 in sheet_skips(pr.sheet(sid), rgb.shape):
+                        rgb[y1:y2, x1:x2] = ground
                 mask = None
                 for cand in (os.path.join(pr.p("masks"), sid + "-starter.png"),):
                     if os.path.exists(cand):
                         mask = cand
-                got = {"v": SUGGEST_VERSION,
+                got = {"v": SUGGEST_VERSION, "skip": skips,
                        "suggested": suggest_outlines(rgb, mask, pr.dpi)}
                 write_json(cache, got)
             return self.send_json(got)

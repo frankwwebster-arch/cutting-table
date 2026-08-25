@@ -519,6 +519,79 @@ else
   exit 1
 fi
 
+# ⭐️⭐️ MASKING OFF A PART OF A SHEET. The designer, 25 August 2026: "one quick
+# tool that would be useful would be the ability to mask off a section of any
+# given sheet, so that it doesn't get run for suggestions." The flood is right
+# about counters on a plain ground and hopeless about a page of printed rules,
+# and one such region fills a sheet with suggestions nobody wants.
+say "a part of a sheet the automatic pass is told to leave alone"
+$PY - "$TMP" "$PORT" <<'PYSKIP' || code=1
+import json, os, sys, urllib.error, urllib.request
+tmp, port = sys.argv[1], sys.argv[2]
+API = "http://127.0.0.1:%s/api/p/proving-ground" % port
+SID = "proving-ground-sheets-05"
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+def call(path, body=None, method="POST"):
+    req = urllib.request.Request(API + path, data=json.dumps(body or {}).encode(),
+                                 headers={"Content-Type": "application/json"},
+                                 method=method)
+    try:
+        return 200, json.load(urllib.request.urlopen(req))
+    except urllib.error.HTTPError as e:
+        return e.code, json.load(e)
+
+
+def drafted():
+    return json.load(urllib.request.urlopen(API + "/suggest/" + SID))["suggested"]
+
+
+before = drafted()
+check("the automatic pass finds pieces on this sheet to begin with",
+      len(before) > 0, len(before))
+
+# the whole sheet masked off is the bluntest form of the question
+code, d = call("/sheet/" + SID, {"skip": [[0, 0, 9000, 9000]]})
+check("a sheet takes a masked-off region", code == 200 and d.get("ok"), d)
+none = drafted()
+check("and the automatic pass then suggests nothing at all inside it",
+      len(none) == 0, len(none))
+
+# ⚠️⚠️ THE ONE THAT MATTERS. The draft is KEPT per sheet, so a mask drawn
+# after one had been made would have been ignored for ever and the tool would
+# have looked as though it did nothing — fault 58, half working reading as
+# broken. Taking the mask off must bring the same suggestions back.
+code, d = call("/sheet/" + SID, {"skip": []})
+back = drafted()
+check("taking it off again puts every suggestion back, so the kept draft "
+      "knows what it was an answer to", len(back) == len(before),
+      [len(before), len(none), len(back)])
+
+# ⚠️ Nothing a page sends is believed: a region has to be four numbers and
+# has to be big enough to mean anything.
+code, d = call("/sheet/" + SID, {"skip": [[10, 10, 11, 11],
+                                          ["a", "b", "c", "d"],
+                                          [30, 40, 300, 400]]})
+kept = (d.get("sheet") or {}).get("skip")
+check("a region that is nonsense, and one too small to mean anything, are dropped",
+      kept == [[30, 40, 300, 400]], kept)
+# ⚠️ and it is written down, not merely answered
+meta = json.load(open(os.path.join(tmp, "home", "proving-ground", "project.json")))
+on_disk = [x.get("skip") for x in meta["sheets"] if x["id"] == SID]
+check("and the region is written down on the sheet, not merely answered",
+      on_disk == [[[30, 40, 300, 400]]], on_disk)
+code, d = call("/sheet/" + SID, {"skip": []})
+
+sys.exit(1 if bad else 0)
+PYSKIP
+
 # ⭐️ SHAPES KEPT, AND KEPT BESIDE THE PROJECTS RATHER THAN INSIDE ONE.
 # The designer, 23 August 2026: "I will need to cut a number of pieces that are
 # different, but also EXACTLY the same shape — I only want to create that

@@ -258,6 +258,10 @@
   }
 
   .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  /* ⚠️ `display` beats the browser's own [hidden] rule, so a tool marked
+     hidden in the markup would sit there in plain sight — fault 23, which
+     this file has already been bitten by four times above. */
+  .tool[hidden] { display: none; }
   .tools.three { grid-template-columns: 1fr 1fr 1fr; }
   .tools.three .tool { padding: 7px 4px; font-size: 12px; }
   .tool {
@@ -744,6 +748,10 @@
                   title="Put down a shape you have kept before, at whatever size you want. Pick one from Shapes kept, below, then click where each one goes.">
             Lay a shape <kbd>S</kbd>
           </button>
+          <button class="tool" id="tSkip" type="button" aria-pressed="false"
+                  title="Drag a box over a part of the sheet the automatic pass should leave alone — a title panel, a page of rules, a colour bar down the margin. Nothing is deleted, nothing is cropped, and you can still outline there by hand: it only stops the room suggesting pieces inside the box. Click a box to take it off again.">
+            Mask off <kbd>M</kbd>
+          </button>
         </div>
         <p class="note" id="toolNote"></p>
       </section>
@@ -1018,7 +1026,8 @@
     adjust: document.getElementById("tAdjust"),
     rect: document.getElementById("tRect"),
     ellipse: document.getElementById("tEllipse"),
-    lay: document.getElementById("tLay")
+    lay: document.getElementById("tLay"),
+    skip: document.getElementById("tSkip")
   };
 
   var sheet = null;
@@ -1032,6 +1041,12 @@
   var moving = null;          // {piece, from} — a whole piece being shifted
   var xform = null;           // a stretch, squash or turn in progress
   var guides = [];            // [{axis: "x"|"y", at: n}] — lines to line up on
+  /* ⭐️ The parts of THIS sheet the automatic pass is told to leave alone, in
+     the sheet's own pixels: [[x1, y1, x2, y2], ...]. They live on the sheet
+     record, beside its turn, because a region can be drawn again in a moment
+     — unlike an outline, which is the work. */
+  var skips = [];
+  var canMask = typeof ROOM !== "undefined" && !!ROOM;
   var railing = null;         // a guide being dragged
   var sel = null;             // {piece, nodes: []} — nodes picked out together
   var marquee = null;         // the rubber band picking them out
@@ -1120,6 +1135,7 @@
     pieces = [];
     draft = null;
     guides = [];
+    skips = (s.skip || []).map(function (r) { return r.slice(); });
     sel = null;
     undoStack = [];
     ruler = null;
@@ -2196,6 +2212,28 @@
       ctx.globalAlpha = 1;
     }
 
+    /* ⭐️ THE MASKED-OFF REGIONS ARE ALWAYS SHOWN, whatever tool is in hand.
+       A part of the sheet the room has been told to ignore is a thing you
+       must be able to SEE you did, or a sheet that comes back with nothing
+       suggested on half of it looks like a fault in the room. Quiet while
+       you are working, plain while you are drawing them. */
+    if (skips.length) {
+      var live = tool === "skip";
+      for (var sk = 0; sk < skips.length; sk++) {
+        var q = skips[sk];
+        ctx.globalAlpha = live ? 0.26 : 0.13;
+        ctx.fillStyle = "#8494A5";
+        ctx.fillRect(q[0], q[1], q[2] - q[0], q[3] - q[1]);
+        ctx.globalAlpha = live ? 0.95 : 0.5;
+        ctx.strokeStyle = "#8494A5";
+        ctx.lineWidth = 1.5 / view.s;
+        ctx.setLineDash([9 / view.s, 6 / view.s]);
+        ctx.strokeRect(q[0], q[1], q[2] - q[0], q[3] - q[1]);
+        ctx.setLineDash([]);
+      }
+      ctx.globalAlpha = 1;
+    }
+
     if (marquee) {
       var mx = Math.min(marquee.a[0], marquee.b[0]);
       var my = Math.min(marquee.a[1], marquee.b[1]);
@@ -2213,7 +2251,19 @@
       ctx.globalAlpha = 1;
     }
 
-    if (box2) {
+    if (box2 && tool === "skip") {
+      ctx.globalAlpha = 0.26;
+      ctx.fillStyle = "#8494A5";
+      ctx.fillRect(Math.min(box2.a[0], box2.b[0]), Math.min(box2.a[1], box2.b[1]),
+                   Math.abs(box2.b[0] - box2.a[0]), Math.abs(box2.b[1] - box2.a[1]));
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "#8494A5";
+      ctx.lineWidth = 2 / view.s;
+      ctx.setLineDash([9 / view.s, 6 / view.s]);
+      ctx.strokeRect(Math.min(box2.a[0], box2.b[0]), Math.min(box2.a[1], box2.b[1]),
+                     Math.abs(box2.b[0] - box2.a[0]), Math.abs(box2.b[1] - box2.a[1]));
+      ctx.setLineDash([]);
+    } else if (box2) {
       var shown = tool === "rect" ? rectPts(box2.a, box2.b, box2.square)
                                   : ellipsePts(box2.a, box2.b, box2.square);
       var ink3 = INKS[pieces.length % INKS.length];
@@ -2311,7 +2361,8 @@
     adjust: "Hover a piece for its box: corner or side to stretch, the grip above to turn, inside to move. Pick out a run of nodes with <b>shift</b>-click along the outline, <b>&#8984;</b>-click for one at a time, or a band dragged on open water &mdash; then drag any one to move them all, or <b>delete</b> to remove the lot. Click a line to add a node, <b>double-click</b> to remove one.",
     rect: "Drag out a rectangle. Hold <b>shift</b> for a square. Its four corners stay adjustable.",
     ellipse: "Drag out an ellipse. Hold <b>shift</b> for a circle.",
-    lay: "Pick a kept shape below, then <b>click where each one goes</b>. It lands at the size in the boxes &mdash; or <b>drag out</b> the size you want, and the next one keeps it."
+    lay: "Pick a kept shape below, then <b>click where each one goes</b>. It lands at the size in the boxes &mdash; or <b>drag out</b> the size you want, and the next one keeps it.",
+    skip: "Drag a box over anything the automatic pass should ignore &mdash; a title panel, a page of rules, a bar of colour down the margin. <b>Nothing is deleted and nothing is cropped</b>; you can still outline inside it by hand. Click a box to take it off again."
   };
 
   var HINTS = {
@@ -2327,7 +2378,10 @@
     ellipse: "Drag out an ellipse &middot; <kbd>shift</kbd> for a circle " +
              "&middot; <kbd>G</kbd> drops guides to snap to",
     lay: "Pick a shape from <b>Shapes kept</b> &middot; click where each one " +
-         "goes &middot; <kbd>esc</kbd> puts it down"
+         "goes &middot; <kbd>esc</kbd> puts it down",
+    skip: "Drag a box over what the automatic pass should leave alone " +
+          "&middot; click a box to take it off &middot; nothing is deleted " +
+          "and you can still outline in there by hand"
   };
 
   function setTool(t) {
@@ -2445,7 +2499,7 @@
       return;
     }
 
-    if (tool === "rect" || tool === "ellipse") {
+    if (tool === "rect" || tool === "ellipse" || tool === "skip") {
       box2 = { a: snapped(p), b: snapped(p), square: ev.shiftKey };
       draw();
       return;
@@ -2713,6 +2767,21 @@
       draw();
       return;
     }
+    if (box2 && tool === "skip") {
+      var dd = bounds([box2.a, box2.b]);
+      if (Math.max(dd[0], dd[1]) * view.s > 6) {
+        addSkip(box2.a, box2.b);
+      } else {
+        // ⚠️ A stray click is how you take one OFF. A region you cannot
+        // remove is fault 50's shape — a mark nothing can clear — and this
+        // one hides part of the sheet from the automatic pass, so it has to
+        // be as easy to undo as it was to make.
+        dropSkipAt(box2.a);
+      }
+      box2 = null;
+      draw();
+      return;
+    }
     if (box2) {
       var d = bounds([box2.a, box2.b]);
       if (Math.max(d[0], d[1]) * view.s > 6) {     // not just a stray click
@@ -2918,6 +2987,8 @@
     if (k === "r") setTool("rect");
     if (k === "e") setTool("ellipse");
     if (k === "s") setTool("lay");
+    // ⭐️ M for mask off. Only where there is a room to re-draft the sheet.
+    if (k === "m" && TOOLS.skip) setTool("skip");
   });
 
   window.addEventListener("keyup", function (ev) {
@@ -3779,6 +3850,70 @@
   }
 
   document.getElementById("aDup").addEventListener("click", duplicate);
+
+  /* ---------------------------------------------- masking off a part of it
+
+     ⭐️⭐️ THE DESIGNER, 25 August 2026: "one quick tool that would be useful
+     would be the ability to mask off a section of any given sheet, so that it
+     doesn't get run for suggestions."
+
+     The automatic pass is right about cards and counters on a plain ground and
+     hopeless about a page of printed rules, a title panel or a bar of colour
+     down the margin — and ONE such region fills a sheet with suggestions
+     nobody wants, which is the work this whole button exists to save.
+
+     ⚠️ IT MASKS THE SUGGESTIONS AND NOTHING ELSE. Not a crop, not a delete;
+     the scan is untouched, the cut pays it no attention, and an outline drawn
+     inside one by hand is as good as any other. A region put in the wrong
+     place costs a suggestion, never a piece — which is why it needs no
+     confirming and no undo stack of its own. */
+  function saveSkips() {
+    if (sheet) sheet.skip = skips.map(function (r) { return r.slice(); });
+    /* ⚠️ THE DRAFT ALREADY MADE IS AN ANSWER TO THE OLD QUESTION. Left as it
+       was, the sheet would go on offering the suggestions it had before the
+       mask was drawn and the tool would look as though it had done nothing
+       (fault 58: half working reads as broken). Putting it back to "not asked
+       yet" makes the button say *Find the suggested outlines* again, and the
+       room re-drafts because its own kept answer carries the regions it was
+       made with. */
+    if (sheet) sheet.suggested = null;
+    if (canMask) roomPost("/sheet/" + encodeURIComponent(sheet.id), { skip: skips });
+    offers();
+  }
+
+  function addSkip(a, b) {
+    var r = [Math.round(Math.min(a[0], b[0])), Math.round(Math.min(a[1], b[1])),
+             Math.round(Math.max(a[0], b[0])), Math.round(Math.max(a[1], b[1]))];
+    skips.push(r);
+    saveSkips();
+    elHint.innerHTML = "<b>Masked off</b> &middot; the automatic pass will " +
+      "leave that part alone &middot; nothing is deleted and you can still " +
+      "outline in there by hand &middot; click the box to take it off";
+  }
+
+  function dropSkipAt(p) {
+    for (var i = skips.length - 1; i >= 0; i--) {
+      var r = skips[i];
+      if (p[0] >= r[0] && p[0] <= r[2] && p[1] >= r[1] && p[1] <= r[3]) {
+        skips.splice(i, 1);
+        saveSkips();
+        elHint.innerHTML = "Mask taken off &middot; the automatic pass will " +
+          "look at that part of the sheet again";
+        return;
+      }
+    }
+    elHint.innerHTML = "Drag a box over what the automatic pass should leave " +
+      "alone &middot; click one to take it off again";
+  }
+
+  /* ⚠️ A BAKED PAGE CANNOT RE-DRAFT ITSELF. Its suggestions were worked out
+     when it was made and there is no room behind it to ask again, so masking
+     a region off there would be a control that quietly does nothing — which
+     is fault 58 exactly. The tool is not offered at all where it cannot work.  */
+  if (!canMask) {
+    TOOLS.skip.hidden = true;
+    delete TOOLS.skip;
+  }
 
   /* ---------------------------------------------------------- shapes kept
 
