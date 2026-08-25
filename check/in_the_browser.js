@@ -1821,6 +1821,155 @@ const SHAPE = `(function () {
             (book.items || []).length);
     }
 
+    /* ⭐️⭐️ WHAT IS BEING CUT NOW, AND WHAT WAS ONLY UPLOADED FOR LATER. The
+       designer, 25 August 2026: "I find the overall checklist % isn't very
+       helpful... I've decided to not yet cut some pieces which belong to
+       advanced rule sets that I don't want to bring in the v1 of the game.
+       Maybe I need a user-defined divide between live cutting and a sheet
+       backlog/future cutting which I may have uploaded only for convenience?"
+       ⚠️ The API is checked elsewhere; this is the half that goes wrong
+       unwatched — fault 61's lesson, that a check going through the API is a
+       green light over a button that does nothing. */
+    {
+      console.log("\nputting a set by for later, from the page");
+      await page.go(`${ROOM}/p/the-spare-room/?tab=sheets`);
+      const before = await page.val(`(function () {
+        var f = document.querySelector('#sFilter button[data-f="todo"]');
+        if (f) f.click();
+        return document.querySelectorAll(".sheets .sheet").length; })()`);
+      await sleep(300);
+      const put = await page.val(`(function () {
+        var all = document.querySelector('#sFilter button[data-f=""]');
+        if (all) all.click();
+        var rows = document.querySelectorAll(".boxrow"), hit = null, b = null;
+        for (var i = 0; i < rows.length; i++) {
+          var w = rows[i].querySelector(".fold .what");
+          if (w && /Keepers/.test(w.textContent)) hit = rows[i];
+        }
+        if (!hit) return { found: false };
+        hit.querySelectorAll("button").forEach(function (x) {
+          if (/Put this set by/.test(x.textContent)) b = x;
+        });
+        if (b) b.click();          // ⚠️ guarded: a click on nothing throws, and
+        return { found: true, pressed: !!b }; })()`);   // one throw ends the section
+      check("a set of sheets can be put by for later, from its own heading",
+            put.pressed, put);
+      await sleep(900);
+      const after = await page.val(`(function () {
+        var f = document.querySelector('#sFilter button[data-f="todo"]');
+        if (f) f.click();
+        return { todo: document.querySelectorAll(".sheets .sheet").length }; })()`);
+      check("and its sheets drop out of the work still to outline",
+            after.todo === before - 2, { was: before, now: after.todo });
+      // ⚠️ NOTHING IS HIDDEN AND NOTHING IS DELETED: there is a chip that
+      // shows exactly the sheets put by, so they can always be found again.
+      const stashed = await page.val(`(function () {
+        var f = document.querySelector('#sFilter button[data-f="later"]');
+        if (f) f.click();
+        return { chip: !!f, cards: document.querySelectorAll(".sheets .sheet").length }; })()`);
+      check("they are still here, under a chip of their own that shows which they are",
+            stashed.chip && stashed.cards === 2, stashed);
+      // ⚠️ and the heading says so where every box is in front of you, or a
+      // set could be put by and nothing on the page would ever say it was
+      const marked = await page.val(`(function () {
+        var all = document.querySelector('#sFilter button[data-f=""]');
+        if (all) all.click();
+        return (document.querySelector(".boxrow.later .putby") || {}).textContent || ""; })()`);
+      check("and the box's own heading says it is put by, in as many words",
+            /put by for later/.test(marked), marked);
+
+      /* ⭐️⭐️ AND THE FIGURE. This set of components was made FROM that box of
+         sheets, so it answers to it — one switch, not two (fault 24). */
+      await page.go(`${ROOM}/p/the-spare-room/?tab=wanted`);
+      await sleep(900);
+      const fig = await page.val(`(function () {
+        var heads = [];
+        document.querySelectorAll("#wBody tr.ghead").forEach(function (tr) {
+          var w = tr.querySelector(".fold .what"), f = tr.querySelector(".setfig");
+          heads.push({ name: w ? w.textContent : "", fig: f ? f.textContent : "",
+                       later: tr.classList.contains("later") });
+        });
+        return { heads: heads, pct: document.getElementById("wPct").textContent,
+                 says: document.getElementById("wLater").textContent }; })()`);
+      check("every set on the checklist carries its own figure",
+            fig.heads.length > 0 && fig.heads.every(function (h) { return /\d+%/.test(h.fig); }),
+            fig.heads);
+      check("the set put by is marked as such on the checklist too",
+            fig.heads.some(function (h) { return /Keepers/.test(h.name) && h.later; }),
+            fig.heads);
+      // ⚠️ TWO NUMBERS THAT DISAGREE IN SILENCE (fault 67): the headline is
+      // about what is being cut now, so the line under it says what it left out.
+      check("and the headline says what it has left out of itself",
+            /put by for later/.test(fig.says || "") && /whole game/i.test(fig.says || ""),
+            fig.says);
+      const back = await page.val(`(function () {
+        var b = null;
+        document.querySelectorAll("#wBody tr.ghead").forEach(function (tr) {
+          var w = tr.querySelector(".fold .what");
+          if (w && /Keepers/.test(w.textContent)) {
+            tr.querySelectorAll("button").forEach(function (x) {
+              if (/Bring back/.test(x.textContent)) b = x;
+            });
+          }
+        });
+        if (b) b.click();
+        return !!b; })()`);
+      check("and the same switch is on the checklist heading, to bring it back",
+            back, back);
+      await sleep(1200);
+      const home = await page.val(`(function () {
+        return { says: document.getElementById("wLater").textContent,
+                 later: !!document.querySelector("#wBody tr.ghead.later") }; })()`);
+      check("bringing it back counts it again, and the line about it goes",
+            home.says === "" && !home.later, home);
+    }
+
+    /* ⭐️⭐️ A WAY IN TO A SECTION OF THE CHECKLIST ITSELF. The designer, 25
+       August 2026: "very obvious quirk I just noticed - I cant see how to add
+       a new section to the checklist (eg to add details of the new sail set I
+       just uploaded and have started cutting)." Every door made a set on the
+       way past to something else. */
+    {
+      console.log("\nadding a section to the checklist");
+      await page.go(`${ROOM}/p/the-spare-room/?tab=wanted`);
+      await sleep(900);
+      const opened = await page.val(`(function () {
+        window.prompt = function () { return "A section of its own"; };
+        var b = document.getElementById("wSetAdd");
+        if (b) b.click();
+        var pick = document.getElementById("wNewSetPick");
+        return { there: !!b, open: !!(pick && !document.getElementById("wNewSet").hidden),
+                 offers: pick ? Array.prototype.map.call(pick.options, function (o) {
+                   return o.value; }) : [] }; })()`);
+      check("there is a button on the checklist for adding a section",
+            opened.there && opened.open, opened);
+      check("and it offers the boxes of sheets, or a name of your own",
+            (opened.offers || []).indexOf("__new") >= 0, opened.offers);
+      await page.val(`(function () {
+        document.getElementById("wNewSetPick").value = "__new";
+        document.getElementById("wNewSetGo").click(); return true; })()`);
+      await sleep(1500);
+      const made = await page.val(`(function () {
+        var heads = [];
+        document.querySelectorAll("#wBody tr.ghead .fold .what").forEach(function (w) {
+          heads.push(w.textContent); });
+        return { heads: heads,
+                 empty: (document.querySelector("#wBody tr.ghead + tr td.muted") || {}).textContent || "" };
+      })()`);
+      /* ⚠️ THE SECTION IS EMPTY, and a list that only draws a heading where
+         there are rows under it would have made it, saved it, and then shown
+         nothing at all — fault 44's shape, the thing you have just made being
+         the one thing you cannot see. */
+      check("the new section appears on the list at once, empty though it is",
+            made.heads.indexOf("A section of its own") >= 0, made.heads);
+      check("and it says what to do next, rather than being a blank space",
+            /Nothing in this section yet/.test(made.empty || ""), made.empty);
+      const kept2 = await (await fetch(`${ROOM}/api/p/the-spare-room/wanted`)).json();
+      check("and it is written down, so it is still there on the next load",
+            (kept2.groups || []).some((g) => g.name === "A section of its own"),
+            (kept2.groups || []).map((g) => g.name));
+    }
+
     /* ⭐️⭐️ A WHOLE BOX OF SHEETS OUT AGAIN, IN ONE PRESS. The designer, 25 August
        2026: "I'd like to be able to remove a full set of imported sheets in
        one click (after a confirmation)."
@@ -1837,8 +1986,17 @@ const SHAPE = `(function () {
         var rows = document.querySelectorAll(".boxrow");
         for (var i = 0; i < rows.length; i++) {
           if (/browser-fodder/.test(rows[i].querySelector(".fold .what").textContent)) {
-            rows[i].querySelectorAll("button")[2].click();
-            return { said: said, heads: rows.length };
+            /* ⚠️ FOUND BY WHAT IT SAYS, NOT BY WHERE IT SITS. This pressed
+               the third button in the row, and the day a fourth was added to
+               the heading it pressed the wrong one — the check went red over
+               code that was perfectly well. A handle that is a position will
+               drift; the words on the button are the thing being tested. */
+            var rm = null;
+            rows[i].querySelectorAll("button").forEach(function (b) {
+              if (/Remove this set/.test(b.textContent)) rm = b;
+            });
+            if (rm) rm.click();
+            return { said: said, heads: rows.length, found: !!rm };
           }
         }
         return { said: null, heads: rows.length }; })()`);
@@ -1857,7 +2015,12 @@ const SHAPE = `(function () {
         var rows = document.querySelectorAll(".boxrow");
         for (var i = 0; i < rows.length; i++) {
           if (/browser-fodder/.test(rows[i].querySelector(".fold .what").textContent)) {
-            rows[i].querySelectorAll("button")[2].click(); return true; } }
+            var rm = null;                       // by its words, not its place
+            rows[i].querySelectorAll("button").forEach(function (b) {
+              if (/Remove this set/.test(b.textContent)) rm = b;
+            });
+            if (rm) rm.click();
+            return !!rm; } }
         return false; })()`);
       await sleep(2000);
       const left = await (await fetch(`${ROOM}/api/p/the-spare-room`)).json();

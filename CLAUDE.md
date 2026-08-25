@@ -93,11 +93,19 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 414 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 440 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**25 August, later**: the designer, working with two boxes of one game imported and
+only one of them being cut, on the figure at the top of the checklist: *"I find
+the overall checklist % isn't very helpful."* A percentage over a whole game
+answers a question nobody asks — see fault 68, which is the divide they asked
+for in the same breath: **a set can be put by for later** and stops being
+counted, and **every set carries its own figure**. In the same message: no way
+to add a section to the checklist at all (fault 69).
 
 **25 August** was a day of the designer importing rather than cutting, and every
 complaint was about **sets of sheets**: twelve files that arrived as twelve sets
@@ -1188,6 +1196,68 @@ rather than by reading the code.
     the check went red pointing at the page rather than at itself. It makes its
     own piece now.
 
+68. ⭐️⭐️ **A PERCENTAGE THAT COUNTS WORK YOU HAVE DECIDED NOT TO DO CAN
+    NEVER REACH 100, SO IT SAYS NOTHING.** The designer, 25 August 2026: *"I find
+    the overall checklist % isn't very helpful — would be preferable to have a
+    % completion per set of files uploaded for cutting. eg in [one game] I've
+    decided to not yet cut some pieces which belong to advanced rule sets that
+    I don't want to bring in the v1 of the game. Maybe I need a user-defined
+    divide between live cutting and a sheet backlog/future cutting which I may
+    have uploaded only for convenience?"*
+    Both halves were right and they are one feature. **A set can be PUT BY**:
+    it stays exactly where it is, nothing is deleted and nothing is hidden,
+    and the room stops adding it up — its sheets leave *To outline*, its
+    components leave the headline figure, and the end-of-job report lists it
+    under *Sets put by for later* instead of as things missing. **And every
+    set carries its own figure**, because the work is done a box at a time
+    (fault 42) and so is the reading of it.
+    ⭐️ This is **fault 50's lesson arriving on a number**: a list nobody can
+    shorten is a list nobody opens, and a figure nobody can move is a figure
+    nobody reads. The question to ask of anything the room counts is *what
+    makes this reach 100?*
+    ⚠️ **ONE SWITCH, NOT TWO.** A set of components made from a box of sheets
+    — which is how they are normally made (fault 64) — answers to **that box**,
+    so the button on the Sheets heading and the one on the Checklist heading
+    press the same thing. `later` is a list of keys on the project:
+    `book:<id>` for a box of sheets, `set:<id>` only for a set that has no box
+    of its own. `group_later()` in the room and `groupLater()` in the page are
+    the one rule each. Fault 24, for the eighth time.
+    ⚠️ **And two numbers that disagree in silence are worse than one blunt
+    one** (fault 67). The whole-game figure is still worked out and still
+    true; the page leads with the live one and **says what the difference is
+    made of** — *"Not counted here: 30 components in 1 set put by for later.
+    The whole game is 44 of 221 (20%)."*
+    ⚠️ Nothing is inferred. Fault 51 works out which box a set answers to from
+    the links already made, for **ordering** — and its rule is that it orders
+    and never hides. Using that guess to drop a set out of a count would break
+    it, so only a `book` somebody has actually picked counts here.
+
+69. ⭐️ **EVERY DOOR MADE A SET ON THE WAY PAST TO SOMETHING ELSE.** The designer, 25
+    August 2026: *"very obvious quirk I just noticed - I cant see how to add a
+    new section to the checklist (eg to add details of the new sail set I just
+    uploaded and have started cutting)."* Quite so: a set could be made from a
+    component's own **Set** box, or from the panel that pastes a whole
+    contents list in — both of them on the way to doing something else — so
+    somebody who wanted the **section** first had nowhere to press.
+    **+ Add a set** is that door, and it offers **the boxes of sheets** first
+    (fault 64), so the new sail set is sitting there by name.
+    ⚠️ **An empty section would have been made, saved, and then invisible.**
+    Every folding list in the room only draws a heading where there are rows
+    under it — so the one thing they had just made would have been the one
+    thing they could not see, which is **fault 44 exactly**. A set that is
+    empty in the whole list is drawn anyway, and says what to do next.
+    ⚠️ Only ever one that is empty in the *whole* list, never one the search
+    or a filter has merely emptied, or every set would sprout a phantom
+    heading the moment somebody typed in the find box.
+
+70. ⚠️ **A CHECK THAT PRESSES THE THIRD BUTTON IN A ROW IS A CHECK THAT WILL
+    PRESS THE WRONG ONE.** Two checks reached the *Remove this set* button as
+    `querySelectorAll("button")[2]`, and adding *Put this set by* to that
+    heading made them press the new button instead: three checks went red over
+    code that was perfectly well, and one of them was about the room's only
+    really destructive action. **A handle that is a position drifts; the words
+    on the button are the thing being tested.** They find it by its text now.
+
 ---
 
 ## Architecture
@@ -1307,7 +1377,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 414 checks, about a minute
+check/check.sh          # 440 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

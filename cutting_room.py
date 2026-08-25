@@ -782,6 +782,43 @@ class Project:
         m = re.match(r"^(.+)-\d+$", str(sid or ""))
         return m.group(1) if m else str(sid or "")
 
+    # ⭐️⭐️ WHAT IS BEING CUT NOW, AND WHAT WAS ONLY UPLOADED FOR LATER.
+    # The designer, 25 August 2026: "I find the overall checklist % isn't very
+    # helpful... I've decided to not yet cut some pieces which belong to
+    # advanced rule sets that I don't want to bring in the v1 of the game.
+    # Maybe I need a user-defined divide between live cutting and a sheet
+    # backlog/future cutting which I may have uploaded only for convenience?"
+    #
+    # Quite so, and it is one mark rather than a new kind of project: a set is
+    # either being cut now or PUT BY. `later` is a list of keys — "book:<id>"
+    # for a box of sheets, "set:<id>" for a set of components that has no box
+    # of its own — and every count in the room reads it.
+    #
+    # ⚠️ NOTHING IS HIDDEN AND NOTHING IS DELETED. The sheets stay, the
+    # components stay, anything already cut still counts. All the mark does is
+    # take a set out of the figure that says how far you have got, because a
+    # percentage that includes work you have decided not to do can never
+    # reach 100 and so tells you nothing (fault 50's lesson about a flag
+    # nobody can clear, arriving on a number instead of a list).
+    def later_keys(self):
+        return set(self.meta.get("later") or [])
+
+    def book_later(self, book):
+        return ("book:" + str(book or "")) in self.later_keys()
+
+    # ⚠️ ONE RULE, ASKED IN ONE PLACE (fault 24, seven times over). A set of
+    # components made from a box of sheets — which is how they are normally
+    # made, see fault 64 — answers to that BOX, so putting the box by on the
+    # Sheets page and putting the set by on the checklist are the same switch
+    # rather than two that will disagree. Only a set with no box of its own
+    # carries the mark itself.
+    def group_later(self, g, later=None):
+        later = self.later_keys() if later is None else later
+        book = str((g or {}).get("book") or "").strip()
+        if book:
+            return ("book:" + book) in later
+        return ("set:" + str((g or {}).get("id") or "")) in later
+
     def sheet_title(self, s):
         """What to CALL this sheet.
 
@@ -1036,6 +1073,9 @@ class Project:
             # and the room has been calling the box that ever since — see the
             # `book` route for why the id itself is never touched.
             "books": self.meta.get("books") or {},
+            # ⭐️ the sets put by for later — "book:<id>" for a box of sheets,
+            # "set:<id>" for a set of components with no box. See later_keys().
+            "later": sorted(self.later_keys()),
             "hooks": [{"id": h.get("id"), "label": h.get("label")}
                       for h in (self.meta.get("hooks") or [])],
             "kinds": KINDS,
@@ -1158,21 +1198,53 @@ class Project:
             out.append(dict(it, pieces=have, guesses=guess, state=state,
                             need=need, got=got, cut_pieces=len(have)))
         groups = book.get("groups") or []
+        # ⭐️⭐️ A FIGURE FOR EACH SET, AND A HEADLINE OVER WHAT IS BEING CUT
+        # NOW. The designer, 25 August 2026: "I find the overall checklist %
+        # isn't very helpful - would be preferable to have a % completion per
+        # set of files uploaded for cutting."
+        #
+        # One number over a whole game answers a question nobody is asking:
+        # the work is done a box at a time (fault 42), so what is wanted is
+        # how far THIS box has got — and a box deliberately not being cut yet
+        # must not drag the figure down for ever.
+        later = self.later_keys()
+        put_by = {g.get("id", ""): self.group_later(g, later) for g in groups}
+
+        def is_later(gid):
+            if gid in put_by:
+                return put_by[gid]
+            return ("set:" + str(gid or "")) in later
+
         per_group = {}
         for it in out:
             g = it.get("group", "")
-            d = per_group.setdefault(g, {"total": 0, "done": 0})
+            d = per_group.setdefault(g, {"total": 0, "done": 0, "later": is_later(g)})
             d["total"] += 1
             d["done"] += 1 if it["state"] in ("cut", "probably") else 0
+        for d in per_group.values():
+            d["pct"] = round(100.0 * d["done"] / d["total"]) if d["total"] else 0
+        # ⚠️ TWO NUMBERS THAT DISAGREE IN SILENCE ARE WORSE THAN ONE THAT IS
+        # BLUNT (fault 67). The whole-game figure is still here and still
+        # true; the live one is what the room leads with, and the page says
+        # in as many words what the difference between them is made of.
+        live = [i for i in out if not is_later(i.get("group", ""))]
+        live_done = sum(1 for i in live if i["state"] in ("cut", "probably"))
         # ⭐️ and the same sum in CARDS as well as in components, because a
         # deck of twenty-four counts once here and is twenty-four evenings of
-        # nothing if you only ever read the component figure
-        want_pieces = sum(i["need"] for i in out)
-        got_pieces = sum(min(i["got"], i["need"]) for i in out)
+        # nothing if you only ever read the component figure. Over what is
+        # being cut now, so it cannot contradict the figure above it.
+        want_pieces = sum(i["need"] for i in live)
+        got_pieces = sum(min(i["got"], i["need"]) for i in live)
         return {"items": out, "groups": groups, "kinds": book.get("kinds") or KINDS,
-                "note": book.get("note", ""),
+                "note": book.get("note", ""), "later": sorted(later),
                 "summary": {"total": len(out), "done": done,
                             "pct": (round(100.0 * done / len(out)) if out else 0),
+                            "live_total": len(live), "live_done": live_done,
+                            "live_pct": (round(100.0 * live_done / len(live))
+                                         if live else 0),
+                            "later_total": len(out) - len(live),
+                            "later_sets": len([1 for d in per_group.values()
+                                               if d["later"] and d["total"]]),
                             "pieces_wanted": want_pieces, "pieces_cut": got_pieces,
                             "groups": per_group}}
 
@@ -1208,11 +1280,20 @@ class Project:
                     "got": it["got"], "need": it["need"],
                     "pieces": it["pieces"], "guesses": it["guesses"]}
 
+        # ⭐️ A SET PUT BY FOR LATER IS NOT A SET FALLING SHORT. The designer
+        # has some sheets in the game they have decided not to cut yet, and a
+        # report that lists every one of those components as missing is a
+        # report they stop reading — which is fault 50's lesson (a list nobody
+        # can shorten is a list nobody opens) arriving on the end-of-job check.
+        # So they are counted on their own, at the end, and nothing above
+        # counts them.
+        per_group = (st.get("summary") or {}).get("groups") or {}
         by_group, order = {}, []
         for it in items:
             g = it.get("group", "")
             if g not in by_group:
                 by_group[g] = {"id": g, "name": names.get(g, g) or "Everything else",
+                               "later": bool((per_group.get(g) or {}).get("later")),
                                "total": 0, "accounted": 0,
                                "missing": [], "part": [], "probably": []}
                 order.append(g)
@@ -1223,6 +1304,8 @@ class Project:
             if it["state"] in ("missing", "part", "probably"):
                 band[it["state"]].append(about(it))
         sets = [by_group[g] for g in sorted(order, key=lambda x: (x == "", x))]
+        live_sets = [x for x in sets if not x["later"]]
+        put_by = [x for x in sets if x["later"]]
 
         # ⭐️⭐️ A DECK COUNTED AS ONE CARD WILL READ AS DONE ON THE FIRST CARD
         # CUT. This came straight out of reading a real game's list: NINE
@@ -1246,6 +1329,8 @@ class Project:
         # of cards is not. Reading the game's own data changed this rule twice.
         loose = []
         for it in items:
+            if (per_group.get(it.get("group", "")) or {}).get("later"):
+                continue          # not being cut yet; see the sets put by, below
             if it["need"] > 1 or (it.get("kind") or "") != "deck":
                 continue
             digits = re.sub(r"[^0-9]", "", str(it.get("qty") or ""))
@@ -1286,18 +1371,22 @@ class Project:
         if not has_list:
             orphans = []
         s = st["summary"]
-        return {"has_list": has_list, "sets": sets, "orphans": orphans,
+        return {"has_list": has_list, "sets": live_sets, "put_by": put_by,
+                "orphans": orphans,
                 "aside": aside, "unnamed": unnamed, "held": held,
                 "loose_decks": loose,
                 "summary": {
-                    "components": s["total"], "accounted": s["done"],
-                    "pct": s["pct"],
+                    "components": s["live_total"], "accounted": s["live_done"],
+                    "pct": s["live_pct"],
+                    "later_sets": len(put_by),
+                    "later_components": sum(x["total"] for x in put_by),
+                    "later_left": sum(x["total"] - x["accounted"] for x in put_by),
                     "pieces_wanted": s["pieces_wanted"],
                     "pieces_cut": s["pieces_cut"],
                     "pieces": len(stems) - len(aside),
-                    "missing": sum(len(x["missing"]) for x in sets),
-                    "part": sum(len(x["part"]) for x in sets),
-                    "probably": sum(len(x["probably"]) for x in sets),
+                    "missing": sum(len(x["missing"]) for x in live_sets),
+                    "part": sum(len(x["part"]) for x in live_sets),
+                    "probably": sum(len(x["probably"]) for x in live_sets),
                     "orphans": len(orphans), "aside": len(aside),
                     "unnamed": len(unnamed), "held": len(held),
                     "loose_decks": len(loose)}}
@@ -2228,12 +2317,19 @@ def checklist_page(pr, game):
     for it in items:
         by_group.setdefault(it.get("group", ""), []).append(it)
     words = {"cut": "cut", "probably": "probably cut", "missing": "not yet"}
+    per_group = (st.get("summary") or {}).get("groups") or {}
     out = []
-    for g in sorted(by_group, key=lambda x: (x == "", x)):
+    # ⭐️ the sets being cut now first, the ones put by after them, each with
+    # its own figure — the work is done a box at a time and so is the reading
+    for g in sorted(by_group, key=lambda x: (bool((per_group.get(x) or {}).get("later")),
+                                             x == "", x)):
         got = by_group[g]
         left = len([i for i in got if i["state"] == "missing"])
-        out.append("<h2>%s — %d of %d still to cut</h2>"
-                   % (esc_html(names.get(g, g) or "Everything else"), left, len(got)))
+        band = per_group.get(g) or {}
+        out.append("<h2>%s — %d of %d still to cut (%d%% done)%s</h2>"
+                   % (esc_html(names.get(g, g) or "Everything else"), left, len(got),
+                      band.get("pct", 0),
+                      " · put by for later" if band.get("later") else ""))
         out.append("<table><tr><th>Component</th><th>Kind</th><th>Where it stands</th></tr>")
         for it in sorted(got, key=lambda i: (i["state"] != "missing", (i.get("name") or "").lower())):
             out.append('<tr class="%s"><td><span class="box%s"></span>%s</td>'
@@ -2244,7 +2340,14 @@ def checklist_page(pr, game):
         out.append("</table>")
     s = st["summary"]
     sub = ("%d of %d accounted for (%d%%). Tick as you go — the empty boxes are "
-           "the work." % (s["done"], s["total"], s["pct"]))
+           "the work." % (s["live_done"], s["live_total"], s["live_pct"]))
+    if s.get("later_total"):
+        # ⚠️ the figure is over what is being cut NOW, so it has to say so —
+        # two numbers that disagree in silence is fault 67's subject
+        sub = ("%d of %d accounted for (%d%%) in the sets you are cutting now, "
+               "and a further %d component%s put by for later. Tick as you go."
+               % (s["live_done"], s["live_total"], s["live_pct"],
+                  s["later_total"], "" if s["later_total"] == 1 else "s"))
     return print_page("%s — still to cut" % game, sub, "\n".join(out))
 
 
@@ -2359,6 +2462,22 @@ def review_page(pr, game, rv=None):
               lambda r: ['<code>%s</code>' % esc_html(r["stem"]),
                          esc_html(r["name"] or "(nothing yet)"),
                          esc_html(r["why"])])
+    # ⭐️ PUT BY FOR LATER, AND SAID SO RATHER THAN LEFT OUT IN SILENCE. A
+    # report that quietly dropped a whole box would be a report that lies by
+    # omission — so the sets are named, with what they hold, under a heading
+    # that says plainly that none of it is in the figures above.
+    if rv.get("put_by"):
+        out.append("<h2>Sets put by for later — %d</h2>" % len(rv["put_by"]))
+        out.append("<p>You have said these are not being cut yet, so "
+                   "<b>nothing in them is counted anywhere above</b> — not as "
+                   "missing, and not in the percentage. Bring one back into "
+                   "the cutting from the Sheets page or the Checklist and it "
+                   "joins the figures again; nothing has been deleted or "
+                   "hidden.</p>")
+        table(rv["put_by"], ["Set", "Accounted for", "Still to cut"],
+              lambda r: [esc_html(r["name"]),
+                         "%d of %d" % (r["accounted"], r["total"]),
+                         "%d" % (r["total"] - r["accounted"])])
     if rv["aside"]:
         out.append("<h2>Pieces set aside — %d</h2>" % len(rv["aside"]))
         out.append("<p>Kept on disk and left out of the hand-over, on purpose. "
@@ -2370,6 +2489,11 @@ def review_page(pr, game, rv=None):
 
     sub = ("%d of %d components accounted for (%d%%), out of %d pieces cut."
            % (s["accounted"], s["components"], s["pct"], s["pieces"]))
+    if s.get("later_components"):
+        sub += (" %d component%s in %d set%s put by for later %s not counted."
+                % (s["later_components"], "" if s["later_components"] == 1 else "s",
+                   s["later_sets"], "" if s["later_sets"] == 1 else "s",
+                   "is" if s["later_components"] == 1 else "are"))
     if not rv["has_list"]:
         sub = "%d pieces cut, and no contents list to check them against." % s["pieces"]
     return print_page("%s — the cut checked against the list" % game, sub,
@@ -3547,6 +3671,27 @@ class Room(BaseHTTPRequestHandler):
                 pr.meta["books"] = books
                 pr.save_meta()
             return self.send_json({"ok": True, "books": books})
+
+        # ⭐️⭐️ PUT BY FOR LATER, OR BROUGHT BACK INTO THE CUTTING. One door
+        # for both, because the Sheets page and the checklist are pressing the
+        # same switch — see `later_keys()` for why the mark is a key rather
+        # than a flag on the sheet or on the set.
+        # ⚠️ IT DELETES NOTHING AND HIDES NOTHING: the sheets stay where they
+        # are and anything already cut from them still counts. All it changes
+        # is which sets the room adds up when it says how far you have got.
+        if head == "later" and len(rest) == 1 and method == "POST":
+            d = self.body_json()
+            key = str(d.get("key") or "").strip()[:120]
+            if not (key.startswith("book:") or key.startswith("set:")):
+                return self.send_json({"error": "a set is put by as book:<id> "
+                                                "or set:<id>"}, 400)
+            with pr.lock:
+                keys = [k for k in (pr.meta.get("later") or []) if k != key]
+                if d.get("later"):
+                    keys.append(key)
+                pr.meta["later"] = sorted(keys)
+                pr.save_meta()
+            return self.send_json({"ok": True, "later": pr.meta["later"]})
 
         # ⭐️⭐️ PUTTING SHEETS INTO ONE SET. The designer, 25 August 2026, having dragged
         # twelve files in at once: "assuming they would all stay together as a

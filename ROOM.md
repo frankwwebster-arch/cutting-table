@@ -181,6 +181,24 @@ separately). ⚠️ Getting it back is not an undo: the scans have to be importe
 again. The **outlines** are kept in the room's own history under Settings, so
 the work is not lost with them.
 
+⭐️⭐️ **Put a set by for later.** A box you have imported but are not cutting
+yet — an advanced rule set, a supplement for version two, sheets uploaded only
+because they were to hand — takes **Put this set by** on its heading. Nothing
+is deleted and nothing is hidden: the sheets stay, anything already cut from
+them still counts, and the **Put by for later** chip beside the other filters
+shows exactly which they are. What changes is what the room counts:
+
+- its sheets drop out of **To outline**, so the work in front of you is work
+  you mean to do;
+- its components drop out of the **percentage** on the Checklist, which is the
+  point — a figure that includes work you have decided not to do can never
+  reach 100, so it tells you nothing.
+
+The set is named on the Checklist too, with its own figure, and the report at
+the end lists it under *Sets put by for later* rather than as anything missing.
+**Bring back into the cutting** on the same heading puts every one of those
+figures back. See *How complete is the cutting?* below.
+
 ⭐️ **The sheet list opens on the work still to do.** With a hundred sheets
 imported, the ones already cut and filed are the ones in the way — so *Sheets*
 opens on **To outline**, and whichever filter you choose is remembered for that
@@ -570,9 +588,13 @@ cards on its own), or by name (which puts everything unnamed together).
 
 ## The checklist — how complete is the cutting?
 
-⭐️ **Every component belongs to a set**, and the **Set** column moves it: the
-core game, or a supplement. Choosing *+ a new set…* makes one — that is the
-only way sets are made, and everything in the room groups by them.
+⭐️ **Every component belongs to a set** — the core game, or a supplement — and
+everything in the room groups by them. There are two ways to make one:
+**+ Add a set**, which offers the boxes of sheets you have imported by the
+names you gave them (so the sheets and the components agree about what the box
+is called) or a name of your own; and the **Set** column on any row, which
+moves that component and can make a set on the way past. A section made before
+it has anything in it sits on the list, empty, saying so.
 
 ### ⭐️ One is enough, unless every one is different
 
@@ -632,9 +654,17 @@ quantity and which sheet it is on. Against each one:
 | **probably cut** | no link, but a piece's *name* matches — press **Confirm the likely links** to make them firm |
 | **not yet** | nothing yet |
 
-The percentage at the top is how much of the game is accounted for. Filter by
-kind, by group (core box / expansion / magazine) or by state, and type in the
-boxes to correct a name, a quantity or a sheet reference in place.
+⭐️⭐️ **A figure for each set, and a headline over what you are cutting now.**
+The work is done a box at a time, so the reading of it is too: every section
+heading carries its own *12 of 30 · 40%*. The big figure at the top is over the
+sets you are **cutting now** — a set you have **put by for later** (from its
+heading here, or from the box's heading on Sheets: they are the same switch) is
+left out of it, and the line underneath says how many components that is and
+what the whole game reads. Nothing is hidden: the components stay on the list,
+and anything already cut against them still counts.
+
+Filter by kind, by group (core box / expansion / magazine) or by state, and
+type in the boxes to correct a name, a quantity or a sheet reference in place.
 
 **Building the list.** Press **Paste the contents list** and type or
 paste the box's own contents list, one component a line:
@@ -705,6 +735,10 @@ It says, set by set:
   list forgot, a piece cut twice, or a piece cut from the wrong place.
 - **Pieces with no name**, **pieces held back**, and **anything set aside** —
   so each of those is a decision and not an accident.
+- ⭐️ **Sets put by for later** — named, with what they hold, at the end. None
+  of it is counted anywhere above: not as missing, and not in the percentage.
+  A report that quietly dropped a whole box would be lying by omission, so it
+  says which boxes and how many components.
 
 **Read the whole check** opens it as a page to read and to print. The same
 report goes into the exported folder twice: `check-against-the-list.html` to

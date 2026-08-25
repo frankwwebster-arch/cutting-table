@@ -223,6 +223,15 @@ Against each component the room then says **cut**, **probably cut** (a name
 matches, but nothing is joined up — press *Confirm the likely links*) or **not
 yet**, and gives you a percentage.
 
+⭐️ **A game is a box and its supplements, so there is a figure for each.**
+Every section of the list carries its own — *12 of 30 · 40%* — and **+ Add a
+set** starts a new section, offering the boxes of sheets you have imported by
+name. A box you are **not cutting yet** takes **Put by for later**, on its
+heading here or on the Sheets page: its sheets leave the work still to
+outline, and its components leave the figure at the top, which is the point —
+a percentage that counts work you have decided not to do can never reach 100.
+Nothing is deleted, and the line under the figure says what it left out.
+
 ⭐️⭐️ **One line, one piece — unless every one is different.** A sheet prints
 twenty-six identical damage counters and the game repeats one for ever, so *26
 Damage counters* wants **one** piece cut. But *24 Damage cards* is twenty-four

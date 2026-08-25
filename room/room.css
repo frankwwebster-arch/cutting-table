@@ -148,7 +148,10 @@ section[hidden] { display: none; }
    silently (fault 29), so anything added here needs the row widening too */
 .boxrow { display: flex; align-items: baseline; gap: 12px; }
 .boxrow .fold { width: auto; flex: 1; min-width: 0; }
-.boxrow .rename { font-size: 11px; letter-spacing: .04em; padding: 2px 8px; flex: none; }
+.boxrow .rename, .boxrow .setby { font-size: 11px; letter-spacing: .04em; padding: 2px 8px; flex: none; }
+/* a set put by for later: still here, still listed, simply not being counted */
+.boxrow .putby { font-size: 11px; letter-spacing: .04em; color: var(--hold); flex: none; }
+.group-head.later .fold { opacity: .6; }
 .group-head { grid-column: 1 / -1; margin: 8px 0 -4px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
 
 /* ---- pieces */
@@ -200,6 +203,12 @@ table.wanted input:focus { background: var(--panel-2); border-color: var(--brass
 table.wanted input.qty { width: 4.5em; }
 table.wanted tr.ghead td { background: var(--panel); color: var(--dim); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding-top: 10px; }
 table.wanted tr.ghead .fold { text-transform: inherit; letter-spacing: inherit; }
+/* ⭐️ how far this one set has got, beside its name — the work is done a box
+   at a time, so the figure that matters is the box's own */
+table.wanted tr.ghead .setfig { margin-left: 10px; color: var(--ink); font-weight: 600; }
+table.wanted tr.ghead .setby { margin-left: 10px; font-size: 11px; padding: 2px 8px; text-transform: none; letter-spacing: .02em; }
+table.wanted tr.ghead .putby { margin-left: 8px; color: var(--hold); text-transform: none; letter-spacing: .02em; }
+table.wanted tr.ghead.later .fold, table.wanted tr.ghead.later .setfig { opacity: .6; }
 .wfilters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 10px; font-size: 13px; }
 .wfilters label { color: var(--dim); }
 .pieces-links a { font-size: 12px; margin-right: 8px; }

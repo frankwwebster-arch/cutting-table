@@ -62,6 +62,11 @@
         <button data-f="uncut" title="Sheets you have drawn round but not yet turned into pieces. Usually the next press.">Outlined, not cut</button>
         <button data-f="cut" title="Sheets whose pieces have been cut out.">Cut</button>
         <button data-f="done" title="Sheets you have ticked as done with. The tick is set by hand — only you can know when a sheet is finished.">Finished</button>
+        <!-- ⭐️ THE DESIGNER, 25 August 2026: sheets "uploaded only for convenience"
+             that they have decided not to cut yet. They are still here and
+             nothing has been deleted; they are simply left out of the work
+             still to do, and out of every figure that says how far you have got. -->
+        <button data-f="later" title="Sets of sheets you have put by for later — imported, but not being cut yet. They are left out of “To outline” and out of the checklist percentage until you bring them back. Nothing is deleted and nothing is hidden.">Put by for later</button>
       </div>
       <input id="sFind" placeholder="find a sheet…" style="min-width:170px" data-tip="Find a sheet by its name or its page number.">
       <!-- ⭐️⭐️ ONE DRAG, ONE SET — and a way to put right the ones that came
@@ -166,7 +171,12 @@
     <div class="wsum">
       <span class="big" id="wPct">—</span>
       <span><span id="wDone">0</span> of <span id="wTotal">0</span> components accounted for — <span class="good" id="wCut">0</span> cut and linked, <span class="hold" id="wProb">0</span> probably cut (a piece's name matches), <span class="hold" id="wPart">0</span> part of a deck, <span class="bad" id="wMiss">0</span> not yet.
-      <span class="tiny muted" id="wCards"></span></span>
+      <span class="tiny muted" id="wCards"></span>
+      <!-- ⚠️ TWO NUMBERS THAT DISAGREE IN SILENCE ARE WORSE THAN ONE BLUNT ONE
+           (fault 67). The figure above is about what is being cut now, so
+           this line says what has been left out of it and what the whole
+           game reads. -->
+      <span class="tiny muted" id="wLater"></span></span>
     </div>
     <div class="meter"><i id="wBar" style="width:0"></i></div>
     <div class="wfilters">
@@ -176,8 +186,23 @@
       <input id="wFind" placeholder="find…" style="min-width:200px">
       <span class="spacer" style="flex:1"></span>
       <button id="wConfirm" data-tip="Where exactly one cut piece's name matches a component on this list, tie the two together. It only acts where there is no doubt — anything ambiguous is left for you.">Confirm the likely links</button>
+      <!-- ⭐️⭐️ THE DESIGNER, 25 August 2026: "very obvious quirk I just noticed
+           - I cant see how to add a new section to the checklist (eg to add
+           details of the new sail set I just uploaded and have started
+           cutting)." Quite right: a set could only be made on the way past —
+           from a component's own Set box, or from the panel that pastes a
+           whole list in — so somebody who wanted the SECTION first had
+           nowhere to press. -->
+      <button id="wSetAdd" data-tip="Start a new section of the checklist — a box: the core game, or one of its supplements. The sets of sheets you have imported are offered by name, so the two agree.">+ Add a set</button>
       <button id="wAdd" data-tip="Add one line to the checklist by hand.">+ Add a component</button>
       <button id="wImportBtn" data-tip="Paste several components at once, one a line. A number at either end is read as the quantity.">Paste a list</button>
+    </div>
+    <div id="wNewSet" hidden style="margin:0 0 12px">
+      <div class="row">
+        <label class="tiny muted" data-tip="The boxes of sheets you have imported that have no section on this list yet. Pick one and the section takes its name, so the sheets and the components agree about what the box is called.">a section for <select id="wNewSetPick"></select></label>
+        <button class="primary" id="wNewSetGo" title="Make this section. It appears on the list at once, empty, ready for its components — nothing is cut or changed.">Add the section</button>
+        <button class="quiet" id="wNewSetCancel" title="Leave the list as it is; no section is made.">Cancel</button>
+      </div>
     </div>
     <div id="wSplit" hidden style="margin:0 0 12px">
       <p class="note" style="margin:0 0 6px" id="wSplitSays"></p>
@@ -442,7 +467,15 @@
       ].filter(function (x) { return x[0]; });
       var head = "<b>" + s.accounted + " of " + s.components +
         " components accounted for (" + s.pct + "%)</b>, out of " +
-        s.pieces + " piece" + (s.pieces === 1 ? "" : "s") + " cut.";
+        s.pieces + " piece" + (s.pieces === 1 ? "" : "s") + " cut." +
+        // ⚠️ the figure is over the sets being cut now, so it has to say what
+        // it has left out — a report that dropped a whole box in silence
+        // would be lying by omission
+        (s.later_components
+          ? " " + s.later_components + " component" + (s.later_components === 1 ? "" : "s") +
+            " in " + s.later_sets + " set" + (s.later_sets === 1 ? "" : "s") +
+            " put by for later " + (s.later_components === 1 ? "is" : "are") + " not counted."
+          : "");
       box.innerHTML = head + (found.length
         ? "<ul class=\"found\">" + found.map(function (x) {
             var words = "<b>" + x[0] + "</b> " + esc(x[0] === 1 ? x[1] : x[2]);
@@ -742,6 +775,14 @@
          the 'To outline' view." The tick is the only thing that can know
          that — a sheet with no outlines is otherwise indistinguishable from
          one nobody has started. */
+      /* ⭐️ AND A SET YOU HAVE PUT BY IS NOT WORK IN FRONT OF YOU EITHER.
+         The designer, 25 August 2026, of sheets "uploaded only for
+         convenience": the ones they have decided not to cut yet are exactly
+         the ones in the way of the ones they are cutting. Same reasoning as
+         the tick above, and the same list. They are still here — the chip
+         beside this one shows them, and nothing has been deleted. */
+      if (sheetFilter === "later") return bookLater(bookOf(s.id));
+      if (bookLater(bookOf(s.id)) && sheetFilter === "todo") return false;
       if (sheetFilter === "todo") return !s.outlines && !s.done;
       if (sheetFilter === "uncut") return s.outlines && !s.cut;
       if (sheetFilter === "cut") return s.cut > 0;
@@ -764,6 +805,7 @@
         : sheetFilter === "uncut" ? "Nothing outlined is waiting to be cut."
         : sheetFilter === "cut" ? "Nothing has been cut yet."
         : sheetFilter === "done" ? "No sheet has been ticked as finished with yet."
+        : sheetFilter === "later" ? "No set of sheets has been put by for later. Use “Put this set by” on a set's heading for sheets you have imported but are not cutting yet."
         : "No sheet matches that.";
       box.innerHTML = '<p class="note" style="grid-column:1/-1">' + why +
         ' <a href="#" id="clearF">Show them all</a>.</p>';
@@ -810,6 +852,33 @@
                     "their own names and nothing already cut is touched.";
         ren.addEventListener("click", function () { renameBook(g); });
         row.appendChild(ren);
+        /* ⭐️⭐️ PUT THIS SET BY, OR BRING IT BACK. The whole of the divide the
+           designer asked for is this one button: sheets imported for
+           convenience stay imported, and stop being counted as work. */
+        var lat = document.createElement("button");
+        lat.type = "button";
+        lat.className = "quiet setby";
+        var isLater = bookLater(g);
+        lat.textContent = isLater ? "Bring back into the cutting" : "Put this set by";
+        lat.title = isLater
+          ? "Start counting this set again: its sheets come back into “To outline” and its components back into the checklist percentage."
+          : "For sheets you have imported but are not cutting yet — an advanced " +
+            "rule set, a supplement for later. NOTHING IS DELETED and nothing is " +
+            "hidden: the sheets stay, anything already cut still counts, and this " +
+            "chip above shows them. They simply drop out of the work still to do " +
+            "and out of the percentage, so the figure is about what you are " +
+            "actually cutting. Press again to bring the set back.";
+        lat.addEventListener("click", function () {
+          setLater("book:" + g, !isLater, function () { renderSheets(); loadWanted(); refreshCounts(); });
+        });
+        row.appendChild(lat);
+        if (isLater) {
+          row.classList.add("later");
+          var says = document.createElement("span");
+          says.className = "putby";
+          says.textContent = "put by for later";
+          row.appendChild(says);
+        }
         /* ⭐️⭐️ A WHOLE BOX OUT AGAIN, IN ONE PRESS. The designer, 25 August 2026:
            "I'd like to be able to remove a full set of imported sheets in one
            click (after a confirmation). The [two of these books] are
@@ -1957,6 +2026,52 @@
     });
     return book + src;
   }
+  /* ⭐️⭐️ WHAT IS BEING CUT NOW, AND WHAT WAS ONLY UPLOADED FOR LATER.
+     The designer, 25 August 2026: "I find the overall checklist % isn't very
+     helpful... I've decided to not yet cut some pieces which belong to
+     advanced rule sets that I don't want to bring in the v1 of the game.
+     Maybe I need a user-defined divide between live cutting and a sheet
+     backlog/future cutting which I may have uploaded only for convenience?"
+
+     A percentage that counts work you have decided not to do can never reach
+     100, so it says nothing — the same shape as a flag nobody can clear
+     (fault 50). So a set can be PUT BY: it stays where it is, nothing is
+     deleted and nothing is hidden, but the room stops adding it up.
+
+     ⚠️ ONE SWITCH, NOT TWO. A set of components made from a box of sheets —
+     which is how they are normally made (fault 64) — answers to that box, so
+     the button on Sheets and the one on the Checklist press the same thing.
+     Only a set with no box of its own carries the mark itself. Fault 24, and
+     the room has been bitten by it seven times. */
+  function laterKeys() {
+    var out = {};
+    ((project && project.later) || []).forEach(function (k) { out[k] = 1; });
+    return out;
+  }
+  function bookLater(book) {
+    return !!laterKeys()["book:" + book];
+  }
+  function groupLater(gid) {
+    var g = ((wantedData && wantedData.groups) || []).filter(function (x) { return x.id === gid; })[0];
+    if (g && g.book) return bookLater(g.book);
+    return !!laterKeys()["set:" + gid];
+  }
+  function groupLaterKey(gid) {
+    var g = ((wantedData && wantedData.groups) || []).filter(function (x) { return x.id === gid; })[0];
+    return (g && g.book) ? "book:" + g.book : "set:" + gid;
+  }
+  /* Put a set by, or bring it back. `after` is run once the room has said yes,
+     so nothing on screen moves on a request that failed. */
+  function setLater(key, on, after) {
+    return post(API + "/later", { key: key, later: !!on }).then(function (r) {
+      if (r.error) { flash(r.error, true); return; }
+      if (project) project.later = r.later || [];
+      flash(on ? "Put by for later. Nothing is deleted, and it is left out of the figures until you bring it back."
+               : "Back in the cutting, and counted again.");
+      if (after) after();
+    });
+  }
+
   function renameBook(book, after) {
     var was = bookName(book);
     var said = window.prompt(
@@ -2707,9 +2822,7 @@
       wantedData.items.forEach(function (it) {
         it.state = (it.pieces || []).length ? "cut" : ((it.guesses || []).length ? "probably" : "missing");
       });
-      var done = wantedData.items.filter(function (it) { return it.state !== "missing"; }).length;
-      wantedData.summary.done = done;
-      wantedData.summary.pct = wantedData.items.length ? Math.round(100 * done / wantedData.items.length) : 0;
+      recountWanted(wantedData);
       loadWantedSummary(wantedData);
       renderMatch();
       renderPieceList();
@@ -2731,18 +2844,18 @@
       document.getElementById("wBody2").hidden = empty;
       document.getElementById("wFoot").hidden = empty;
       var s = d.summary;
-      document.getElementById("wPct").textContent = s.pct + "%";
-      document.getElementById("wDone").textContent = s.done;
-      document.getElementById("wTotal").textContent = s.total;
-      document.getElementById("wBar").style.width = s.pct + "%";
-      document.getElementById("wCut").textContent = d.items.filter(function (i) { return i.state === "cut"; }).length;
-      document.getElementById("wProb").textContent = d.items.filter(function (i) { return i.state === "probably"; }).length;
-      document.getElementById("wMiss").textContent = d.items.filter(function (i) { return i.state === "missing"; }).length;
-      document.getElementById("wPart").textContent = d.items.filter(function (i) { return i.state === "part"; }).length;
+      loadWantedSummary(d);
+      // the counts beside the figure read the same way it does: over the sets
+      // being cut now, or they would not add up to it
+      var live = liveItems(d);
+      document.getElementById("wCut").textContent = live.filter(function (i) { return i.state === "cut"; }).length;
+      document.getElementById("wProb").textContent = live.filter(function (i) { return i.state === "probably"; }).length;
+      document.getElementById("wMiss").textContent = live.filter(function (i) { return i.state === "missing"; }).length;
+      document.getElementById("wPart").textContent = live.filter(function (i) { return i.state === "part"; }).length;
       // ⭐️ a deck of twenty-four counts once as a component and is
       // twenty-four evenings of cutting; say both, or the figure lies
       var wc = document.getElementById("wCards");
-      wc.textContent = (s.pieces_wanted > s.total)
+      wc.textContent = (s.pieces_wanted > s.live_total)
         ? "That is " + s.pieces_cut + " of " + s.pieces_wanted + " actual pieces, counting every card in a deck."
         : "";
       var kinds = {}; d.items.forEach(function (i) { kinds[i.kind || "other"] = 1; });
@@ -2769,9 +2882,24 @@
       if (q && (it.name + " " + (it.notes || "") + " " + (it.where || "") + " " + (it.source || "")).toLowerCase().indexOf(q) < 0) return false;
       return true;
     });
+    /* ⚠️ A SECTION WITH NOTHING IN IT YET STILL HAS TO BE ON THE LIST. This
+       list only draws a heading where there are rows under it, so a set made
+       before its components — which is the whole point of "+ Add a set" —
+       would have been made, saved, and then invisible: fault 44's shape, the
+       thing you have just made being the one thing you cannot see.
+       ⚠️ Only sets that are empty in the WHOLE list, never ones the filter or
+       the search has merely emptied, or every set would sprout a phantom
+       heading the moment you typed in the search box. */
+    var held = {};
+    (wantedData.items || []).forEach(function (it) { held[it.group || ""] = 1; });
+    var emptySets = (wantedData.groups || []).filter(function (g) {
+      return !held[g.id] && !(q || st || kind || (grp && grp !== g.id));
+    });
     // ⚠️ gathered first — a component added by hand goes on the end of the
     // list, so walking it would show its set twice. See `gather`.
-    gather(showing, function (it) { return it.group || ""; }).forEach(function (set) {
+    gather(showing, function (it) { return it.group || ""; })
+      .concat(emptySets.map(function (g) { return { key: g.id, rows: [] }; }))
+      .forEach(function (set) {
       var gh = document.createElement("tr");
       gh.className = "ghead";
       var cell = document.createElement("td");
@@ -2779,9 +2907,62 @@
       var gb = Fold.head("wanted", set.key,
                          groups[set.key] || set.key || "Everything else", body);
       cell.appendChild(gb);
+      /* ⭐️⭐️ A FIGURE FOR EACH SET. The designer, 25 August 2026: "I find the
+         overall checklist % isn't very helpful - would be preferable to have
+         a % completion per set of files uploaded for cutting." The work is
+         done a box at a time (fault 42) and so is the reading of it.
+         ⚠️ It is the set's OWN figure, over everything in it — not over the
+         rows the filter happens to be showing, which would change as you
+         typed in the search box. */
+      var band = ((wantedData.summary && wantedData.summary.groups) || {})[set.key] || {};
+      if (band.total) {
+        var fig = document.createElement("span");
+        fig.className = "setfig";
+        fig.textContent = band.done + " of " + band.total + " · " + band.pct + "%";
+        fig.title = "How much of this set is accounted for: " + band.done +
+                    " of its " + band.total + " components have a piece cut against them.";
+        cell.appendChild(fig);
+      }
+      /* The same switch as the one on a set of sheets — see setLater(). For a
+         set made from a box of sheets it IS that box's button; only a set
+         with no box of its own carries the mark itself. */
+      var lb = document.createElement("button");
+      lb.type = "button";
+      lb.className = "quiet setby";
+      var setIsLater = !!band.later;
+      lb.textContent = setIsLater ? "Bring back" : "Put by for later";
+      lb.title = setIsLater
+        ? "Count this set again in the figure at the top, and bring its sheets back into the work still to outline."
+        : "For a box you are not cutting yet — an advanced rule set, a supplement for " +
+          "version two. Nothing is deleted and nothing is hidden: the components stay " +
+          "on this list and anything already cut still counts. The set simply drops " +
+          "out of the percentage at the top, and its sheets out of “To outline”, so " +
+          "the figure is about what you are actually cutting.";
+      lb.addEventListener("click", function () {
+        setLater(groupLaterKey(set.key), !setIsLater, function () { loadWanted(); renderSheets(); refreshCounts(); });
+      });
+      cell.appendChild(lb);
+      if (setIsLater) {
+        gh.classList.add("later");
+        var sy = document.createElement("span");
+        sy.className = "putby";
+        sy.textContent = "put by for later";
+        cell.appendChild(sy);
+      }
       gh.appendChild(cell);
       body.appendChild(gh);
       wHeads.push([set.key, gb]);
+      if (!set.rows.length) {
+        /* ⭐️ AN EMPTY LIST SAYS WHICH EMPTY IT IS. A blank space under a
+           heading reads as a broken screen; this one is a good answer — the
+           section has just been made — so it says what to do next. */
+        var er = document.createElement("tr");
+        er.dataset.fold = set.key;
+        er.innerHTML = '<td colspan="8" class="tiny muted" style="padding:8px 6px">' +
+          "Nothing in this section yet. <b>+ Add a component</b> and choose this set, " +
+          "or <b>Paste a list</b> and send it into this set." + "</td>";
+        body.appendChild(er);
+      }
       set.rows.forEach(function (it) {
       var tr = document.createElement("tr");
       tr.className = it.state;
@@ -2949,9 +3130,44 @@
                                  // bare id it was made from.
                                  groups: wantedData.groups || [] }).then(function (d) { wantedData = d; flash("Saved."); loadWantedSummary(d); });
   }
+  /* The figure worked out again here on the page, without asking the room,
+     so that linking a piece moves it at once rather than a second later.
+     ⚠️ It has to do the same arithmetic the room does — both readings, the
+     whole game and the sets being cut now — or the two halves of the line
+     would drift apart between saves. */
+  function recountWanted(d) {
+    var s = d.summary, all = d.items || [], live = liveItems(d);
+    function done(list) { return list.filter(function (it) { return it.state !== "missing" && it.state !== "part"; }).length; }
+    s.done = done(all);
+    s.pct = all.length ? Math.round(100 * s.done / all.length) : 0;
+    s.live_total = live.length;
+    s.live_done = done(live);
+    s.live_pct = live.length ? Math.round(100 * s.live_done / live.length) : 0;
+    s.later_total = all.length - live.length;
+  }
+  /* Which components are in a set being cut now. The room has already
+     worked it out per set — this only reads its answer, so the page and the
+     report cannot come to different conclusions about the same list. */
+  function liveItems(d) {
+    var per = ((d && d.summary && d.summary.groups) || {});
+    return ((d && d.items) || []).filter(function (i) {
+      return !((per[i.group || ""] || {}).later);
+    });
+  }
+  /* ⚠️ ONE PLACE THAT WRITES THE FIGURE. It was written in two — loadWanted
+     and here — and the second forgot half of what the first said. Fault 24. */
   function loadWantedSummary(d) {
-    var s = d.summary; document.getElementById("wPct").textContent = s.pct + "%"; document.getElementById("wDone").textContent = s.done; document.getElementById("wTotal").textContent = s.total; document.getElementById("wBar").style.width = s.pct + "%";
-    document.getElementById("nWanted").textContent = s.total ? s.pct + "%" : "";
+    var s = d.summary;
+    document.getElementById("wPct").textContent = s.live_pct + "%";
+    document.getElementById("wDone").textContent = s.live_done;
+    document.getElementById("wTotal").textContent = s.live_total;
+    document.getElementById("wBar").style.width = s.live_pct + "%";
+    document.getElementById("nWanted").textContent = s.live_total ? s.live_pct + "%" : "";
+    document.getElementById("wLater").textContent = s.later_total
+      ? "Not counted here: " + s.later_total + " component" + (s.later_total === 1 ? "" : "s") +
+        " in " + s.later_sets + " set" + (s.later_sets === 1 ? "" : "s") +
+        " put by for later. The whole game is " + s.done + " of " + s.total + " (" + s.pct + "%)."
+      : "";
   }
   ["wState", "wKind", "wGroup"].forEach(function (id) { document.getElementById(id).addEventListener("change", renderWanted); });
   document.getElementById("wFind").addEventListener("input", debounce(renderWanted, 200));
@@ -3109,6 +3325,47 @@
     }
     return gid;
   }
+  /* ⭐️⭐️ A WAY IN TO THE SECTION ITSELF. Every other door made a set on the
+     way past to doing something else, so the one thing the designer wanted —
+     "a new section... for the new sail set I just uploaded" — had no button.
+     ⚠️ It uses the SAME two functions as every other picker (`chooseSet`,
+     `newSet`), or a set made here would look subtly unlike a set made from a
+     component's Set box and the two would never join up. Fault 24. */
+  function newSetOptions() {
+    var boxes = boxesWithNoSet();
+    return boxes.map(function (b) {
+      return '<option value="__book:' + esc(b.book) + '">' + esc(b.name) + "</option>";
+    }).join("") + '<option value="__new">a set of some other name…</option>';
+  }
+  document.getElementById("wSetAdd").addEventListener("click", function () {
+    var pick = document.getElementById("wNewSetPick");
+    pick.innerHTML = newSetOptions();
+    document.getElementById("wNewSet").hidden = false;
+  });
+  document.getElementById("wNewSetCancel").addEventListener("click", function () {
+    document.getElementById("wNewSet").hidden = true;
+  });
+  document.getElementById("wNewSetGo").addEventListener("click", function () {
+    var gid = chooseSet(document.getElementById("wNewSetPick").value);
+    if (!gid) return;                       // they changed their mind
+    document.getElementById("wNewSet").hidden = true;
+    /* ⚠️ A FOLD MUST NEVER SWALLOW SOMETHING YOU JUST ASKED FOR (fault 44) —
+       and an empty section would be swallowed by the list itself, which only
+       draws a heading where there are rows under it. It is drawn empty, and
+       says what to do next. */
+    Fold.open("wanted", gid);
+    saveWantedAll().then(function () {
+      renderWanted();
+      // ⚠️ matched by reading the attribute rather than by building a
+      // selector out of it: a set's id comes from a name somebody typed
+      var head = null;
+      document.querySelectorAll("#wBody .fold").forEach(function (h) {
+        if (h.dataset.foldHead === gid) head = h;
+      });
+      if (head) head.scrollIntoView({ block: "center" });
+      flash("Section added. Add its components below, or paste the box's contents list into it.");
+    });
+  });
   document.getElementById("wImportBtn").addEventListener("click", function () { document.getElementById("wImport").hidden = false; });
   document.getElementById("wStart").addEventListener("click", function () {
     document.getElementById("wEmpty").hidden = true;

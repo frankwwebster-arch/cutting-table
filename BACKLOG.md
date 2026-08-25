@@ -301,6 +301,46 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️⭐️ A figure for each set, and a divide between what is being cut and what is not — **built**
+
+The designer, 25 August 2026: *"I find the overall checklist % isn't very helpful -
+would be preferable to have a % completion per set of files uploaded for
+cutting. eg in [one game] I've decided to not yet cut some pieces which belong
+to advanced rule sets that I don't want to bring in the v1 of the game. Maybe
+I need a user-defined divide between live cutting and a sheet backlog/future
+cutting which I may have uploaded only for convenience?"*
+
+Both halves, and they are one feature: a figure that includes work you have
+decided not to do can never reach 100, so it tells you nothing.
+
+- `[x]` ⭐️⭐️ **Put this set by** on a box of sheets' heading, and **Put by for
+  later** on a set of components' heading — the **same switch**, because a set
+  made from a box answers to that box (fault 64). Nothing is deleted and
+  nothing is hidden.
+- `[x]` **Its sheets leave *To outline*** and gather under a **Put by for
+  later** chip of their own, so they can always be found.
+- `[x]` ⭐️⭐️ **Every section of the checklist carries its own figure** —
+  *12 of 30 · 40%*.
+- `[x]` **The headline is over what is being cut now**, and says what it left
+  out: *"Not counted here: 30 components in 1 set put by for later. The whole
+  game is 44 of 221 (20%)."*
+- `[x]` **The end-of-job report follows**, listing them under *Sets put by for
+  later* rather than as things missing — a report that dropped a whole box in
+  silence would be lying by omission.
+
+See CLAUDE.md 68. Nineteen new checks; teeth tried — the rule taken out turns
+eight of them red.
+
+### `[x]` ⭐️ A way to add a section to the checklist — **built**
+
+The designer, 25 August 2026: *"very obvious quirk I just noticed - I cant see how to
+add a new section to the checklist (eg to add details of the new sail set I
+just uploaded and have started cutting)."* Every door made a set on the way
+past to something else. **+ Add a set** offers the boxes of sheets by name,
+and a section with nothing in it yet is drawn anyway and says what to do next
+— or the thing just made would have been the one thing hidden (fault 44).
+See CLAUDE.md 69.
+
 ### `[x]` ⭐️⭐️ The pieces held back, as a list — **built**
 
 The designer, 25 August 2026: *"I want a way to see, on #pieces, a list of every piece
@@ -621,7 +661,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 414 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 440 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 

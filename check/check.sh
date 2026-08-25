@@ -983,6 +983,70 @@ check("a deck the list counts as one card is reported, before the totals are tru
 check("but a counter printed twenty-six times is NOT, because one is enough",
       "Damage counter" not in names, names)
 
+# ⭐️⭐️ WHAT IS BEING CUT NOW, AND WHAT WAS ONLY UPLOADED FOR LATER. The
+# designer, 25 August 2026: "I find the overall checklist % isn't very helpful
+# - would be preferable to have a % completion per set of files uploaded for
+# cutting... I've decided to not yet cut some pieces which belong to advanced
+# rule sets that I don't want to bring in the v1 of the game."
+print("")
+print("a figure for each set, and the sets put by for later")
+code, d = call("/wanted/import", {"text": "Advanced marker\nAdvanced tile",
+                                  "group": "advanced", "group_name": "The advanced rules",
+                                  "group_book": "adv-scans"})
+g = d["summary"]["groups"]
+check("every set carries its own figure, not just the game",
+      g["core"]["pct"] == 100 and g["advanced"]["pct"] == 0,
+      [g["core"]["pct"], g["advanced"]["pct"]])
+check("and the game as a whole is the two of them together",
+      (d["summary"]["done"], d["summary"]["total"], d["summary"]["pct"]) == (2, 4, 50),
+      [d["summary"]["done"], d["summary"]["total"], d["summary"]["pct"]])
+
+# ⚠️ ONE SWITCH, NOT TWO: this set was made FROM a box of sheets, so it
+# answers to that box — putting the box by is what puts the set by.
+code, d = call("/later", {"key": "book:adv-scans", "later": True})
+check("a box of sheets can be put by for later", d.get("later") == ["book:adv-scans"],
+      d.get("later"))
+d = json.load(urllib.request.urlopen(API + "/wanted"))
+s2 = d["summary"]
+check("the figure is then about what is being cut now, and reads 100%",
+      (s2["live_done"], s2["live_total"], s2["live_pct"]) == (2, 2, 100),
+      [s2["live_done"], s2["live_total"], s2["live_pct"]])
+# ⚠️ TWO NUMBERS THAT DISAGREE IN SILENCE ARE WORSE THAN ONE BLUNT ONE (fault
+# 67): the whole-game reading is still there and still true, and the page says
+# what the difference between them is made of.
+check("while the whole game still reads 2 of 4, and says what was left out",
+      (s2["pct"], s2["later_total"], s2["later_sets"]) == (50, 2, 1),
+      [s2["pct"], s2["later_total"], s2["later_sets"]])
+check("and nothing is hidden — the components are still on the list",
+      len(d["items"]) == 4, len(d["items"]))
+rv = json.load(urllib.request.urlopen(API + "/review"))
+check("the end-of-job report does not count a set put by as missing",
+      not [i for band in rv["sets"] for i in band["missing"]],
+      [i["name"] for band in rv["sets"] for i in band["missing"]])
+check("but it names the set, with what it holds, rather than dropping it in silence",
+      [(x["name"], x["total"]) for x in rv["put_by"]] == [("The advanced rules", 2)],
+      [(x["name"], x["total"]) for x in rv["put_by"]])
+check("and its own figure is over what is being cut now",
+      (rv["summary"]["accounted"], rv["summary"]["components"],
+       rv["summary"]["later_components"]) == (2, 2, 2), rv["summary"])
+
+# ⚠️ THE TEETH. Bringing the set back must put every one of those figures
+# straight back to what it was, or the mark is a one-way door.
+code, d = call("/later", {"key": "book:adv-scans", "later": False})
+d = json.load(urllib.request.urlopen(API + "/wanted"))
+s2 = d["summary"]
+check("bringing it back into the cutting counts it again, at once",
+      (s2["live_total"], s2["live_pct"], s2["later_total"]) == (4, 50, 0),
+      [s2["live_total"], s2["live_pct"], s2["later_total"]])
+rv = json.load(urllib.request.urlopen(API + "/review"))
+check("and the report asks for its components again",
+      sorted(i["name"] for band in rv["sets"] for i in band["missing"])
+      == ["Advanced marker", "Advanced tile"],
+      sorted(i["name"] for band in rv["sets"] for i in band["missing"]))
+code, d = call("/later", {"key": "advanced", "later": True})
+check("a mark that says neither a box nor a set is refused in a sentence",
+      code == 400 and "book:" in d.get("error", ""), d)
+
 # ⚠️ WITH NO CONTENTS LIST, EVERY PIECE IS AN ORPHAN — which is not a finding,
 # it is the absence of a list. The checklist has always been optional and this
 # report must not quietly make it compulsory.
