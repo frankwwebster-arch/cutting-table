@@ -334,6 +334,7 @@ table.wanted tr.ghead .fold { text-transform: inherit; letter-spacing: inherit; 
 .prow.aside { background: repeating-linear-gradient(135deg,
   transparent 0 7px, rgba(255,255,255,.017) 7px 14px); }
 .flag.aside { border-color: var(--dim); color: var(--dim); }
+.flag.held { border-color: var(--hold); color: var(--hold); }
 .mcell.aside .pic, .mcell.aside .cap { opacity: 0.45; }
 
 /* ⭐️ the room's worries about one piece, each with an answer beside it —
@@ -353,6 +354,12 @@ table.wanted tr.ghead .fold { text-transform: inherit; letter-spacing: inherit; 
 .review ul.found { margin: 8px 0 0; padding-left: 18px; }
 .review ul.found li { margin: 2px 0; }
 .review ul.found b { color: var(--ink); }
+/* ⭐️ a count you can open. The ones that have a list behind them on the
+   Pieces page are links; the ones that do not are plain, so the
+   difference is visible before it is pressed. */
+.review ul.found a { color: inherit; text-decoration: underline;
+  text-decoration-color: var(--blue); text-underline-offset: 3px; }
+.review ul.found a:hover { color: var(--blue); }
 .review .ok { color: var(--good); }
 
 .dupbar.kept { background: #10201a; border-color: #2f4a39; }

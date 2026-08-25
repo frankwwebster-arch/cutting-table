@@ -1316,6 +1316,114 @@ const SHAPE = `(function () {
             !((sp2.data || {}).fine || ""), sp2.data);
       fs.unlinkSync(speck);
 
+      /* ⭐️ HELD BACK IS A LIST TO COME BACK TO, SO IT HAS TO BE GETTABLE AT.
+         A piece can be marked *hold back* with a reason — the artwork wants
+         redoing, the rules are unclear — and it stays in the folder with
+         everything else. Until this chip the only way to find the four pieces
+         somebody had put off was to open all two hundred one at a time, or to
+         print the whole report. And the reason goes on the ROW: a list of six
+         pieces that all say nothing but "held back" is a list you still have
+         to open six times. */
+      const holdable = (await (await fetch(`${ROOM}/api/p/${PROJECT}/pieces`)).json())
+        .pieces.filter((p) => p.stem.indexOf("zz_") !== 0 && !(p.data || {}).spare);
+      const heldA = (holdable[0] || {}).stem;
+      // ⚠️ its own piece, not the second one that happens to be lying about:
+      // written that way there WAS no second one, so the stem came out
+      // `undefined`, the room dutifully wrote a manifest entry under that
+      // name, and the check went red pointing at the page rather than at
+      // itself. A bench that borrows whatever it finds is a bench that breaks
+      // when the run before it changes.
+      const heldB = "zz_held";
+      fs.copyFileSync(process.env.COUNTER, path.join(BED, "pieces", heldB + ".png"));
+      const hold = (stem, why) =>
+        fetch(`${ROOM}/api/p/${PROJECT}/manifest/${stem}`, { method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hold: why }) });
+      const putAside = (stem, aside) =>
+        fetch(`${ROOM}/api/p/${PROJECT}/pieces/aside`, { method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stems: [stem], aside }) });
+      await hold(heldA, "artwork");
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=pieces`);
+      await sleep(800);
+      const onHold = await page.val(`(function () {
+        var f = document.querySelector('#pFilter button[data-f="held"]');
+        if (!f) return null;
+        f.click();
+        var rows = document.querySelectorAll("#plist .prow");
+        return { n: rows.length, stem: rows[0] ? rows[0].dataset.stem : "",
+                 says: rows[0] ? rows[0].textContent : "" }; })()`);
+      check("the pieces being held back can be listed on their own",
+            onHold && onHold.n === 1 && onHold.stem === heldA, onHold);
+      check("and the row says why that one is being held",
+            onHold && /held back: artwork/.test(onHold.says || ""), onHold && onHold.says);
+
+      /* ⚠️ A PIECE SET ASIDE AND ALSO HELD BACK IS ON THIS LIST, DIMMED, because
+         every chip on this page shows what is set aside rather than hiding it —
+         a filter that quietly drops rows is how the room loses things (fault
+         44). The printed check against the contents list counts the other way:
+         a piece set aside is counted as set aside and nothing else. So the two
+         numbers really do differ, and the list SAYS what the difference is made
+         of rather than letting them disagree in silence. */
+      await hold(heldB, "wrong scan");
+      await putAside(heldB, true);
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=pieces`);
+      await sleep(800);
+      const mixed = await page.val(`(function () {
+        document.querySelector('#pFilter button[data-f="held"]').click();
+        var put = document.querySelector('#plist .prow[data-stem="${heldB}"]');
+        return { n: document.querySelectorAll("#plist .prow").length,
+                 dim: !!put && /aside/.test(put.className),
+                 count: document.getElementById("pCount").textContent }; })()`);
+      check("a piece set aside is still on the held-back list, dimmed, not hidden from it",
+            mixed && mixed.n === 2 && mixed.dim, mixed);
+      check("and the list says how many of it are set aside, which is what the printed check leaves out",
+            mixed && /1 set aside/.test(mixed.count || ""), mixed && mixed.count);
+
+      /* ⭐️ AND THE REPORT'S COUNT IS A WAY IN TO THE PIECES IT COUNTS. "1 piece
+         held back" was a number with no route to the piece — you opened pieces
+         one at a time until you found it, or printed the whole check. */
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=export`);
+      await sleep(1800);
+      const rep = await page.val(`(function () {
+        var a = document.querySelector('#reviewSum a[data-chip="held"]');
+        return { has: !!a, says: a ? a.textContent : "",
+                 all: document.getElementById("reviewSum").textContent }; })()`);
+      check("the end-of-job report's count of pieces held back is a link into that list",
+            rep && rep.has && /^1 piece held back$/.test((rep.says || "").trim()), rep);
+      /* ⚠️ `if (a)`, not a bare click: with the link gone this threw inside the
+         page, the throw ended the WHOLE browser section — some eighty checks
+         after it never ran, and the bench kept the piece this block makes,
+         which turned four more checks red for reasons that were nothing to do
+         with them. A check that crashes reports one fault as six. */
+      await page.val(`(function () {
+        var a = document.querySelector('#reviewSum a[data-chip="held"]');
+        if (a) a.click(); return !!a; })()`);
+      await sleep(1400);
+      const landed = await page.val(`(function () {
+        return { tab: !document.getElementById("tab-pieces").hidden,
+                 on: !!document.querySelector('#pFilter button[data-f="held"].on'),
+                 n: document.querySelectorAll("#plist .prow").length }; })()`);
+      check("and pressing it opens the Pieces page with that chip already chosen",
+            landed && landed.tab && landed.on && landed.n === 2, landed);
+
+      /* ⚠️ AND THE OTHER HALF OF IT: nothing held back is the GOOD answer, and
+         a blank page reads as a broken screen rather than as good news. */
+      await hold(heldA, "");
+      await hold(heldB, "");
+      await putAside(heldB, false);
+      fs.unlinkSync(path.join(BED, "pieces", heldB + ".png"));
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=pieces`);
+      await sleep(800);
+      const clear = await page.val(`(function () {
+        var f = document.querySelector('#pFilter button[data-f="held"]');
+        f.click();
+        return { n: document.querySelectorAll("#plist .prow").length,
+                 note: (document.querySelector("#plist .note") || {}).textContent || "" }; })()`);
+      check("letting a piece go empties that list again", clear && clear.n === 0, clear);
+      check("and the empty list says which empty it is",
+            clear && /Nothing is being held back/.test(clear.note || ""), clear);
+
       /* ⭐️ A CARD BACK SAYS SO, AND THEN IT IS THE ONLY THING IN THE LIST.
          The designer, 24 August 2026: "helpful if a card back element can be flagged
          as such, and then ONLY card backs appear in the ITS BACK dropdown, or

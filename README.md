@@ -309,7 +309,7 @@ unexplained control rather than the last one.
 check/check.sh
 ```
 
-Two hundred and seventy-three checks, about a minute. It makes a throwaway game out of the
+Four hundred and fourteen checks, about a minute. It makes a throwaway game out of the
 demonstration sheet — in a registry of its own, so nothing you are working
 on is touched — and drives a real browser over it: draws a piece, names it,
 cuts it out, and looks on disk to see that the piece arrived at the printed

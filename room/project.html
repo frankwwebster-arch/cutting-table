@@ -86,6 +86,7 @@
         <button data-f="unnamed" data-tip="Only the pieces nothing has been called yet — the work still to do.">No name</button>
         <button data-f="dup" data-tip="Pieces that look the same as each other. Usually the same counter printed twice, in which case you only need one — but sometimes two real components that differ by a flag in the corner, so the room asks rather than deciding.">Look-alikes</button>
         <button data-f="odd" data-tip="Pieces the room thinks are worth your eye: ones that run off the edge of the sheet, ones that came out very small, ones that are mostly empty space. Usually an outline that needs redrawing — and where it is not, open the piece and say so, and it leaves this list for good.">Worth a look</button>
+        <button data-f="held" data-tip="Only the pieces you have marked HOLD BACK — the ones that are cut and named but not ready to be used yet, and the reason you gave for each. The list to work through when you come back to them.">Held back</button>
       </div>
       <label class="tiny muted" data-tip="How the pieces are gathered into sets. By box keeps a game and each of its supplements together, which is how a game is usually worked through; by size gathers all the counters, which makes naming a run of them quick.">Order <select id="pOrder">
         <option value="book">by box</option>
@@ -428,8 +429,15 @@
                         "decks the list counts as a single card"],
         [s.orphans, "cut piece that answers to nothing on the list",
                     "cut pieces that answer to nothing on the list"],
-        [s.unnamed, "piece with no name", "pieces with no name"],
-        [s.held, "piece held back", "pieces held back"],
+        // ⭐️ the fourth entry is the chip on the Pieces page that holds the
+        // same pieces, so the count is a way IN to them. Without it "4 pieces
+        // held back" was a number with no route to the four: you opened
+        // pieces one at a time until you found them, or printed the whole
+        // report. ⚠️ The two do not count quite the same thing — the report
+        // leaves out the pieces set aside and the list shows them, dimmed —
+        // so the list's own count line says how many of it are those.
+        [s.unnamed, "piece with no name", "pieces with no name", "unnamed"],
+        [s.held, "piece held back", "pieces held back", "held"],
         [s.aside, "piece set aside", "pieces set aside"]
       ].filter(function (x) { return x[0]; });
       var head = "<b>" + s.accounted + " of " + s.components +
@@ -437,9 +445,17 @@
         s.pieces + " piece" + (s.pieces === 1 ? "" : "s") + " cut.";
       box.innerHTML = head + (found.length
         ? "<ul class=\"found\">" + found.map(function (x) {
-            return "<li><b>" + x[0] + "</b> " + esc(x[0] === 1 ? x[1] : x[2]) + "</li>";
+            var words = "<b>" + x[0] + "</b> " + esc(x[0] === 1 ? x[1] : x[2]);
+            return "<li>" + (x[3]
+              ? '<a href="#pieces" data-chip="' + x[3] + '" title="Show these on the Pieces ' +
+                'page, and nothing else. Nothing changes — it is the same list, narrowed.">' +
+                words + "</a>"
+              : words) + "</li>";
           }).join("") + "</ul>"
         : " <span class=\"ok\">Nothing outstanding. \u2713</span>");
+      box.querySelectorAll("a[data-chip]").forEach(function (a) {
+        a.addEventListener("click", function (e) { e.preventDefault(); showPieceFilter(a.dataset.chip); });
+      });
     });
   }
   document.getElementById("reviewOpen").addEventListener("click", function () {
@@ -1671,6 +1687,11 @@
       if (pieceFilter === "unnamed") return !(p.data && p.data.name);
       if (pieceFilter === "dup") return p.flags.some(function (f) { return f[0] === "dup"; });
       if (pieceFilter === "odd") return p.flags.some(function (f) { return !!WORRIES[f[0]]; });
+      // ⭐️ HELD BACK IS A LIST YOU COME BACK TO, so it has to be gettable at.
+      // The reason lives on the piece and nowhere else; without this chip the
+      // only way to find the four pieces you put off was to open all two
+      // hundred, or to print the whole report.
+      if (pieceFilter === "held") return !!(p.data && p.data.hold);
       return true;
     });
     if (pieceOrder === "book") {
@@ -1693,14 +1714,28 @@
     }
     return out;
   }
-  document.querySelectorAll("#pFilter button").forEach(function (b) {
-    b.addEventListener("click", function () {
-      pieceFilter = b.dataset.f || "";
-      document.querySelectorAll("#pFilter button").forEach(function (x) { x.classList.toggle("on", x === b); });
-      renderPieceList();
-      var mine = shownPieces();
-      if (mine.length) showPiece(mine[0].stem);
+  /* ⭐️ ONE WAY OF CHOOSING A CHIP, because there are two things that choose
+     one: the chips themselves, and the end-of-job report, whose counts are
+     links into this list now. A count you cannot open is a count you cannot
+     act on — "4 pieces held back" was a number with no route to the four.
+     ⚠️ It must survive being called before the pieces have been fetched: in
+     that case loadPieces() does the rendering, with the chip already set. */
+  function showPieceFilter(key) {
+    pieceFilter = key || "";
+    document.querySelectorAll("#pFilter button").forEach(function (x) {
+      x.classList.toggle("on", (x.dataset.f || "") === pieceFilter);
     });
+    if (document.getElementById("tab-pieces").hidden) {
+      location.hash = "pieces";
+      showTab("pieces");
+    }
+    if (!piecesData) return;
+    renderPieceList();
+    var mine = shownPieces();
+    if (mine.length) showPiece(mine[0].stem);
+  }
+  document.querySelectorAll("#pFilter button").forEach(function (b) {
+    b.addEventListener("click", function () { showPieceFilter(b.dataset.f || ""); });
   });
   document.getElementById("pOrder").addEventListener("change", function () {
     pieceOrder = this.value; renderPieceList();
@@ -2009,8 +2044,35 @@
     var list = document.getElementById("plist");
     list.innerHTML = "";
     var mine = shownPieces();
+    /* ⚠️ AND HOW MANY OF THEM ARE SET ASIDE. Every chip here shows the pieces
+       set aside along with the rest, dimmed and labelled, so that nothing is
+       ever out of sight — but the printed check against the contents list
+       leaves them out of ITS counts, so "3 pieces held back" there can open a
+       list of five here. Now that the report's count is a way in to this list,
+       the two must not be able to disagree in silence: say what the difference
+       is made of. Fault 24's family. */
+    var put = mine.filter(function (p) { return p.data && p.data.spare; }).length;
     document.getElementById("pCount").textContent =
-      mine.length + " piece" + (mine.length === 1 ? "" : "s") + (pieceSheet ? " on this sheet" : " in all");
+      mine.length + " piece" + (mine.length === 1 ? "" : "s") +
+      (pieceSheet ? " on this sheet" : " in all") +
+      (put ? " — " + put + " set aside" : "");
+    /* ⭐️ AN EMPTY LIST MUST SAY WHICH EMPTY IT IS. A chip that selects nothing
+       leaves a blank page, which reads as a broken screen rather than as the
+       good answer — and for these lists the good answer is usually nothing at
+       all. */
+    if (!mine.length) {
+      var why = pieceFilter === "held" ? "Nothing is being held back here."
+              : pieceFilter === "unnamed" ? "Everything here has a name."
+              : pieceFilter === "dup" ? "Nothing here looks like anything else."
+              : pieceFilter === "odd" ? "Nothing here needs your eye."
+              : pieceSheet ? "Nothing has been cut from this yet."
+              : "Nothing has been cut in this game yet.";
+      var n = document.createElement("p");
+      n.className = "note";
+      n.textContent = why;
+      list.appendChild(n);
+      return;
+    }
     var heads = [];
     gather(mine, function (p) {
       return pieceOrder === "size" ? (p.w_in >= 2 ? "Larger than 2 inches" : "Under 2 inches")
@@ -2036,6 +2098,10 @@
       // squeezed the piece's id into an ellipsis. The id is the one thing on
       // the row that must always be readable.
       if (d.spare) chips = '<span class="flag aside">set aside</span>' + chips;
+      // ⚠️ WITH THE REASON, not just the word. A list of six pieces that all
+      // say "held back" and nothing more is a list you have to open six times;
+      // the reason is what makes it a list you can work through.
+      if (d.hold) chips = '<span class="flag held">held back: ' + esc(d.hold) + "</span>" + chips;
       // ⭐️ a piece set aside stays in the list, in its own place, dimmed and
       // labelled — the designer's call, so that nothing is ever out of sight
       if (d.spare) r.className += " aside";

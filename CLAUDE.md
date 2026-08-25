@@ -144,8 +144,11 @@ game belongs in that game's own repository.
    again** are all a press on the page now (24 August), so what remains is
    only that the window exists at all.
 4. ⭐️ **A way in from the report to the piece** — `?tab=pieces&piece=<stem>`.
-   The report names pieces by their stem and cannot open them, and it is the
-   same door a game engine would want in order to say *this one is wrong*.
+   ⭐️ Half of this is built (25 August, fault 67): the report's counts of
+   *held back* and *no name* are links into the matching chip on Pieces. What
+   is left is the **single piece** — the report names pieces by their stem and
+   still cannot open one, and it is the same door a game engine would want in
+   order to say *this one is wrong*.
 
 Built that day, in order:
 
@@ -1120,6 +1123,50 @@ rather than by reading the code.
     defined twice**, top level. It reads the AST of all four, and its teeth
     were tried by adding a second `slug` and watching it name both lines.
 
+67. ⭐️⭐️ **A MARK YOU CAN PUT ON A PIECE AND NOT GET BACK OFF THE PILE IS A
+    NOTE TO NOBODY.** The designer, 25 August 2026: *"I want a way to see, on
+    #pieces, a list of every piece I have marked hold back — at the moment the
+    only route to them is opening pieces one at a time or printing the whole
+    check against the contents list."*
+    *Hold back* had been writable for days and unreadable the whole time. It is
+    the one mark on a piece the room never puts there itself — the artwork wants
+    redoing, the rules are unclear — so it is written precisely when somebody
+    means to come back to it, and coming back meant opening two hundred pieces
+    or printing a report. **A chip that gathers them, and the reason printed on
+    the row**, because a list of six pieces that all say nothing but *held back*
+    is a list you still have to open six times.
+    ⭐️ **And the count in the report is the door.** *1 piece held back* was a
+    number with no route to the piece. The report's counts of held-back and
+    unnamed pieces are links into that chip now — the first half of the *way in
+    from the report to the piece* this file has had on its list. ⚠️ One
+    `showPieceFilter()` does it, shared with the chips themselves, or the two
+    ways of choosing a filter would drift apart (fault 24, seventh time), and it
+    has to survive being called before the pieces have been fetched.
+    ⚠️⚠️ **The hard part was that the two counts are not the same count.** Every
+    chip on Pieces shows what is **set aside** along with the rest, dimmed —
+    nothing on that page is ever out of sight, and a filter that quietly drops
+    rows is fault 44's shape. The printed check counts the other way: a piece
+    set aside is counted as set aside and as nothing else. Both readings are
+    right, so the answer is neither to hide the pieces nor to change the report:
+    **the list says what the difference is made of** — *2 pieces in all — 1 set
+    aside*. Two numbers that disagree in silence is what a link between them
+    would otherwise have created.
+    ⭐️ And an empty list says **which** empty it is — *Nothing is being held
+    back here* — for every chip, not only this one. The commonest empty list on
+    this page is the good answer, and a blank page reads as a broken screen
+    (fault 35's lesson, arriving on a different page).
+    ⚠️ Its own check taught something too: a `querySelector(...).click()` on a
+    control that is not there **throws inside the page, and the throw ended the
+    whole browser section** — eighty checks after it never ran, the bench kept
+    the piece the block had made, and four more checks went red for reasons that
+    were nothing to do with them. Trying the teeth showed that, not the code.
+    *Guard the click: a check that crashes reports one fault as six.*
+    ⚠️ And the bench borrowed *whatever second piece it found* to be the
+    held-and-set-aside one. There was no second piece, so the stem came out
+    `undefined`, the room dutifully wrote a manifest entry under that name, and
+    the check went red pointing at the page rather than at itself. It makes its
+    own piece now.
+
 ---
 
 ## Architecture
@@ -1239,7 +1286,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 406 checks, about a minute
+check/check.sh          # 414 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1272,6 +1319,12 @@ It breaks **one line of a contents list into the components it really
 stands for** and follows what that does to the pieces already linked to it —
 including the one that matters most, that a name somebody typed themselves is
 left exactly as it was.
+
+It works the **list of pieces held back**: the chip gathers them, the reason
+is printed on each row, a piece both set aside and held back stays on the list
+dimmed with the count saying how many of it are those, the report's *N pieces
+held back* is a link that opens that chip, and letting the piece go empties the
+list again and says which empty it is.
 
 It checks that **every button on every page says what it does** — the one
 that stops the next unexplained control, rather than the ones already fixed —

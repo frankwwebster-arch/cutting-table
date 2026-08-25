@@ -411,6 +411,31 @@ chips at the top select them:
 | **No name** | nothing has said what it is yet |
 | **N alike** | this piece and N−1 others look like the same component — unless you have said they are variants, in which case they stop being flagged |
 | **Worth a look** | it runs off the edge of the sheet, or is very small, or is mostly empty — usually an outline that wants correcting |
+| **Held back** | you marked it *hold back* when you named it: it is cut and named but not ready to be used yet. Each row carries the reason you gave |
+
+⭐️ **Held back is the one you set yourself.** The other three chips are the
+room's own reading of the pieces; *hold back* is a note you write on a piece
+when you name it — *artwork*, *rules unclear*, *wrong scan* — saying why it is
+not in play yet. It changes nothing about the piece and the piece is handed
+over with the rest; it is a list to come back to. So the chip gathers them,
+and the reason is printed on each row: a list of six pieces that all say
+nothing but *held back* is a list you still have to open six times.
+
+⭐️ **The end-of-job check is the way in.** Its counts of *pieces held back*
+and *pieces with no name* are links: press one and the Pieces page opens with
+that chip already chosen. A count you cannot open is a count you cannot act on.
+
+⚠️ **The two do not count quite the same thing, and the list says so.** Every
+chip here shows the pieces you have **set aside** along with the rest, dimmed
+and labelled, because nothing on this page is ever out of sight. The printed
+check counts the other way round: a piece set aside is counted as set aside and
+as nothing else, so it is left out of *pieces held back* there. Rather than let
+the two numbers disagree in silence, the count above the list says how many of
+what it is showing are set aside — *2 pieces in all — 1 set aside*.
+
+⭐️ **Nothing held back is the good answer**, so an empty list says which empty
+it is — *Nothing is being held back here* — rather than leaving a blank page
+that reads as a broken screen. Every chip does the same.
 
 ⭐️ **Every flag can be answered, including by saying it does not matter.**
 Open a piece the room is worried about and the worry is written out in full,

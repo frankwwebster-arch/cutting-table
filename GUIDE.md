@@ -180,6 +180,11 @@ Things that make it quicker:
 - ⭐️ **Match** is the fastest way if you have typed the box's contents list:
   a board of every piece beside the list of components, and you drag a name
   onto the piece it is.
+- ⭐️ **The chips above the list** narrow it to the work: *No name*,
+  *Look-alikes*, *Worth a look*, and **Held back** — the pieces you have
+  marked as not ready yet, each row carrying the reason you gave. An empty
+  list always says which empty it is, because for these lists nothing is
+  usually the good answer.
 
 ![Match](docs/guide/5-match.png)
 
@@ -250,7 +255,9 @@ It says, set by set:
 - ⭐️ **cut pieces that answer to nothing on the list** — the one nothing else
   can tell you. Each is either something the printed list forgot, a piece cut
   twice, or a piece cut from the wrong place;
-- **pieces with no name**, **held back**, and **set aside**.
+- **pieces with no name**, **held back**, and **set aside**. ⭐️ The first two
+  counts are **links**: press one and the Pieces tab opens with just those
+  pieces in front of you.
 
 Then press **Write the folder**. You get:
 

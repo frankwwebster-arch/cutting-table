@@ -15,6 +15,38 @@ as when you finish. The full version of all of that is in CLAUDE.md under
 
 ## NOW
 
+### `[x]` ⭐️⭐️ The pieces held back, as a list — **built**
+
+The designer, 25 August 2026: *"I want a way to see, on #pieces, a list of every piece
+I have marked hold back — at the moment the only route to them is opening
+pieces one at a time or printing the whole check against the contents list."*
+
+*Hold back* is the one mark on a piece the room never puts there itself — the
+artwork wants redoing, the rules are unclear — so it is written exactly when
+somebody means to come back to it, and until now coming back meant opening two
+hundred pieces one at a time.
+
+- `[x]` **A fifth chip on Pieces — *Held back*** — and the **reason printed on
+  the row** (*held back: artwork*), so the list can be worked through without
+  opening anything. Six pieces that all say nothing but *held back* is a list
+  you still have to open six times.
+- `[x]` ⭐️ **The report's count is the way in.** *1 piece held back* and *1
+  piece with no name* are links now: press one and Pieces opens with that chip
+  already chosen. ⚠️ One `showPieceFilter()`, shared with the chips themselves.
+- `[x]` ⚠️ **A piece both set aside and held back stays on the list, dimmed** —
+  every chip here shows what is set aside rather than hiding it. The printed
+  check counts the other way, so the count above the list now says how many of
+  what it is showing are set aside: *2 pieces in all — 1 set aside*. Two
+  numbers disagreeing in silence is what the link would otherwise have made.
+- `[x]` ⭐️ **An empty list says which empty it is** — *Nothing is being held
+  back here* — on every chip, not only this one.
+
+See CLAUDE.md 67. Eight new checks, 406 to 414; teeth tried, and they found
+two faults in the checks themselves rather than in the code.
+
+⭐️ **What is left of *a way in from the report to the piece***: the single
+piece. The report still names pieces by their stem and cannot open one.
+
 ### `[x]` ⭐️⭐️ Files imported in one go are one set — **built**
 
 The designer, 25 August 2026: *"I just imported 12 new files into the project, assuming
@@ -471,7 +503,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 406 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 414 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -582,6 +614,14 @@ anything that speeds up cutting.
   other said twenty-one, and it was missing the last five faults. That is the
   fault this codebase warns about most, arriving in the documents themselves.
 - `[x]` **1 new check** — 321 to 322.
+- `[x]` **8 new checks** — 406 to 414: the pieces held back listed on their
+  own, the reason on the row, a piece set aside and held back staying on the
+  list dimmed with the count saying so, the report's count opening that chip,
+  and the list emptying again and saying which empty it is. ⭐️ Teeth tried,
+  and they went red naming the right two things — but the run also showed that
+  a `querySelector(...).click()` on a control that is not there throws inside
+  the page and takes the **whole browser section** with it, so one fault was
+  reported as six. Guarded.
 - `[x]` **15 new checks** — 391 to 406: nothing defined twice in any of the
   four modules, what a handful of dropped files is called (folder, shared
   name, the day it arrived, and one file left alone), and the sheets shown
