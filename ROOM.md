@@ -779,7 +779,10 @@ It says, set by set:
   shape and is exactly right, because one design is printed twenty-six times.
 - ⭐️ **Cut pieces that answer to nothing on the list** — the inverse, and the
   one nothing else can tell you. Each is either something the printed contents
-  list forgot, a piece cut twice, or a piece cut from the wrong place.
+  list forgot, a piece cut twice, or a piece cut from the wrong place. ⭐️ Each
+  one says **how big it is**, in inches and millimetres, because a size is very
+  often the whole answer: a 0.6in square is a counter, a 2.5 × 3.5in rectangle
+  is a card.
 - **Pieces with no name**, **pieces held back**, and **anything set aside** —
   so each of those is a decision and not an accident.
 - ⭐️ **Sets put by for later** — named, with what they hold, at the end. None
@@ -787,11 +790,19 @@ It says, set by set:
   A report that quietly dropped a whole box would be lying by omission, so it
   says which boxes and how many components.
 
-**Read the whole check** opens it as a page to read and to print. The same
-report goes into the exported folder twice: `check-against-the-list.html` to
-read, and `check-against-the-list.json` for a program — so whatever ingests
-the pieces has the room's own account of what is missing instead of working it
-out again.
+**Read the whole check** opens it as a page to read and to print. ⭐️ **Every
+piece it names is a link** — press one and the room opens the Pieces page on
+that piece, with any narrowing you had on cleared out of the way, so a finding
+is something to go and deal with rather than a name to hunt for. Press the
+browser's Back button to return to the report. The counts in the panel itself
+work the same way: *3 pieces held back* opens the list of those three.
+
+The same report goes into the exported folder twice:
+`check-against-the-list.html` to read, and `check-against-the-list.json` for a
+program — so whatever ingests the pieces has the room's own account of what is
+missing instead of working it out again. ⚠️ The exported copy has **no links**
+in it, on purpose: it is meant to be read by somebody with no Cutting Room
+running, and a link to this computer would be a dead one in their folder.
 
 ⚠️ With no contents list it says so, plainly, rather than reporting every
 piece you have as answering to nothing. The checklist is optional and this

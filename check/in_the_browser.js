@@ -1471,6 +1471,66 @@ const SHAPE = `(function () {
       check("and the empty list says which empty it is",
             clear && /Nothing is being held back/.test(clear.note || ""), clear);
 
+      /* ⭐️⭐️ AND THE OTHER WAY IN: ?piece=<stem> OPENS ONE PIECE BY NAME.
+         The end-of-job check names pieces by their stem and could not open
+         one, so every finding was a name to go and hunt for through two
+         hundred rows. The report the room serves links each stem here.
+         ⚠️ Pick the LAST piece, not the first: the list opens on the first
+         thing it can find, so landing on that would be a check that passes
+         whether or not the address was read at all. */
+      const everyPiece = (await (await fetch(`${ROOM}/api/p/${PROJECT}/pieces`)).json()).pieces;
+      const target = (everyPiece[everyPiece.length - 1] || {}).stem;
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=pieces&piece=${target}`);
+      await sleep(1200);
+      const gotThere = await page.val(`(function () {
+        var on = document.querySelector("#plist .prow.on");
+        return { tab: !document.getElementById("tab-pieces").hidden,
+                 on: on ? on.dataset.stem : "",
+                 addr: location.search + location.hash }; })()`);
+      check("a link naming one piece opens the Pieces page on that piece",
+            gotThere && gotThere.tab && gotThere.on === target, gotThere);
+      /* ⚠️ AND IT ACTS ONCE. Left sitting in the address, every later hash
+         change — pressing Pieces again after a look at Match — would drag you
+         back to the same piece: a link that will not let go. */
+      check("and the piece is taken out of the address, so it does not keep pulling you back",
+            gotThere && !/piece=/.test(gotThere.addr || ""), gotThere && gotThere.addr);
+
+      /* ⚠️⚠️ THE HALF THAT MATTERS: A LINK MUST NEVER LAND ON A HIDDEN ROW.
+         This list is held to a chip and to a box for as long as the page is
+         open, so a piece asked for while a chip is on can be sitting behind a
+         narrowing chosen twenty minutes ago — and the press would appear to do
+         nothing at all. Fault 44's shape: the one thing asked for is the one
+         thing hidden. Nothing is held back by now, so that chip shows an empty
+         list, which is the worst case there is. */
+      const behind = await page.val(`(function () {
+        document.querySelector('#pFilter button[data-f="held"]').click();
+        var hidden = document.querySelectorAll("#plist .prow").length;
+        location.hash = "pieces//${target}";
+        return hidden; })()`);
+      await sleep(900);
+      const dug = await page.val(`(function () {
+        var on = document.querySelector("#plist .prow.on");
+        return { on: on ? on.dataset.stem : "",
+                 chip: !!document.querySelector('#pFilter button[data-f="held"].on'),
+                 n: document.querySelectorAll("#plist .prow").length }; })()`);
+      check("a piece behind a narrowing that hides it is still opened, and the narrowing cleared",
+            behind === 0 && dug && dug.on === target && !dug.chip && dug.n > 1,
+            [behind, dug]);
+
+      /* ⚠️ AND A PIECE THAT IS NOT THERE SAYS SO. Quietly showing the first
+         piece in the list instead would look for all the world as though the
+         link had worked, which is fault 58's lesson: half working is worse
+         than not working. */
+      await page.val(`(function () { location.hash = "pieces//no-such-piece-at-all"; })()`);
+      await sleep(900);
+      const nope = await page.val(`(function () {
+        var on = document.querySelector("#plist .prow.on");
+        return { said: document.getElementById("flash").textContent,
+                 on: on ? on.dataset.stem : "" }; })()`);
+      check("and a piece the room has not got says so rather than opening another one",
+            nope && /no piece called no-such-piece-at-all/.test(nope.said || "")
+            && nope.on === target, nope);
+
       /* ⭐️ A CARD BACK SAYS SO, AND THEN IT IS THE ONLY THING IN THE LIST.
          The designer, 24 August 2026: "helpful if a card back element can be flagged
          as such, and then ONLY card backs appear in the ITS BACK dropdown, or

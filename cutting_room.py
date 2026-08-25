@@ -1309,6 +1309,18 @@ class Project:
         has_list = bool(items)
         if not has_list:
             orphans = []
+        # ⭐️ SAY WHAT AN ORPHAN MEASURES. A piece that answers to nothing on
+        # the contents list is very often recognisable from its size alone —
+        # a 0.6in square is a counter, a 2.5 x 3.5in rectangle is a card — so
+        # a column of bare stems is a column nobody can read, and the same
+        # column with a size beside it is a list somebody can work down with
+        # the box open. ⚠️ It costs nothing on a game whose Pieces page has
+        # ever been opened: piece_stats() keeps its answer in cache/stats.json
+        # and this is the same record that page reads.
+        for row in orphans:
+            rec = self.piece_stats(row["stem"]) or {}
+            if rec.get("w_in"):
+                row["w_in"], row["h_in"] = rec["w_in"], rec["h_in"]
         s = st["summary"]
         return {"has_list": has_list, "sets": live_sets, "put_by": put_by,
                 "orphans": orphans,
@@ -2180,6 +2192,12 @@ PRINT_CSS = """
   p.good { color: #275; }
   p.warn { color: #8a5a1a; }
   code { font: 9.5pt/1.3 ui-monospace, Menlo, Consolas, monospace; color: #444; }
+  /* ⭐️ A PIECE NAMED IN THE REPORT IS A LINK BACK INTO THE ROOM — but only in
+     the copy the room serves; see piece_link() in review_page(). On paper a
+     link is just words, so it must not shout. */
+  a { color: #245; }
+  a code { color: #245; }
+  p.how { color: #666; font-size: 9.5pt; margin: 0 0 6mm; }
   .rights { margin: 10mm 0 0; padding-top: 2.5mm; border-top: 1px solid #ccc;
             font-size: 8pt; color: #666; max-width: 120mm; }
   @page { margin: 12mm; }
@@ -2300,10 +2318,40 @@ def checklist_page(pr, game):
 # it is a FACT (nothing is linked to this component) or a GUESS (a name looks
 # about right), because those two are worth very different amounts.
 
-def review_page(pr, game, rv=None):
+def review_page(pr, game, rv=None, home=None):
     rv = rv if rv is not None else pr.cut_review()
     s = rv["summary"]
     out = []
+
+    # ⭐️⭐️ A REPORT THAT NAMES A PIECE AND CANNOT OPEN IT IS HALF A REPORT.
+    # Every line below names a `stem` — the one name the room, the inventory
+    # and whatever ingests the pieces afterwards can all say — so the stem is
+    # the right handle for "this one is wrong, go and fix it". The room reads
+    # ?piece=<stem> in ONE place (fromHash in project.html), so this is a
+    # link and not a second way of saying where to go.
+    # ⚠️ ONLY THE COPY THE ROOM SERVES GETS ONE. The identical page is written
+    # into the export folder, which leaves the room and is meant to be read by
+    # somebody with no room running (fault 22) — a dead link to a local port
+    # sitting in their folder is worse than plain text. So `home` is passed by
+    # the route that serves it and by nothing else.
+    def piece_link(stem):
+        code = "<code>%s</code>" % esc_html(stem)
+        if not home:
+            return code
+        return ('<a href="%s?tab=pieces&amp;piece=%s">%s</a>'
+                % (esc_html(home), urllib.parse.quote(stem), code))
+
+    def size_of(r):
+        if not r.get("w_in"):
+            return "—"
+        return ("%.2f &times; %.2f in <span style=\"color:#888\">&middot; "
+                "%.0f &times; %.0f mm</span>"
+                % (r["w_in"], r["h_in"], r["w_in"] * 25.4, r["h_in"] * 25.4))
+
+    if home:
+        out.append('<p class="how noprint">Every piece named below opens in '
+                   'the room &mdash; the report says what it sees and changes '
+                   'nothing itself.</p>')
 
     def table(rows, head, cells):
         out.append("<table><tr>" +
@@ -2383,22 +2431,23 @@ def review_page(pr, game, rv=None):
                    "printed contents list forgot, a piece cut twice, or a "
                    "piece cut from the wrong place. All three are worth a look "
                    "before the pieces leave the room.</p>")
-        table(rv["orphans"], ["Piece", "What it is called", "Kind", "Off which sheet"],
-              lambda r: ['<span class="box"></span><code>%s</code>' % esc_html(r["stem"]),
+        table(rv["orphans"],
+              ["Piece", "What it is called", "How big it is", "Off which sheet"],
+              lambda r: ['<span class="box"></span>' + piece_link(r["stem"]),
                          esc_html(r["name"] or "(nothing yet)"),
-                         esc_html(r["kind"]),
+                         size_of(r),
                          esc_html(r["sheet"] or "no sheet the room knows")])
     if rv["unnamed"]:
         out.append("<h2>Pieces with no name yet — %d</h2>" % len(rv["unnamed"]))
         out.append("<p>They will be written out filed under the number they "
                    "were cut as, which is no use to anybody later.</p>")
         table(rv["unnamed"], ["Piece", "Off which sheet"],
-              lambda r: ['<span class="box"></span><code>%s</code>' % esc_html(r["stem"]),
+              lambda r: ['<span class="box"></span>' + piece_link(r["stem"]),
                          esc_html(r["sheet"] or "no sheet the room knows")])
     if rv["held"]:
         out.append("<h2>Pieces held back — %d</h2>" % len(rv["held"]))
         table(rv["held"], ["Piece", "What it is called", "Why"],
-              lambda r: ['<code>%s</code>' % esc_html(r["stem"]),
+              lambda r: [piece_link(r["stem"]),
                          esc_html(r["name"] or "(nothing yet)"),
                          esc_html(r["why"])])
     # ⭐️ PUT BY FOR LATER, AND SAID SO RATHER THAN LEFT OUT IN SILENCE. A
@@ -2423,7 +2472,7 @@ def review_page(pr, game, rv=None):
                    "They are here so that it is a decision and not an "
                    "accident.</p>")
         table(rv["aside"], ["Piece", "What it is called"],
-              lambda r: ['<code>%s</code>' % esc_html(r["stem"]),
+              lambda r: [piece_link(r["stem"]),
                          esc_html(r["name"] or "(nothing yet)")])
 
     sub = ("%d of %d components accounted for (%d%%), out of %d pieces cut."
@@ -4054,8 +4103,11 @@ class Room(BaseHTTPRequestHandler):
             if len(rest) == 1 and method == "GET":
                 return self.send_json(pr.cut_review())
             if len(rest) == 2 and rest[1] == "print" and method == "GET":
+                # ⭐️ the served copy knows the way back to the project page, so
+                # every piece it names is a link; the exported copy does not.
                 return self.send(200, review_page(
-                    pr, pr.meta.get("game") or pr.meta.get("name") or "this game"))
+                    pr, pr.meta.get("game") or pr.meta.get("name") or "this game",
+                    home="/p/%s/" % urllib.parse.quote(pr.id)))
 
         if head == "wanted":
             if len(rest) == 1 and method == "GET":

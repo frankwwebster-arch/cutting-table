@@ -283,7 +283,7 @@
       reports: nothing here changes a piece or a component.</p>
       <div id="reviewSum" class="tiny muted">Working it out…</div>
       <div class="row" style="margin-top:10px">
-        <button id="reviewOpen" data-tip="Open the whole check as a page you can read and print — a list to work through with the box open in front of you. It changes nothing.">Read the whole check</button>
+        <button id="reviewOpen" data-tip="Open the whole check as a page you can read and print — a list to work through with the box open in front of you. Every piece it names is a link that opens that piece here. It changes nothing by itself.">Read the whole check</button>
         <button class="quiet" id="reviewAgain" data-tip="Work the check out again from what is on disk now, after you have fixed something.">Check again</button>
         <span class="tiny muted">It goes into the folder too, as
         <code>check-against-the-list.html</code> and <code>.json</code></span>
@@ -594,10 +594,35 @@
     // instead. A set of names that has to be repeated in a second place is a
     // set of names that will disagree with itself. Fault 14's shape again.
     var want = TABS.indexOf(bits[0]) >= 0 ? bits[0] : "sheets";
+    var askedPiece = "";
+    if (want === "pieces") {
+      wantSheet = bits[1] || null;
+      /* ⭐️⭐️ ?piece=<stem> IS THE WAY IN FROM THE REPORT. The end-of-job
+         check names pieces and, until now, could not open one: you read a
+         stem off the page and then hunted for it through two hundred rows.
+         A stem is the one name the room, the inventory and whatever ingests
+         the pieces afterwards can all say, so it is the right handle — and
+         it is read HERE, in the one place the address is read, rather than
+         in a second chain of ifs (fault 24). */
+      var qp = (location.search.match(/[?&]piece=([^&]+)/) || [])[1];
+      askedPiece = bits[2] || (qp ? decodeURIComponent(qp) : "");
+      if (askedPiece) wantSheet = null;
+      /* ⚠️ AND IT MUST ACT ONCE. Left sitting in the address, every later
+         hash change — pressing Pieces again after a look at Match — would
+         drag you back to the same piece, which is a link that will not let
+         go. Take it out of the address as it is used; the hash is left
+         exactly as it was. */
+      if (qp && window.history && history.replaceState) {
+        var rest = location.search.replace(/^\?/, "").split("&")
+          .filter(function (x) { return x && x.indexOf("piece=") !== 0; }).join("&");
+        history.replaceState(null, "", location.pathname +
+          (rest ? "?" + rest : "") + location.hash);
+      }
+    }
     showTab(want);
-    if (want === "pieces") wantSheet = bits[1] || null;
+    if (askedPiece) goToPiece(askedPiece);
   }
-  var wantSheet = null;
+  var wantSheet = null, wantPiece = null;
   window.addEventListener("hashchange", fromHash);
 
   /* ---------------------------------------------------------- project */
@@ -1230,6 +1255,10 @@
       // 21 Aug 2026: pressing Pieces on a sheet and being handed the whole
       // list to hunt through is the wrong answer to the question they asked.
       if (wantSheet) { pieceSheet = wantSheet; wantSheet = null; }
+      // ⭐️ Arriving at ONE piece, from the report: it is the only thing being
+      // asked for, so nothing may narrow it away — see goToPiece().
+      var asked = wantPiece; wantPiece = null;
+      if (asked) landOn(asked, d.pieces || []);
       sel.value = pieceSheet;
       if (sel.value !== pieceSheet) { pieceSheet = ""; sel.value = ""; }
       renderPieceList();
@@ -1237,6 +1266,7 @@
       if (curPiece && mine.filter(function (p) { return p.stem === curPiece; }).length) showPiece(curPiece);
       else if (mine.length) showPiece((mine.filter(function (p) { return !(p.data && p.data.name); })[0] || mine[0]).stem);
       else { document.getElementById("pstage").innerHTML = '<p class="note">Nothing cut from this sheet yet.</p>'; document.getElementById("pform").innerHTML = ""; }
+      if (asked) bringRowIntoView(asked);
     });
   }
   /* ------------------------------------------------------ post-cut review
@@ -1837,6 +1867,60 @@
   document.querySelectorAll("#pFilter button").forEach(function (b) {
     b.addEventListener("click", function () { showPieceFilter(b.dataset.f || ""); });
   });
+
+  /* ⭐️⭐️ ONE PIECE, NAMED FROM SOMEWHERE ELSE. The end-of-job check names
+     pieces by their stem and could not open one, so a finding was a name to
+     go and hunt for. `?piece=<stem>` on the project page lands on it.
+
+     ⚠️⚠️ AND NOTHING MAY NARROW IT AWAY. This list is held to a chip and to a
+     box, and both of those stay put for as long as the page is open — so a
+     piece asked for while a chip is on can perfectly well be sitting behind a
+     narrowing chosen twenty minutes ago, and the link would appear to do
+     nothing at all. That is fault 44's shape exactly: the one thing you asked
+     for is the one thing hidden. So arriving at a piece clears the narrowing,
+     every time, rather than only on the fresh page load where it happens to
+     be clear already. */
+  function landOn(stem, pieces) {
+    var got = (pieces || []).filter(function (p) { return p.stem === stem; })[0];
+    if (!got) {
+      // ⚠️ Say so. Silently showing the first piece in the list instead would
+      // be the room answering a question nobody asked, and it would look for
+      // all the world as though the link had worked.
+      flash("There is no piece called " + stem + " in this game now.", true);
+      return false;
+    }
+    pieceFilter = ""; pieceSheet = "";
+    document.querySelectorAll("#pFilter button").forEach(function (x) {
+      x.classList.toggle("on", !(x.dataset.f || ""));
+    });
+    var sel = document.getElementById("pSheet");
+    if (sel) sel.value = "";
+    curPiece = stem;
+    return true;
+  }
+  /* A list of two hundred should not have to be scrolled for the row that was
+     just asked for — the same courtesy a newly added component gets. */
+  function bringRowIntoView(stem) {
+    document.querySelectorAll(".prow").forEach(function (r) {
+      if (r.dataset.stem === stem && r.scrollIntoView) {
+        r.scrollIntoView({ block: "center" });
+      }
+    });
+  }
+  function goToPiece(stem) {
+    if (!stem) return;
+    if (document.getElementById("tab-pieces").hidden) {
+      location.hash = "pieces";
+      showTab("pieces");
+    }
+    // ⚠️ It has to survive being called before the pieces have been fetched —
+    // showTab() starts that fetch, and loadPieces() picks wantPiece up.
+    if (!piecesData) { wantPiece = stem; return; }
+    if (!landOn(stem, piecesData.pieces)) return;
+    renderPieceList();
+    showPiece(stem);
+    bringRowIntoView(stem);
+  }
   document.getElementById("pOrder").addEventListener("change", function () {
     pieceOrder = this.value; renderPieceList();
   });

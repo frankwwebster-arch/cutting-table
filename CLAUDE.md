@@ -93,11 +93,18 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 495 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 504 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**25 August, last thing**: the designer, asked about the light ground that had
+been first on the list since 22 August: *"I'm no longer certain a white
+background view is worthwhile."* Agreed, and it came off — but there was a real
+fault underneath the cosmetic one, and it is *NOW* item 2. See fault 74. What
+was done instead was **a report you can act on**: every piece the end-of-job
+check names now opens it. See fault 73.
 
 **25 August, the first thing off the list**: *learn the checklist from what is
 cut* — the inverse of Match, and the answer for a game whose contents list
@@ -1383,6 +1390,72 @@ rather than by reading the code.
     **already filled**, by the offer above, and the check went red over
     perfectly good code. *Looking at the thing is what showed it.*
 
+73. ⭐️⭐️ **A REPORT THAT NAMES A PIECE AND CANNOT OPEN IT IS HALF A REPORT.**
+    The end-of-job check against the contents list prints a `stem` on every
+    line it finds — a piece answering to nothing on the list, a piece with no
+    name, a piece held back — and there was no way from any of them to the
+    piece. You read the name off the page and then hunted for it through two
+    hundred rows, which is precisely the work the report exists to save. Half
+    of the way in was built on 25 August (fault 67, the counts becoming links
+    into a chip); this is the other half, **one piece at a time**.
+    `?tab=pieces&piece=<stem>` on the project page opens it, and ⚠️ it is read
+    in `fromHash`, **the one place the address is read**, rather than in a
+    second chain of ifs (fault 24, and this file's most-repeated warning).
+    ⭐️ A stem is the right handle because it is **the one name the room, the
+    inventory and whatever ingests the pieces afterwards can all say** —
+    `cut_from` in `inventory.csv` carries it — so *"this one is wrong, go and
+    fix it"* is a link rather than a description.
+    ⚠️⚠️ **THE HARD HALF IS THAT NOTHING MAY NARROW IT AWAY.** The Pieces list
+    is held to a chip and to a box, and both stay put for as long as the page
+    is open — so a piece asked for while a chip is on is sitting behind a
+    narrowing chosen twenty minutes ago, and **the link would appear to do
+    nothing at all**. That is fault 44 exactly: the one thing you asked for is
+    the one thing hidden. `landOn()` clears the narrowing every time, rather
+    than only on the fresh page load where it happens to be clear already.
+    ⚠️ **And a piece the room has not got says so.** Quietly showing the first
+    piece in the list instead would look for all the world as though the link
+    had worked — fault 58's lesson, that half working is worse than not
+    working.
+    ⚠️ **The link acts once.** Left sitting in the address, every later hash
+    change — pressing Pieces again after a look at Match — dragged you back to
+    the same piece: a link that will not let go. It is taken out of the address
+    as it is used, and the fragment left alone.
+    ⚠️⚠️ **And only the copy the room SERVES carries a link.** The identical
+    page is written into the export folder, which leaves the room and is meant
+    to be read by somebody with no room running (fault 22) — a dead link to a
+    local port sitting in somebody else's folder is worse than plain text. So
+    `home` is passed by the route that serves it and by nothing else, and a
+    check holds both halves.
+    ⭐️ **A piece that answers to nothing also says how big it is**, in inches
+    and millimetres. A size is very often the whole answer — a 0.6in square is
+    a counter, a 2.5 × 3.5in rectangle is a card — and it costs nothing, being
+    the same cached record the Pieces page reads.
+    ⚠️ The report still **reports and fixes nothing** (fault 52). Its lines
+    became doors; they did not become buttons.
+
+74. ⭐️⭐️ **THE COSMETIC ASK HAD A REAL FAULT UNDERNEATH IT, AND THE ASK ITSELF
+    DID NOT SURVIVE.** *A light ground* — *"I'd like to consider some different
+    displays (eg white background rather than the black)"*, 22 August — sat
+    first on the list for three days, and on 25 August the designer took it
+    back: *"I'm no longer certain a white background view is worthwhile."* It
+    went to *Ideas*, where a room-wide theme belongs: it costs one set of
+    colour names read by both `room/room.css` and the editor's own `:root`
+    (they hard-code one palette each, which is fault 24 waiting), a control,
+    somewhere to remember it, and all eight guide pictures taken again — for a
+    preference nobody had complained about since.
+    ⭐️⭐️ **But the reading of it that was not cosmetic stayed.** A cut piece
+    is a **transparent** picture, and it is shown on one hard-coded near-black
+    (`#0A0F14`) in five places: the sheet card, the piece row, the Match cell,
+    the look-alike tiles and the big preview. A pale card reads beautifully on
+    that. **A dark counter's edge disappears into it** — and whether an outline
+    clipped a corner is precisely the judgement fault 40 says the room must let
+    somebody make. No one ground can be right for both, so the ground has to be
+    a control: dark, light, or a chequer. That is *NOW* item 2, and the
+    cutting table's own ground is deliberately not part of it.
+    ⭐️ The general shape, worth more than this instance: **when an ask reads as
+    a preference, look for the judgement it is getting in the way of.** The
+    preference can be argued with; the judgement cannot.
+
 ---
 
 ## Architecture
@@ -1511,7 +1584,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 495 checks, about a minute
+check/check.sh          # 504 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1539,6 +1612,13 @@ cut piece answering to nothing — and the two checks that matter most are the
 ones about it keeping QUIET: that a counter printed twenty-six times is **not**
 reported as a deck counted short (fault 52), and that a game with no contents
 list **says so** rather than reporting every piece it has as an orphan.
+
+It follows **the report's way in to a piece**: the served report links every
+stem it prints and says what an orphan measures, the copy that leaves the room
+carries no link at all, and — in the browser — a link naming one piece opens
+that piece, **opens it from behind a chip that was hiding it**, drops the piece
+out of the address so it does not keep pulling you back, and says so plainly
+when the piece is not there rather than opening a different one.
 
 It breaks **one line of a contents list into the components it really
 stands for** and follows what that does to the pieces already linked to it —

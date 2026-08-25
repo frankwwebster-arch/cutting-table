@@ -1126,6 +1126,41 @@ code, d = call("/wanted/learn", {"groups": []})
 check("and being asked to learn from nothing is refused in a sentence",
       code == 400 and "learn" in d.get("error", ""), d)
 
+# ⭐️⭐️ A REPORT YOU CAN ACT ON. The end-of-job check names pieces by their
+# stem and, until now, could not open one — so every finding was a name to go
+# and hunt for through two hundred rows. Two halves to it: each stem it prints
+# is a way IN to that piece, and a piece that answers to nothing on the list
+# says how big it is, because a size is very often what tells you what it was.
+print("")
+print("the report as a way in to the piece")
+rv = json.load(urllib.request.urlopen(API + "/review"))
+orph = {o["stem"]: o for o in rv["orphans"]}
+check("a piece that answers to nothing on the list is measured",
+      bool((orph.get("zz") or {}).get("w_in")), orph.get("zz"))
+# ⚠️ AT ITS PRINTED SIZE, not in pixels — the whole room deals in inches, and a
+# report that quietly said 300 x 420 would be answering a different question.
+# This bench draws its pieces 300 x 420 at 300dpi.
+check("and measured at its PRINTED size, in inches",
+      abs((orph.get("zz") or {}).get("w_in", 0) - 1.0) < 0.02
+      and abs((orph.get("zz") or {}).get("h_in", 0) - 1.4) < 0.02,
+      [(orph.get("zz") or {}).get("w_in"), (orph.get("zz") or {}).get("h_in")])
+page = urllib.request.urlopen(API + "/review/print").read().decode()
+check("the report the room serves opens the piece it names",
+      "?tab=pieces&amp;piece=zz" in page, "piece=" in page)
+check("and prints what that piece measures beside it",
+      "1.00 &times; 1.40 in" in page, page.count("&times;"))
+# ⚠️⚠️ BUT THE COPY THAT LEAVES THE ROOM MUST NOT CARRY ONE. The same page is
+# written into the export folder, which is meant to be read by somebody with no
+# room running at all (fault 22) — a dead link to a local port sitting in
+# somebody else's folder is worse than plain text. So the link comes from
+# `home`, and only the route that SERVES the page passes it.
+sys.path.insert(0, os.getcwd())
+import cutting_room
+away = cutting_room.review_page(
+    cutting_room.Project(os.path.join(tmp, "home", "the-supplement")), "a game")
+check("but the copy that leaves the room carries no link back to it",
+      "piece=" not in away and "<code>zz</code>" in away, away.count("piece="))
+
 # ⚠️ WITH NO CONTENTS LIST, EVERY PIECE IS AN ORPHAN — which is not a finding,
 # it is the absence of a list. The checklist has always been optional and this
 # report must not quietly make it compulsory.

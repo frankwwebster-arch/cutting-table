@@ -265,7 +265,9 @@ nothing; it just tells you what it sees.
 ![Take it away](docs/guide/7-take-it-away.png)
 
 **Read the whole check** opens it as a page you can print and work through with
-the box open in front of you.
+the box open in front of you. ⭐️ **Every piece it names is a link** — press one
+and the room opens the Pieces page on that piece, so a finding is something to
+go and deal with rather than a name to hunt for.
 
 ![The check](docs/guide/8-the-check.png)
 
@@ -278,7 +280,8 @@ It says, set by set:
   the percentage above it is flattering you;
 - ⭐️ **cut pieces that answer to nothing on the list** — the one nothing else
   can tell you. Each is either something the printed list forgot, a piece cut
-  twice, or a piece cut from the wrong place;
+  twice, or a piece cut from the wrong place, and each says **how big it is**,
+  which is very often the whole answer;
 - **pieces with no name**, **held back**, and **set aside**. ⭐️ The first two
   counts are **links**: press one and the Pieces tab opens with just those
   pieces in front of you.

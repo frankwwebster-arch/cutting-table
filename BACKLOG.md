@@ -47,67 +47,7 @@ people than the one who commissioned it. Cosmetic last.
 
 ---
 
-### 1. `[ ]` ⭐️ A light ground — the half that can be finished, offered as a choice
-
-The designer, 22 August 2026: *"I'd like to consider some different displays (eg white
-background rather than the black)."* It has been on the list since, behind
-work they asked for more loudly, and it should not slip a fifth time.
-
-⚠️ **Read the reason for the dark ground before changing it.** The editor's own
-stylesheet says it: *"A workbench that commits to one look on purpose: the
-printed sheet is the only thing on the page whose colour must be judged, so
-everything round it is a quiet dark ground in both host themes."* A scanned
-counter is being looked at against that ground while it is outlined, and a
-white surround changes how its colour and its edges read. That is an argument
-for care, **not** for refusing — their eye is the instrument, and if a light
-ground suits them better it wins.
-
-⭐️ **So split it, and do the half that does not need their eye first:**
-
-- ⭐️ **The room's own pages** (home, project, pieces, match, checklist,
-  settings) are text and thumbnails. A light ground here is uncontroversial,
-  and it is the visible answer to what they asked. **Offer it as a choice, and
-  remember it** — beside the projects, the way the shelf of shapes is kept, so
-  it is not per-game.
-- ⚠️ **The Cutting Table itself** is where a sheet is judged, and that half
-  should be **put in front of them on a real counter sheet before it is
-  decided**. Build the mechanism so it *can* go light; do not swap it.
-- ⚠️ **The baked offline page** shares the template and has no server behind
-  it, so whatever carries the choice must survive being opened off a disk.
-
-There is no theme mechanism at all today: `room/room.css` and the template's
-`:root` block each hard-code one palette. ⚠️ That is two places, so it is fault
-24 waiting to happen — one set of names for the colours, read by both.
-
-⭐️ **Done looks like**: a control that says what it does, a light room that is
-legible in every screen the guide photographs, and the table unchanged until
-they have looked at it.
-
-### 2. `[ ]` ⭐️ A report you can act on
-
-The end-of-job check names pieces and cannot open them. Half of the way in was
-built on 25 August (CLAUDE.md 67) — the panel's counts of *pieces held back*
-and *pieces with no name* are links into the matching chip on Pieces. Three
-things finish it, and they are one afternoon between them:
-
-- `[~]` ⭐️ **Open a single piece from the report.** Every line names a stem;
-  clicking it should land on that piece. `?tab=pieces&piece=<stem>` does it,
-  and ⚠️ the address is read in **one** place already (`fromHash`, fault 24) —
-  add it there, not in a second chain of `if`s.
-  ⭐️ It is also **the door a game engine wants**: `cut_from` in
-  `inventory.csv`/`.json` carries the stem, which is the one name the room and
-  a game can both say, so *"this one is wrong, go and fix it"* becomes a link.
-- `[ ]` ⭐️ **Say what a piece measures beside the orphans.** A piece that
-  answers to nothing on the list is often recognisable from its size alone, and
-  the measurements are already cached in `cache/stats.json`. Cheap, and it
-  turns a list of stems into a list somebody can read.
-- `[ ]` **Fold the report by set**, once a game has more sets than fit a
-  screen. The game it was built on has four and it is fine, so this is last.
-
-⚠️ The report **reports**; it fixes nothing. That rule does not change because
-its lines became links — see fault 52.
-
-### 3. `[ ]` No terminal window at all
+### 1. `[ ]` No terminal window at all
 
 The last of the designer's *"a simpler way to open and quit. I don't like
 terminal at the best of times."* Quitting, and starting the room again, are
@@ -121,7 +61,33 @@ must not need anything installed. ⚠️ And it must not become a second place t
 knows where this copy was cloned to: `--install-launcher` already works that
 out, so the bundle should be written by the same code.
 
-### 4. `[ ]` A demo sheet, so a stranger can try it with nothing
+### 2. `[ ]` ⭐️ What a piece sits on
+
+**This replaces *a light ground***, which was on the list from 22 August as
+*"I'd like to consider some different displays (eg white background rather than
+the black)"* and which the designer put back on 25 August: *"I'm no longer
+certain a white background view is worthwhile."* Agreed — but there is a real
+fault underneath the cosmetic one, and it is worth doing on its own.
+
+⭐️ **A cut piece is a transparent picture, and it is shown on a near-black
+ground in five places** — the sheet card, the piece row, the Match cell, the
+look-alike tiles and the big preview, all hard-coding `#0A0F14` in
+`room/room.css`. A pale card reads beautifully on that. **A dark counter's edge
+disappears into it** — and whether an outline clipped a corner is precisely the
+judgement fault 40 says the room must let somebody make. No single ground can
+be right for both, so the ground has to be a control rather than a decision.
+
+- `[ ]` One variable for that ground, read in all five places (they are five
+  hard-coded copies today, which is fault 24 waiting), and a control that says
+  what it does: **dark**, **light**, or a **chequer**.
+- `[ ]` Remembered beside the projects, the way the shelf of shapes is, so it
+  is not per-game.
+- ⚠️ **The cutting table's own ground is not part of this.** That is where a
+  scanned sheet's colour is judged, and its stylesheet says why it commits to
+  one look on purpose. Leave it alone until the designer has looked at a light
+  one on a real counter sheet.
+
+### 3. `[ ]` A demo sheet, so a stranger can try it with nothing
 
 `demo/make_demo_sheet.py` already draws a pretend sheet — deliberately awkward
 in the one way that matters, with the same colour inside a piece as outside it.
@@ -134,7 +100,7 @@ author. Today somebody who finds it has to own a board game, scan it, and read
 a guide before anything happens. ⚠️ Nothing in the demonstration sheet is
 anybody's artwork, so this is safe to ship.
 
-### 5. `[ ]` ⚠️ The two places it is macOS-only, needlessly
+### 4. `[ ]` ⚠️ The two places it is macOS-only, needlessly
 
 - `doc_to_docx()` shells out to **`textutil`**, which exists only on a Mac. On
   anything else an old binary `.doc` should say so plainly rather than fail
@@ -148,7 +114,7 @@ which is what makes these two worth an hour. ⚠️ A button that silently does
 nothing is fault 58's shape: half working reads as broken and teaches you to
 stop trusting the room.
 
-### 6. `[ ]` The guide's last mile
+### 5. `[ ]` The guide's last mile
 
 - `[ ]` **Arrows on the pictures.** The designer's original point was *"one
   screenshot with an arrow on it"*; they are honest screenshots with no arrows
@@ -157,12 +123,17 @@ stop trusting the room.
 - `[ ]` **An Artifact of it**, for reading on a phone or handing to somebody.
   ⚠️ Generated FROM `GUIDE.md`, never written twice (fault 24).
 
-### 7. `[ ]` Two small known faults, cheap to clear
+### 6. `[ ]` Three small known faults, cheap to clear
 
 - `[ ]` **The suggestion cache is not invalidated by a new mask.**
   `cache/<sheet>.suggest.json` is written once, so if a `-starter.png` mask
   appears in `masks/` afterwards the old flood-based suggestions are still
   served. Delete the cache file when the masks folder changes.
+- `[ ]` **The end-of-job report does not fold by set.** Left out of *a report
+  you can act on* on purpose: the game it was built on has four sets and reads
+  perfectly well as one page, so folding it would be work done for a game
+  nobody has yet. Worth doing the first time somebody's report will not fit on
+  a screen, and not before.
 - `[ ]` **A sheet's prefix cannot be fixed.** A sheet's id is
   `<prefix>-<page>` and is the key its outlines are filed under, so renaming
   one would strand them — the right constraint, but there is no way at all to
@@ -265,6 +236,28 @@ Nothing here should know what a rulebook is.
 ⭐️ Moved out of *NOW* so the live list stays a list. The full account of
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
+
+### `[x]` ⭐️⭐️ A report you can act on — **built**, 25 August 2026
+
+The end-of-job check named pieces and could not open one, so every finding was
+a name to go and hunt for through two hundred rows. Both halves that mattered
+are built; see CLAUDE.md 73.
+
+- `[x]` ⭐️ **Every piece the report names opens it.** `?tab=pieces&piece=<stem>`
+  on the project page, read in the **one** place the address is read
+  (`fromHash`) rather than in a second chain of ifs. ⚠️ And the hard half:
+  **the narrowing is cleared on the way in**, because the Pieces list is held
+  to a chip and to a box, and a link that landed on a hidden row would look
+  exactly like a link that did nothing (fault 44).
+- `[x]` ⭐️ **A piece that answers to nothing on the list says how big it is**,
+  in inches and millimetres, off the measurements already cached in
+  `cache/stats.json`. A size is very often what tells you what a piece was.
+- `[x]` ⚠️ **The copy that leaves the room carries no link**, because there is
+  no room behind it — a dead link to a local port in somebody else's folder is
+  worse than plain text (fault 22).
+- `[x]` **9 new checks** — 495 to 504, teeth tried: put all three faults back
+  and six go red.
+- `[ ]` **Folding by set** was left out on purpose — see *NOW* item 6.
 
 ### `[x]` ⭐️⭐️ Learn the checklist from what is cut — **built**
 
@@ -756,10 +749,43 @@ anything that speeds up cutting.
   and a game's contents list is public knowledge. A folder of them, shared,
   would make the tool immediately useful to somebody who owns the scans and
   not the patience.
+- **A light room, everywhere.** Was *NOW* item 1 from 22 August until the
+  designer took it back on 25 August: *"I'm no longer certain a white
+  background view is worthwhile."* It costs a shared palette read by both
+  `room/room.css` and the editor's own `:root` (they hard-code one each today,
+  which is fault 24 waiting), a control, somewhere to remember it, and all
+  eight guide pictures taken again — for a preference nobody has complained
+  about since. ⭐️ The part of it that was **not** cosmetic is *NOW* item 3,
+  *what a piece sits on*, and that is worth doing whether or not this ever is.
 
 ---
 
 ## Done
+
+### 25 August 2026 — the report became a way in to the piece
+
+- `[x]` ⭐️⭐️ **Every piece the end-of-job report names opens it.** A finding
+  was a stem printed on a page and nothing else: you read it off and then hunted
+  for it through two hundred rows. `?tab=pieces&piece=<stem>` lands on it, read
+  in the one place the address is read.
+- `[x]` ⚠️⚠️ **And the narrowing is cleared on the way in**, because the Pieces
+  list is held to a chip and to a box for as long as the page is open — a link
+  that landed on a hidden row would look exactly like a link that did nothing.
+  Fault 44's shape, and it is the half the checks are pointed at.
+- `[x]` ⚠️ **A piece the room has not got says so** rather than quietly opening
+  another one, which would look for all the world as though the link had worked.
+- `[x]` ⭐️ **The orphans say how big they are**, in inches and millimetres, off
+  the measurements already cached — a size is very often what tells you what a
+  piece was.
+- `[x]` ⚠️ **The copy that leaves the room carries no links**, having no room
+  behind it (fault 22).
+- `[x]` ⭐️ **The room-wide light ground came off the list**, at the designer's
+  own word: *"I'm no longer certain a white background view is worthwhile."*
+  What replaced it is the part of it that was never cosmetic — **what a piece
+  sits on**, a transparent picture shown on one hard-coded near-black in five
+  places, where a dark counter's edge disappears. *NOW* item 2.
+- `[x]` **9 new checks** — 495 to 504. ⭐️ Teeth tried: put all three faults
+  back and six go red.
 
 ### 24 August 2026 — nothing here names a game, a publisher or a person
 
