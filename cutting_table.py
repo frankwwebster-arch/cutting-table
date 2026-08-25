@@ -24,7 +24,6 @@ import argparse
 import base64
 import io
 import json
-import math
 import os
 import subprocess
 import sys
@@ -42,8 +41,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "cutting_table.tpl.html")
 DPI = 300
 MIN_PIECE_IN = 0.25
-SUGGEST_TOL = 7.0       # sheet px a suggested outline may cut a corner by
-SUGGEST_INSET = 6       # sheet px a suggested outline starts inside the edge
+SUGGEST_TOL = sheets.SUGGEST_TOL     # ⚠️ one set of numbers, in sheets.py
+SUGGEST_INSET = sheets.SUGGEST_INSET
 
 DEFAULT_SUBJECT = "Printed card components"
 DEFAULT_OUT = os.path.expanduser("~/Desktop/Cutting Table.html")
@@ -69,81 +68,11 @@ def render_pdf(pdf, pages, work):
     return out
 
 
-def contour(mask):
-    """The outline of a filled shape, as a ring of pixel positions.
-
-    Moore-neighbour tracing: stand on a boundary pixel, and keep turning
-    round it until the next boundary pixel is found, taking the direction
-    you arrived from as where to start looking. Stops on returning to the
-    first pixel the same way it first left it, which is what keeps a shape
-    with a narrow neck from being walked twice."""
-    ys, xs = np.nonzero(mask)
-    if not len(ys):
-        return []
-    h, w = mask.shape
-    y0 = int(ys.min())
-    x0 = int(xs[ys == y0].min())
-    step = [(1, 0), (1, 1), (0, 1), (-1, 1),
-            (-1, 0), (-1, -1), (0, -1), (1, -1)]
-
-    def on(x, y):
-        return 0 <= x < w and 0 <= y < h and mask[y, x]
-
-    start = (x0, y0)
-    ring = [start]
-    here = start
-    back = 4                      # arrived from the west
-    limit = 8 * int(mask.sum()) + 64
-    for _ in range(limit):
-        found = False
-        for k in range(1, 9):
-            d = (back + k) % 8
-            nxt = (here[0] + step[d][0], here[1] + step[d][1])
-            if on(nxt[0], nxt[1]):
-                back = (d + 4) % 8
-                here = nxt
-                found = True
-                break
-        if not found:
-            break                 # a single stranded pixel
-        if here == start:
-            break                 # all the way round
-        ring.append(here)
-    return ring
-
-
-def thin(pts, tol):
-    """Douglas-Peucker: keep only the points that carry the shape, so what
-    comes out is a handful of nodes to drag rather than a traced pixel ring.
-    Iterative, because a traced ring runs to thousands of points."""
-    if len(pts) < 3:
-        return list(pts)
-    keep = [False] * len(pts)
-    keep[0] = keep[-1] = True
-    work = [(0, len(pts) - 1)]
-    while work:
-        lo, hi = work.pop()
-        if hi <= lo + 1:
-            continue
-        ax, ay = pts[lo]
-        bx, by = pts[hi]
-        vx, vy = bx - ax, by - ay
-        L = vx * vx + vy * vy
-        worst, at = 0.0, -1
-        for i in range(lo + 1, hi):
-            px, py = pts[i]
-            t = ((px - ax) * vx + (py - ay) * vy) / L if L else 0.0
-            t = 0.0 if t < 0 else (1.0 if t > 1 else t)
-            d = math.hypot(px - (ax + t * vx), py - (ay + t * vy))
-            if d > worst:
-                worst, at = d, i
-        if worst > tol:
-            keep[at] = True
-            work.append((lo, at))
-            work.append((at, hi))
-    return [pts[i] for i in range(len(pts)) if keep[i]]
-
-
+# ⚠️ THE TRACING ITSELF LIVES IN sheets.py, and this file used to carry a
+# second copy of it. Two copies of the same arithmetic in the two things that
+# draft the same sheets is fault 24 waiting to happen — and it happened the
+# moment the tracing was made worth using, because only one of them would have
+# been improved.
 def outlines_for(sheet_id, w, h):
     """The automatic attempt at this sheet, handed over as outlines with
     nodes on them rather than as a picture — so the first job is correcting
@@ -164,26 +93,21 @@ def outlines_for(sheet_id, w, h):
     sx, sy = w / float(im.width), h / float(im.height)
     smallest = (MIN_PIECE_IN * DPI * 0.8) ** 2
 
+    # ⚠️ ONE COPY OF THE TRACING, in sheets.py — the room and this baker draft
+    # the same sheets and two copies of it would drift apart (fault 24).
     out = []
     for i in range(1, n + 1):
         m = lab == i
         if m.sum() < smallest:
             continue
-        # start a touch inside the printed edge; it is easier to push a node
-        # out than to notice one sitting on the cut line
-        for _ in range(SUGGEST_INSET):
-            m = sheets.shift_and(m)
-        if not m.any():
+        got = sheets.outline_of(m, SUGGEST_INSET, SUGGEST_TOL)
+        if not got:
             continue
-        ring = contour(m)
-        if len(ring) < 12:
-            continue
-        pts = thin(ring, SUGGEST_TOL)
-        if len(pts) < 3:
-            continue
-        out.append([[round(p[0] * sx, 1), round(p[1] * sy, 1)] for p in pts])
-    out.sort(key=lambda p: (min(q[1] for q in p) // (DPI // 2),
-                            min(q[0] for q in p)))
+        out.append({"pts": [[round(p[0] * sx, 1), round(p[1] * sy, 1)]
+                            for p in got["pts"]],
+                    "curve": bool(got["curve"])})
+    out.sort(key=lambda o: (min(q[1] for q in o["pts"]) // (DPI // 2),
+                            min(q[0] for q in o["pts"])))
     return out
 
 
@@ -204,7 +128,7 @@ def pack(path, sheet_id, label, name, quality, draft=False):
           % (label, im.width, im.height, len(buf.getvalue()) / 1e6,
              len(suggested),
              "" if not suggested else
-             " (%s nodes)" % "/".join(str(len(o)) for o in suggested)))
+             " (%s nodes)" % "/".join(str(len(o["pts"])) for o in suggested)))
     return {
         "id": sheet_id,
         "label": label,

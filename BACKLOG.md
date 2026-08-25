@@ -301,6 +301,34 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️⭐️ The automatic pass, made worth pressing — **built**
+
+The designer, 25 August 2026: *"I'm also finding the auto-cutting quite strangely
+inaccurate... blocky colourful shapes, but I basically had to redo the entire
+thing... the platform added a load of additional nodes and made some of the
+shapes look pretty odd. Easy fix for me to remove those nodes and straighten
+lines, but it means that the auto cutting pass is essentially pointless."*
+
+Three faults, and only one of them was the tracing:
+
+- `[x]` ⭐️⭐️ **Every suggestion arrived at the editor as a CURVE**, so a
+  four-node rectangle was drawn as a Bézier through its corners — bowed sides,
+  rounded corners. One word, and the whole of *"look pretty odd"*.
+- `[x]` ⭐️⭐️ **A counter is not a coastline.** Where a blob really fills its
+  own smallest box it is handed back as four corners, snapped to the paper's
+  axes if the scan was a degree or two crooked; where its edge really is all
+  one distance from its middle, as a circle. ⚠️ Everything else is traced —
+  fourteen of the new check's checks are about it saying nothing.
+- `[x]` ⭐️⭐️ **One flat colour cannot be the ground of a scanned sheet.** The
+  light falls off across the glass, so the far corner stopped counting as
+  paper and its fringe was joined onto real pieces. That is where the extra
+  nodes came from: put the fault back and a printed square returns with **34
+  nodes and bent sides**.
+
+`check/the_automatic_pass.py` — 29 checks, no browser and no project, over a
+sheet it draws itself unevenly lit and speckled; four more in the browser for
+the button and the wire. Teeth tried on all three faults. See CLAUDE.md 71.
+
 ### `[x]` ⭐️⭐️ A figure for each set, and a divide between what is being cut and what is not — **built**
 
 The designer, 25 August 2026: *"I find the overall checklist % isn't very helpful -
@@ -661,7 +689,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 440 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 473 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 

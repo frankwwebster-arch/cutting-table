@@ -93,11 +93,17 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 440 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 473 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**25 August, later still**: *"the auto cutting pass is essentially pointless."*
+Three faults, of which the loudest was one word — every suggested outline was
+handed to the editor as a **curve**, so a rectangle was drawn as a Bézier
+through its corners. See fault 71, and `check/the_automatic_pass.py`, whose
+fourteen checks about **saying nothing** are the half that matters.
 
 **25 August, later**: the designer, working with two boxes of one game imported and
 only one of them being cut, on the figure at the top of the checklist: *"I find
@@ -1258,6 +1264,78 @@ rather than by reading the code.
     really destructive action. **A handle that is a position drifts; the words
     on the button are the thing being tested.** They find it by its text now.
 
+71. ⭐️⭐️⚠️ **THE AUTOMATIC PASS WAS DRAWING EVERY PIECE AS A COASTLINE.** The
+    designer, 25 August 2026: *"I'm also finding the auto-cutting quite strangely
+    inaccurate — can we improve that somehow? the [one] sheet I uploaded felt
+    like it should be very easy, blocky colourful shapes, but I basically had
+    to redo the entire thing. There should be — given these are pieces of
+    board games — a general thought that most shapes will be regular (squares,
+    circles, rectangles), and will be strongly differentiated in colour terms
+    from their background. Whilst the general shapes were OK-ish, the platform
+    added a load of additional nodes and made some of the shapes look pretty
+    odd. Easy fix for me to remove those nodes and straighten lines, but it
+    means that the auto cutting pass is essentially pointless."*
+    **Three separate faults, and only one of them was the tracing.** Each was
+    found by drawing a sheet the way a real one arrives — unevenly lit,
+    speckled, squashed through a JPEG — and watching what came back.
+    - ⭐️⭐️ **EVERY SUGGESTION ARRIVED AT THE EDITOR AS A CURVE.**
+      `addSuggested()` wrote `curve: true` on all of them, whatever they were,
+      so a four-node rectangle was drawn as a **Bézier through its corners**:
+      the sides bowed out and the corners rounded off. That is the whole of
+      *"made some of the shapes look pretty odd"*, and it was one word.
+      A suggested outline now says whether it is straight or curved, because
+      **only the thing that traced it knows**. ⚠️ A page baked before this
+      carries bare lists of points; those were always coastlines, so a list
+      still means a curve.
+    - ⭐️⭐️ **A COUNTER IS NOT A COASTLINE.** The designer's reasoning is
+      right and the room now acts on it: where a blob really fills its own
+      smallest box, it is handed back as **four corners** (snapped to the
+      paper's axes when it is within two degrees of them, because a scan is
+      never straight and a printed square always is); where its edge really is
+      all one distance from its middle, as **a circle**. Everything else is
+      traced as before. ⚠️ **It only speaks when the shape settles it** —
+      fault 25's rule arriving on geometry. A hexagon fills 0.75 of its box
+      and a circle 0.785, four per cent apart, so a circle must ALSO have a
+      square box; ovals and hexagons are left to the tracing. Fourteen of the
+      new check's twenty-nine are about it saying nothing.
+    - ⭐️⭐️ **ONE FLAT COLOUR CANNOT BE THE GROUND OF A SCANNED SHEET.** The
+      light falls off across the glass, so the far corner stopped counting as
+      paper: it became a piece of its own, and the fringe of it lying against
+      a real piece was **joined onto that piece**. That is where the extra
+      nodes came from — put the fault back and a printed square comes back
+      with **34 nodes and bent sides**. The ground is now measured in cells
+      across the sheet and grown outwards from the paper it certainly is.
+    ⚠️⚠️ **Two things keep that ground off the printing, and both were learnt
+    by watching it walk on:** each step out may be **half a tolerance** (at a
+    whole one, a pale board 85 units from the sheet colour was swallowed
+    whole), and **a cell must be all one colour** (a rectangle a few degrees
+    off true has a whole row of half-and-half cells along its top edge, and
+    the ground crept up that ramp in steps of eight and ate four fifths of the
+    piece). And whatever the ground does locally, a pixel more than twice the
+    tolerance from the sheet's own colour is a piece.
+    ⭐️ **Measure on the trimmed extent, not the furthest pixel.** A perfect
+    300-pixel square with six pixels of JPEG ringing at one corner has a
+    smallest box of 314 × 316 — it fills 91% of it and is not a square at all.
+    Every extent is taken a quarter of a per cent in from each end. The same
+    for the circle: it is asked *how much of this ring is at one radius* (nine
+    tenths is a circle; a hexagon manages seven, a square under a half) rather
+    than *how far does it wander*, because one blotch stuck to one side sinks
+    any test made of extremes.
+    ⭐️ **And the tracing itself is smoothed before it is thinned.** A printed
+    edge on a real scan wanders a pixel or two either way, and Douglas-Peucker
+    cannot tell that from a feature, so it planted a node at every bump.
+    ⚠️ **One copy of all of it, in `sheets.py`.** `cutting_table.py` carried a
+    second copy of the tracing and would have gone on drafting yesterday's
+    outlines — fault 24, which would have bitten the moment this was written.
+    ⚠️ **And the cached draft outlives the code that made it**: `/suggest`
+    keeps its answer per sheet, so `SUGGEST_VERSION` is bumped whenever the
+    drafting changes, or every sheet already drafted goes on being offered the
+    old answer for ever with nothing to say so.
+    ⭐️ Habit 1 earned its keep again: a morphological opening written to clean
+    the speckled fringe turned out to earn **nothing** once the measures were
+    made robust — the checks stayed green with it taken out — so it is not in
+    the code. *A step no check can feel is a step nobody can maintain.*
+
 ---
 
 ## Architecture
@@ -1285,7 +1363,12 @@ cutting_room.py          the app: HTTP server, projects, import, cut, API
 cutting_table.tpl.html   THE EDITOR. Shared by the room and the baked page.
 cutting_table.py         bakes the editor + sheets into one offline HTML file
 cut.py                   cuts pieces from a sheet + mask, standalone
-sheets.py                the image work: flood, label, separate, draft
+sheets.py                the image work: flood, label, separate, draft — and
+                         ⭐️ the AUTOMATIC PASS: `local_field()` (the ground as
+                         it falls on this sheet), `outline_of()` and
+                         `regular_outline()` (a rectangle drawn as a rectangle).
+                         ⚠️ The room and the baked table both use these; there
+                         is no second copy. Fault 71.
 demo/make_demo_sheet.py  a pretend sheet, so the repo needs nobody's artwork
 docs/make_guide_pictures.sh  photographs the room for GUIDE.md — a throwaway
                          game in a home of its own, on a port of its own, off
@@ -1294,6 +1377,10 @@ docs/make_guide_pictures.sh  photographs the room for GUIDE.md — a throwaway
 check/check.sh           everything that can be checked without a person
   check/in_the_browser.js  drives a real Chrome over a throwaway game
   check/guessing_the_kind.py  the size rules, and what they refuse to say
+  check/the_automatic_pass.py  ⭐️ the first attempt at a sheet: the shapes it
+                         draws, and — the half that matters — the ones it
+                         refuses to call a rectangle or a circle. Draws its
+                         own sheet, unevenly lit and speckled. See fault 71.
 ```
 
 **The server is one file on purpose.** Standard library plus numpy and Pillow;
@@ -1377,7 +1464,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 440 checks, about a minute
+check/check.sh          # 473 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1435,6 +1522,18 @@ thing by hand in the browser — a shape kept off one sheet, **laid down twice
 on another**, read back off the disk at the printed size it was kept at, and a
 shape belonging to a different game found by search and brought over with a
 star.
+
+`check/the_automatic_pass.py` is the **first attempt at a sheet** on its own —
+no browser and no project, because it is arithmetic over a picture. It draws
+its own sheet out of the shapes a box really holds (square, rectangle, circle,
+oval, two hexagons, a triangle, a coastline, a crooked rectangle, a rounded
+counter, a big pale board) and prints it the way a scan really arrives:
+unevenly lit, speckled with noise, squashed through a JPEG. ⭐️ **Fourteen of
+its twenty-nine checks are about it refusing to fit a shape** — a hexagon
+squared off is a confident wrong answer drawn over somebody's artwork.
+Its teeth were tried on all three faults of number 71: take the regular fits
+out and ten go red, take the local ground out and three go red (naming a
+printed square that comes back with 34 nodes and bent sides).
 
 `check/guessing_the_kind.py` is the measuring on its own — no browser and no
 project, because `guess_kind()` is arithmetic. ⭐️ **Fourteen of its checks are

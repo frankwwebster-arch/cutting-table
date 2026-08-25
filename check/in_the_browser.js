@@ -289,6 +289,53 @@ const SHAPE = `(function () {
       }
     }
 
+    /* ⭐️⭐️ THE AUTOMATIC FIRST ATTEMPT, PRESSED RATHER THAN ASKED FOR. The
+       designer, 25 August 2026: "the auto cutting pass is essentially
+       pointless" — every outline it offered arrived at the editor as a CURVE,
+       so a four-cornered counter was drawn as a Bézier through its corners
+       and came out bowed. The shapes themselves are checked in
+       check/the_automatic_pass.py; what is checked HERE is the wire between
+       them, which is where it was broken: the room says straight or curved
+       and the editor has to believe it. Fault 61 — a check through the API is
+       a green light over a button that does nothing. */
+    if (OUTLINES) {
+      console.log("\nthe automatic attempt at a sheet, from the button");
+      await page.val(`document.querySelectorAll(".tab")[20].click(); true`);
+      await sleep(1400);
+      await page.val(`(function () { var b = document.getElementById("suggest");
+        if (b) b.click(); return !!b; })()`);
+      // the room works the sheet out the first time it is asked, so the press
+      // may have to be made again once the answer has arrived
+      for (let i = 0; i < 40; i++) {
+        const n = await page.val(`document.querySelectorAll("#pieces .piece").length`);
+        if (n > 0) break;
+        await page.val(`(function () { var b = document.getElementById("suggest");
+          if (b && !b.disabled) b.click(); return true; })()`);
+        await sleep(500);
+      }
+      const drew = await page.val(`(function () { return {
+        rows: document.querySelectorAll("#pieces .piece").length }; })()`);
+      check("pressing it outlines the pieces the room can find", drew.rows >= 3, drew);
+      await sleep(1800);
+      const book2 = JSON.parse(fs.readFileSync(OUTLINES, "utf8"));
+      const made = ((book2.sheets || {})["proving-ground-sheets-21"] || {}).pieces || [];
+      check("and the outlines reach the project's own file", made.length >= 3,
+            made.length);
+      /* ⚠️ THE ONE THAT MATTERS. A counter is not a coastline: a shape the
+         room fitted as a rectangle must arrive as four STRAIGHT nodes, or the
+         editor bends its sides and the person redraws it by hand. */
+      const flat = made.filter((p) => p.curve === false);
+      check("a shape the room fitted as a rectangle stays straight-sided",
+            flat.length >= 1 && flat.every((p) => (p.pts || []).length === 4),
+            made.map((p) => [(p.pts || []).length, p.curve]));
+      check("and the traced ones are still curves, with a handful of nodes",
+            made.some((p) => p.curve === true) &&
+            made.every((p) => (p.pts || []).length <= 60),
+            made.map((p) => (p.pts || []).length));
+      await page.val(`document.querySelectorAll(".tab")[0].click(); true`);
+      await sleep(1000);
+    }
+
     // ------------------------------------ a shape kept, and laid down again
     // ⭐️ the designer, 23 August 2026, on a game printed on one die: "I will need to cut a
     // number of pieces that are different, but also EXACTLY the same shape —

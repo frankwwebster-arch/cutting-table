@@ -122,8 +122,14 @@ tools down the left.
   between two points to add one.
 - **Array** — for a block of counters printed on a regular grid: draw one, say
   how many across and down, and it repeats.
-- **Suggest** — the room's own attempt, from the colours. Worth pressing on a
-  sheet of counters; it will not manage an island with a lagoon in it.
+- ⭐️ **Add the suggested outlines** — the room's own attempt, from the
+  colours. Worth pressing first on any sheet: most of what a box holds is a
+  plain rectangle or a plain circle, and where a piece really is one it comes
+  back with **four straight corners** (squared up even if the scan was a
+  little crooked) or as a true circle, so there is nothing left to tidy.
+  Anything else it traces as a curve and leaves you to correct — and it will
+  not manage an island with a lagoon in it, which is what the rest of these
+  tools are for.
 
 Your work is saved **to the game's folder, a moment after every change**. There
 is no Save button and there does not need to be one.

@@ -232,6 +232,20 @@ painted *inside* an island is the same blue as the sheet, so the automatic
 flood walks in through a lagoon and cuts the piece in half. That is why the
 outline is drawn by hand once and everything either side of it is automatic.
 
+⭐️⭐️ **A counter comes back as a counter.** Most of what a box holds is a
+plain rectangle or a plain circle, so where a piece really is one it arrives
+with **four straight corners** — squared to the paper if the scan was a degree
+or two crooked — or as a true circle, rather than as a traced approximation
+with a node wherever the scanner wobbled. Anything else — a hexagon, a
+triangle, a coastline, an oval — is traced as a curve, because a wrong regular
+shape drawn over your artwork looks deliberate. The room only says the shape
+where the shape says it.
+
+⭐️ **And it follows the light.** A scan or a photograph is never evenly lit,
+and the ground is measured across the sheet rather than taken as one colour —
+so a dark corner is not offered to you as a piece, and its fringe is not stuck
+onto the piece lying against it.
+
 ⚠️ **A counter only needs cutting ONCE.** The sheet prints twenty identical damage
 counters; the game repeats one for ever. Outline one of each design.
 

@@ -78,6 +78,7 @@ $PY -c "import ast; ast.parse(open('cutting_table.py').read())"
 $PY -c "import ast; ast.parse(open('cut.py').read())"
 $PY -c "import ast; ast.parse(open('sheets.py').read())"
 $PY -c "import ast; ast.parse(open('check/names_across_a_recut.py').read())"
+$PY -c "import ast; ast.parse(open('check/the_automatic_pass.py').read())"
 # ⚠️ A patch whose anchor has drifted raises here rather than serving an
 # editor that quietly saves nothing.
 $PY -c "import sys; sys.path.insert(0,'.'); import cutting_room; cutting_room.table_template()"
@@ -210,6 +211,16 @@ $PY check/names_across_a_recut.py
 # settle, because a confident wrong answer will be accepted without looking.
 say "does the room guess a piece's kind from its size — and hold its tongue otherwise?"
 $PY check/guessing_the_kind.py
+
+# ⭐️⭐️ THE AUTOMATIC FIRST ATTEMPT AT A SHEET. The designer, 25 August 2026: "the
+# auto cutting pass is essentially pointless" — it added nodes everywhere and
+# bent straight edges into curves. Like the kinds above, what matters most is
+# the half where it says nothing: a hexagon squared off is a confident wrong
+# answer drawn over somebody's artwork. No browser and no project; it draws
+# its own sheet, unevenly lit and speckled, out of the shapes a box really
+# holds.
+say "does the automatic pass draw the shape that is printed — and only where it is sure?"
+$PY check/the_automatic_pass.py
 
 # ⭐️⭐️ EVERY CONTROL SAYS WHAT IT DOES. The designer, 23 August 2026: "I don't, for
 # example, have any idea what 'straight to the table' means on the project

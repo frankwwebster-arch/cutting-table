@@ -103,8 +103,11 @@ JPEG_Q = 85
 THUMB_PX = 640                # long edge of a sheet thumbnail
 PIECE_THUMB_PX = 260
 MIN_PIECE_IN = 0.25
-SUGGEST_TOL = 7.0
-SUGGEST_INSET = 6
+# ⚠️ ONE SET OF NUMBERS FOR THE AUTOMATIC PASS, in sheets.py, or the room and
+# the baked table would draft the same sheet two different ways (fault 24)
+SUGGEST_VERSION = 2     # bump when the automatic pass changes; see /suggest
+SUGGEST_TOL = sheetlib.SUGGEST_TOL
+SUGGEST_INSET = sheetlib.SUGGEST_INSET
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".bmp", ".gif")
 
 # tools/cutting_table.tpl.html: INKS, in order. A piece's ink is an index
@@ -285,70 +288,11 @@ def paint_mask(pieces, size):
 
 # --------------------------------------------------- suggestions (ported)
 
-def contour(mask):
-    """Moore-neighbour tracing: the outline of a filled shape as a ring."""
-    ys, xs = np.nonzero(mask)
-    if not len(ys):
-        return []
-    h, w = mask.shape
-    y0 = int(ys.min())
-    x0 = int(xs[ys == y0].min())
-    step = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
-
-    def on(x, y):
-        return 0 <= x < w and 0 <= y < h and mask[y, x]
-
-    start = (x0, y0)
-    ring = [start]
-    here = start
-    back = 4
-    limit = 8 * int(mask.sum()) + 64
-    for _ in range(limit):
-        found = False
-        for k in range(1, 9):
-            d = (back + k) % 8
-            nxt = (here[0] + step[d][0], here[1] + step[d][1])
-            if on(nxt[0], nxt[1]):
-                back = (d + 4) % 8
-                here = nxt
-                found = True
-                break
-        if not found:
-            break
-        if here == start:
-            break
-        ring.append(here)
-    return ring
-
-
-def thin(pts, tol):
-    """Douglas-Peucker, iterative."""
-    if len(pts) < 3:
-        return list(pts)
-    keep = [False] * len(pts)
-    keep[0] = keep[-1] = True
-    work = [(0, len(pts) - 1)]
-    while work:
-        lo, hi = work.pop()
-        if hi <= lo + 1:
-            continue
-        ax, ay = pts[lo]
-        bx, by = pts[hi]
-        vx, vy = bx - ax, by - ay
-        L = vx * vx + vy * vy
-        worst, at = 0.0, -1
-        for i in range(lo + 1, hi):
-            px, py = pts[i]
-            t = ((px - ax) * vx + (py - ay) * vy) / L if L else 0.0
-            t = 0.0 if t < 0 else (1.0 if t > 1 else t)
-            d = math.hypot(px - (ax + t * vx), py - (ay + t * vy))
-            if d > worst:
-                worst, at = d, i
-        if worst > tol:
-            keep[at] = True
-            work.append((lo, at))
-            work.append((at, hi))
-    return [pts[i] for i in range(len(pts)) if keep[i]]
+# ⚠️ ONE COPY OF THE TRACING, in `sheets.py`, because the baked Cutting Table
+# has to do exactly the same thing to exactly the same sheets and two copies
+# would drift (fault 24). What is left here is only which blobs to trace.
+contour = sheetlib.contour
+thin = sheetlib.thin
 
 
 def suggest_outlines(rgb, mask_path=None):
@@ -378,19 +322,14 @@ def suggest_outlines(rgb, mask_path=None):
         m = lab == i
         if m.sum() < smallest:
             continue
-        for _ in range(SUGGEST_INSET):
-            m = sheetlib.shift_and(m)
-        if not m.any():
+        got = sheetlib.outline_of(m, SUGGEST_INSET, SUGGEST_TOL)
+        if not got:
             continue
-        ring = contour(m)
-        if len(ring) < 12:
-            continue
-        pts = thin(ring, SUGGEST_TOL)
-        if len(pts) < 3:
-            continue
-        out.append([[round(p[0] * sx, 1), round(p[1] * sy, 1)] for p in pts])
-    out.sort(key=lambda p: (min(q[1] for q in p) // (DPI // 2),
-                            min(q[0] for q in p)))
+        out.append({"pts": [[round(p[0] * sx, 1), round(p[1] * sy, 1)]
+                            for p in got["pts"]],
+                    "curve": bool(got["curve"])})
+    out.sort(key=lambda o: (min(q[1] for q in o["pts"]) // (DPI // 2),
+                            min(q[0] for q in o["pts"])))
     return out
 
 
@@ -3816,13 +3755,22 @@ class Room(BaseHTTPRequestHandler):
                 return self.send_json({"error": "no such sheet"}, 404)
             cache = os.path.join(pr.p("cache"), sid + ".suggest.json")
             got = read_json(cache, None)
+            # ⚠️ A CACHED DRAFT OUTLIVES THE CODE THAT MADE IT. The automatic
+            # pass was made worth using on 25 August 2026 (rectangles fitted as
+            # rectangles, and each outline saying whether it is straight or
+            # curved) — and every sheet already drafted would have gone on
+            # being offered yesterday's answer, for ever, with nothing to say
+            # so. Bump this whenever the drafting changes.
+            if got is not None and got.get("v") != SUGGEST_VERSION:
+                got = None
             if got is None:
                 rgb = np.asarray(Image.open(pr.sheet_png(sid)).convert("RGB"))
                 mask = None
                 for cand in (os.path.join(pr.p("masks"), sid + "-starter.png"),):
                     if os.path.exists(cand):
                         mask = cand
-                got = {"suggested": suggest_outlines(rgb, mask)}
+                got = {"v": SUGGEST_VERSION,
+                       "suggested": suggest_outlines(rgb, mask)}
                 write_json(cache, got)
             return self.send_json(got)
 

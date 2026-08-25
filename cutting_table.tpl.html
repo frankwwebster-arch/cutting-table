@@ -1206,7 +1206,19 @@
       return 0;
     }
     var added = 0;
-    offered.forEach(function (pts) {
+    offered.forEach(function (one) {
+      /* ⭐️⭐️ A COUNTER IS NOT A COASTLINE. Every suggested outline arrived
+         here as a CURVE, whatever it was — so a four-node rectangle was drawn
+         as a Bézier through its corners: the edges bowed, the corners rounded
+         off, and the piece came out visibly wrong. The designer, 25 August 2026:
+         "whilst the general shapes were OK-ish, the platform... made some of
+         the shapes look pretty odd." The thing that traced it knows which it
+         is, so it says.
+         ⚠️ An outline may still arrive as a bare list of points — that is
+         what a page baked before this was written carries — and a coastline
+         is what those always were, so it stays a curve. */
+      var pts = one && one.pts ? one.pts : one;
+      var bend = (one && one.pts) ? !!one.curve : true;
       var mine = centroid(pts);
       for (var i = 0; i < pieces.length; i++) {
         // already outlined by hand, one way round or the other
@@ -1214,7 +1226,7 @@
         if (inside(centroid(pieces[i].pts), pts)) return;
       }
       var mine2 = pts.map(function (p) { return [p[0], p[1]]; });
-      pieces.push({ ink: nextInk(mine2), curve: true, pts: mine2 });
+      pieces.push({ ink: nextInk(mine2), curve: bend, pts: mine2 });
       added++;
     });
     if (added && !quiet) { save(); refresh(); }
