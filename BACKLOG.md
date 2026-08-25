@@ -262,10 +262,12 @@ on **Take it away**, above the button, and in the exported folder twice — see
 
 What is left of it, none of it urgent:
 
-- `[ ]` **A way in from the report to the piece.** Every line about a piece
-  names its stem; clicking it should open that piece. `?tab=pieces&piece=<stem>`
-  would do it, and it is the same door a game engine would want (see the item
-  below).
+- `[~]` **A way in from the report to the piece.** ⭐️ Half built, 25 August
+  (CLAUDE.md 67): the panel's counts of *pieces held back* and *pieces with no
+  name* are links that open Pieces with that chip already chosen. What is left
+  is the **single piece** — every line of the printed report names a stem, and
+  clicking it should open that piece. `?tab=pieces&piece=<stem>` would do it,
+  and it is the same door a game engine would want (see the item below).
 - `[ ]` **Fold the report by set**, once a game has more sets than fit a
   screen. The game it was built on has four and it is fine.
 - `[ ]` ⭐️ **Say what a piece measures beside the orphans.** A piece that
