@@ -658,6 +658,39 @@ its own piece, so *Confirm the likely links* ties them all up in one press.
 ⚠️ **Optional.** Cutting works perfectly well without one; make it when you
 want to keep score.
 
+### ⭐️⭐️ Learn the list from the pieces, when there is no contents list
+
+Most games' contents lists are not typed out anywhere, and what a piece is
+*called* is the expensive part of this whole business — it comes from a
+rulebook or somebody's forum post, not from the piece. But the pieces
+themselves are already cut, already measured, and the room already knows which
+of them look alike. So it can build the list the other way round.
+
+**Learn it from the pieces** (on the empty checklist, or *Learn from the
+pieces* beside the other buttons) gathers every cut piece that answers to
+nothing on the list into groups of the same size and design, and shows each
+group with its pictures:
+
+> **6 pieces, 4 different designs** · 0.84 × 0.84 in · looks like a counter
+
+You give each group **one name**, and press *Add the ones I have named*. Each
+group becomes a line on the checklist with its quantity filled in, and every
+piece in it is tied to that line — so the score is right immediately.
+
+- ⚠️ **A group you do not name is not added.** The room cannot know what a
+  piece is called, and it does not guess. Nothing is cut, moved or renamed.
+- ⭐️ **How many designs is the room's own evidence**, and it is the one thing
+  a printed contents list can never tell you: twenty pieces of one design is a
+  counter printed twenty times (*one is enough*), twenty pieces of twenty
+  designs is a deck (*all different*). It offers the answer and you can change
+  it, exactly as on any other line.
+- ⭐️ **A group of several designs is numbered** — *Damage card 01, 02, 03* —
+  because thirty-two pieces all called the same thing cannot be told apart by
+  anything reading the folder afterwards.
+- ⭐️ **A name you have already typed is offered back**, where every named
+  piece in the group agrees about it.
+- ⭐️ Too coarse a line can be broken up afterwards with **Split** (above).
+
 The **Checklist** tab is the index of every component the game should have:
 each counter, template, ruler, card deck, tile and chart, with the printed
 quantity and which sheet it is on. Against each one:

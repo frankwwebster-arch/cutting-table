@@ -229,6 +229,15 @@ Against each component the room then says **cut**, **probably cut** (a name
 matches, but nothing is joined up — press *Confirm the likely links*) or **not
 yet**, and gives you a percentage.
 
+⭐️⭐️ **No contents list? Learn it from the pieces.** Most games' lists are
+not typed out anywhere, and typing one is the dullest hour in the job. Press
+**Learn it from the pieces** and the room gathers everything you have cut into
+groups of the same size and design — *"6 pieces, 4 different designs, 0.84 ×
+0.84 in, looks like a counter"* — and you give each group **one name**. Each
+becomes a line of the checklist with its pieces already tied to it. A group you
+do not name is not added; the room cannot know what a piece is called and does
+not guess.
+
 ⭐️ **A game is a box and its supplements, so there is a figure for each.**
 Every section of the list carries its own — *12 of 30 · 40%* — and **+ Add a
 set** starts a new section, offering the boxes of sheets you have imported by

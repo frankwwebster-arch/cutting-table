@@ -1058,6 +1058,74 @@ code, d = call("/later", {"key": "advanced", "later": True})
 check("a mark that says neither a box nor a set is refused in a sentence",
       code == 400 and "book:" in d.get("error", ""), d)
 
+# ⭐️⭐️ THE CHECKLIST LEARNT FROM WHAT IS CUT — the inverse of Match, and the
+# answer for a game whose contents list nobody has typed out, which is most of
+# them. Naming is the expensive part of this whole business; this is the only
+# idea on the list that takes a step out of it.
+# ⚠️ The GROUPING is done in the page, off the one look-alike rule (there is a
+# browser check for it); what is checked here is what the room does with a
+# named group — and, more important, what it refuses to do.
+print("")
+print("the checklist learnt from the pieces already cut")
+# ⚠️ on pieces with no names yet — the four in this bench were named by hand
+# further up, and a name somebody typed is never overwritten (checked below)
+code, d = call("/wanted/learn", {"groups": [
+    {"name": "Learnt counter", "kind": "counter", "group": "learnt",
+     "group_name": "The learnt box", "group_book": "learnt-scans",
+     "each": False, "stems": ["zz_a", "zz_b"]},
+    {"name": "Learnt card", "kind": "card", "group": "learnt", "each": True,
+     "number": True, "stems": ["zz_c", "zz_d"]}]})
+learnt = {i["name"]: i for i in d.get("added", [])}
+check("a named group of cut pieces becomes a line on the checklist",
+      sorted(learnt) == ["Learnt card", "Learnt counter"], sorted(learnt))
+check("with the quantity taken from how many pieces there are",
+      (learnt.get("Learnt counter") or {}).get("qty") == "2", learnt)
+check("and every piece in the group tied to it", d.get("linked") == 4, d.get("linked"))
+# ⭐️ the set is made too, and it knows which box of sheets it answers to
+# (fault 64) — without that the room is back to inferring it from the links
+made_set = [g for g in d.get("groups", []) if g.get("id") == "learnt"]
+check("the set it went into is written down, by the name given",
+      made_set and made_set[0].get("name") == "The learnt box", made_set)
+check("and it says which box of sheets it belongs to",
+      made_set and made_set[0].get("book") == "learnt-scans", made_set)
+
+man = json.load(open(man_file))["pieces"]
+check("a piece in a group of one design takes the group's name",
+      man["zz_a"]["name"] == "Learnt counter", man["zz_a"])
+# ⭐️ THIRTY-TWO CARDS ALL CALLED THE SAME THING is fault 34's whole subject:
+# whatever reads the manifest afterwards cannot tell one from another.
+check("while a group of several designs is numbered, one name each",
+      sorted([man["zz_c"]["name"], man["zz_d"]["name"]]) == ["Learnt card 1", "Learnt card 2"],
+      [man["zz_c"]["name"], man["zz_d"]["name"]])
+check("and the kind the room offered is taken with it",
+      man["zz_a"].get("kind") == "counter", man["zz_a"])
+
+# ⚠️⚠️ A NAME SOMEBODY TYPED IS NEVER OVERWRITTEN. This is a bulk action, and
+# a bulk action is where a wrong rule is spread over hundreds of pieces before
+# anybody looks. c03 is named by hand before the group is learnt.
+man_all = json.load(open(man_file))
+man_all["pieces"]["c03"] = {"name": "I typed this myself"}
+json.dump(man_all, open(man_file, "w"))
+code, d = call("/wanted/learn", {"groups": [
+    {"name": "Something else", "group": "learnt", "stems": ["c03"]}]})
+man = json.load(open(man_file))["pieces"]
+check("a name somebody typed themselves is left exactly as it was",
+      man["c03"]["name"] == "I typed this myself", man["c03"])
+check("but the piece is tied to the component all the same",
+      man["c03"].get("wanted", "").startswith("other_something_else"), man["c03"])
+
+# ⚠️⚠️ AND THE ROOM NAMES NOTHING BY ITSELF. A group nobody has named is a
+# group nobody has decided about — the same rule as the kinds (fault 25), the
+# look-alikes (fault 18) and the splitting (fault 34).
+before = len(json.load(urllib.request.urlopen(API + "/wanted"))["items"])
+code, d = call("/wanted/learn", {"groups": [{"name": "  ", "stems": ["zz_a"]}]})
+after = len(json.load(urllib.request.urlopen(API + "/wanted"))["items"])
+check("a group left unnamed is not added, and says so rather than failing quietly",
+      code == 400 and after == before, [code, before, after])
+code, d = call("/wanted/learn", {"groups": []})
+check("and being asked to learn from nothing is refused in a sentence",
+      code == 400 and "learn" in d.get("error", ""), d)
+
 # ⚠️ WITH NO CONTENTS LIST, EVERY PIECE IS AN ORPHAN — which is not a finding,
 # it is the absence of a list. The checklist has always been optional and this
 # report must not quietly make it compulsory.

@@ -93,11 +93,15 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 473 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 495 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**25 August, the first thing off the list**: *learn the checklist from what is
+cut* — the inverse of Match, and the answer for a game whose contents list
+nobody has typed out. See fault 72.
 
 **25 August, later still**: *"the auto cutting pass is essentially pointless."*
 Three faults, of which the loudest was one word — every suggested outline was
@@ -1336,6 +1340,49 @@ rather than by reading the code.
     made robust — the checks stayed green with it taken out — so it is not in
     the code. *A step no check can feel is a step nobody can maintain.*
 
+72. ⭐️⭐️ **THE CHECKLIST LEARNT FROM WHAT IS CUT — the inverse of Match.**
+    The first thing on BACKLOG's *NOW*, and it is there because **naming is
+    the expensive part and it is expensive because it comes from outside the
+    room**: *"3rd party lists etc, or rules manuals which may be tricky to
+    comprehend."* A game with no contents list typed out — which is most
+    games — had no way to keep score at all without somebody reading a manual
+    first. But the pieces are already cut, already measured, and already
+    grouped by the very look-alike hash the review uses, so **twenty identical
+    counters become one line in one typing**, and a deck of thirty-two becomes
+    one line with all thirty-two tied to it.
+    ⚠️⚠️ **THE ROOM PROPOSES THE GROUPS AND NOTHING ELSE.** What a group is
+    *called* is a judgement and stays the person's — fault 25 (the kinds),
+    fault 18 (the look-alikes), fault 34 (splitting a line), and now this. A
+    group nobody names **is not added**, the room refuses in a sentence rather
+    than failing quietly, and a name somebody typed themselves is never
+    overwritten. Both of those have teeth: break either and the checks go red.
+    ⭐️ **What the room CAN see, and a printed contents list never can: how
+    many DESIGNS a group holds.** Twenty pieces of one design is a counter
+    printed twenty times and one is enough; twenty pieces of twenty designs is
+    a deck and every one has to be cut. So *one is enough / all different*
+    (fault 36) arrives with an answer already offered — ⚠️ as a **control**,
+    because it is still a decision about what the game needs rather than about
+    what was cut.
+    ⭐️ **A group of several designs is numbered** — *Damage card 01, 02…* —
+    because thirty-two pieces all called *Damage card* is fault 34's whole
+    subject: whatever reads the manifest afterwards cannot tell one from
+    another. The panel says so before the press.
+    ⭐️ **And a name already typed is offered back.** Where every named piece
+    in a group agrees, the box arrives filled in; where they disagree it stays
+    empty, because two names in a group is a question and the room does not
+    answer questions about what a thing is called.
+    ⚠️ **The grouping is done in the PAGE**, off `alike()` and `sameSize()` —
+    `sameSize()` was factored out of `alike()` for it, so there is still one
+    rule for *"the same size"* rather than two that would drift (fault 24).
+    What reaches the room is stems, a name and a decision.
+    ⚠️ **And there is now one `new_wanted()`**, because three things make
+    components — a pasted list, a line split into parts, and this — and an id
+    made three ways is fault 24 waiting: two would agree and the third would
+    file its components where nothing else looks.
+    ⭐️ Its browser check was written believing an empty name box; the box was
+    **already filled**, by the offer above, and the check went red over
+    perfectly good code. *Looking at the thing is what showed it.*
+
 ---
 
 ## Architecture
@@ -1464,7 +1511,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 473 checks, about a minute
+check/check.sh          # 495 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

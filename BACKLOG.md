@@ -38,51 +38,16 @@ have not.
 
 ⭐️ **How it was ordered**, so it can be argued with rather than merely
 inherited: *what is expensive is naming, not cutting* (CLAUDE.md says so three
-times, and reading the real game's data has proved it twice). So the one thing
-that makes a checklist appear without anybody finding a rules manual is first.
-After that, things the designer has asked for and not yet got. After those, the
-things a stranger meets — this repository is public and the room is meant for
-far more people than the one who commissioned it. Cosmetic last.
+times, and reading the real game's data has proved it twice). The one thing
+that made a checklist appear without anybody finding a rules manual was first,
+and is now **built** — see *Recently finished*. What is left is, in order:
+things the designer has asked for and not yet got; then the things a stranger
+meets, this repository being public and the room being meant for far more
+people than the one who commissioned it. Cosmetic last.
 
 ---
 
-### 1. `[ ]` ⭐️⭐️ Learn the checklist from what is cut
-
-The inverse of Match, for a game with **no contents list at all** — which is
-most games, and certainly any game whose list nobody has bothered to type out.
-Rather than reading a component list in and ticking pieces off against it,
-**group the cut pieces by look-alike and printed size, show each group, and let
-the person name the group once.** Twenty identical damage counters become one
-line of the checklist in one typing.
-
-Everything it needs is already built and already on the screen somewhere else:
-the 144-bit look-alike hash and mean colour that the review uses to cluster,
-the printed measurements, and the **kind the room offers from those
-measurements** — so a group can arrive pre-labelled *counter* and only want its
-name. The work is the interface, not the arithmetic.
-
-⭐️ **Why it is first.** Naming is the expensive part, and it is expensive
-because it comes from outside the room — *"3rd party lists etc, or rules
-manuals which may be tricky to comprehend."* This is the only idea left on the
-list that removes a step from naming rather than from cutting. A second game is
-loaded with its sheets imported and no checklist typed; this is what that game
-wants.
-
-⚠️ **It must not become an automatic checklist.** The room may propose the
-groups; what a group is *called* is a judgement and stays the person's, exactly
-as with the kinds (fault 25), the look-alikes (fault 18) and the splitting
-(fault 34). A confident wrong answer spread over three hundred pieces is the
-failure mode.
-
-⚠️ Read fault 36 before writing the counts: *one is enough, unless every one is
-different* is not something a group of look-alikes can decide for itself, and
-`each` is the person's answer.
-
-⭐️ **Done looks like**: a game with an empty checklist, a page that offers its
-cut pieces in groups, and a checklist with real lines on it that nobody read
-out of a manual — with the pieces already linked to the components they made.
-
-### 2. `[ ]` ⭐️ A light ground — the half that can be finished, offered as a choice
+### 1. `[ ]` ⭐️ A light ground — the half that can be finished, offered as a choice
 
 The designer, 22 August 2026: *"I'd like to consider some different displays (eg white
 background rather than the black)."* It has been on the list since, behind
@@ -118,7 +83,7 @@ There is no theme mechanism at all today: `room/room.css` and the template's
 legible in every screen the guide photographs, and the table unchanged until
 they have looked at it.
 
-### 3. `[ ]` ⭐️ A report you can act on
+### 2. `[ ]` ⭐️ A report you can act on
 
 The end-of-job check names pieces and cannot open them. Half of the way in was
 built on 25 August (CLAUDE.md 67) — the panel's counts of *pieces held back*
@@ -142,7 +107,7 @@ things finish it, and they are one afternoon between them:
 ⚠️ The report **reports**; it fixes nothing. That rule does not change because
 its lines became links — see fault 52.
 
-### 4. `[ ]` No terminal window at all
+### 3. `[ ]` No terminal window at all
 
 The last of the designer's *"a simpler way to open and quit. I don't like
 terminal at the best of times."* Quitting, and starting the room again, are
@@ -156,7 +121,7 @@ must not need anything installed. ⚠️ And it must not become a second place t
 knows where this copy was cloned to: `--install-launcher` already works that
 out, so the bundle should be written by the same code.
 
-### 5. `[ ]` A demo sheet, so a stranger can try it with nothing
+### 4. `[ ]` A demo sheet, so a stranger can try it with nothing
 
 `demo/make_demo_sheet.py` already draws a pretend sheet — deliberately awkward
 in the one way that matters, with the same colour inside a piece as outside it.
@@ -169,7 +134,7 @@ author. Today somebody who finds it has to own a board game, scan it, and read
 a guide before anything happens. ⚠️ Nothing in the demonstration sheet is
 anybody's artwork, so this is safe to ship.
 
-### 6. `[ ]` ⚠️ The two places it is macOS-only, needlessly
+### 5. `[ ]` ⚠️ The two places it is macOS-only, needlessly
 
 - `doc_to_docx()` shells out to **`textutil`**, which exists only on a Mac. On
   anything else an old binary `.doc` should say so plainly rather than fail
@@ -183,7 +148,7 @@ which is what makes these two worth an hour. ⚠️ A button that silently does
 nothing is fault 58's shape: half working reads as broken and teaches you to
 stop trusting the room.
 
-### 7. `[ ]` The guide's last mile
+### 6. `[ ]` The guide's last mile
 
 - `[ ]` **Arrows on the pictures.** The designer's original point was *"one
   screenshot with an arrow on it"*; they are honest screenshots with no arrows
@@ -192,7 +157,7 @@ stop trusting the room.
 - `[ ]` **An Artifact of it**, for reading on a phone or handing to somebody.
   ⚠️ Generated FROM `GUIDE.md`, never written twice (fault 24).
 
-### 8. `[ ]` Two small known faults, cheap to clear
+### 7. `[ ]` Two small known faults, cheap to clear
 
 - `[ ]` **The suggestion cache is not invalidated by a new mask.**
   `cache/<sheet>.suggest.json` is written once, so if a `-starter.png` mask
@@ -242,8 +207,8 @@ a new game, and it is what the two ideas below are aimed at:
 
 - `[x]` **Guess the kind** from size and shape — built, 22 August 2026. See
   *Done*, below.
-- ⭐️ **Learn the checklist from what is cut** — its own entry below; it is now
-  the best of the three.
+- `[x]` ⭐️⭐️ **Learn the checklist from what is cut** — **built**, 25 August
+  2026. See *Recently finished*, and CLAUDE.md 72.
 - **A shared folder of checklists**, since a game's contents list is public
   knowledge and only has to be typed once by anybody.
 
@@ -300,6 +265,38 @@ Nothing here should know what a rulebook is.
 ⭐️ Moved out of *NOW* so the live list stays a list. The full account of
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
+
+### `[x]` ⭐️⭐️ Learn the checklist from what is cut — **built**
+
+The first thing on *NOW*, and it was first because **naming is what is
+expensive, not cutting**. A game whose contents list nobody has typed out —
+which is most games — had no way to keep score at all without somebody reading
+a rulebook first. The inverse of Match: the pieces are already cut, already
+measured and already grouped by the look-alike hash, so the list can be built
+out of them.
+
+- `[x]` ⭐️⭐️ **Learn it from the pieces**, on the empty checklist and beside
+  the other buttons. Every cut piece that answers to nothing is gathered into
+  groups of the same size and design, shown with its pictures, and **one name
+  per group** is the whole job. Each group becomes a line with its quantity
+  filled in and all its pieces tied to it.
+- `[x]` ⚠️ **A group nobody names is not added**, and the room says so rather
+  than failing quietly. A name somebody typed is never overwritten. Both have
+  teeth.
+- `[x]` ⭐️ **How many designs a group holds** is the room's own evidence and
+  the one thing a printed contents list can never give you, so *one is enough
+  / all different* (fault 36) arrives with an answer offered — as a control,
+  not a decision.
+- `[x]` ⭐️ **A group of several designs is numbered** (*Damage card 01, 02*),
+  because thirty-two pieces all called the same thing cannot be told apart
+  afterwards (fault 34).
+- `[x]` ⭐️ **A name already typed is offered back** where the group agrees.
+
+⚠️ The grouping is done in the page off the one look-alike rule (`sameSize()`
+was factored out of `alike()` for it); the room's side is one `new_wanted()`,
+now shared by all three things that make components. 22 new checks — eight
+through the API, nine in the browser, and the rest about what it refuses to
+do. See CLAUDE.md 72.
 
 ### `[x]` ⭐️⭐️ The automatic pass, made worth pressing — **built**
 
@@ -689,7 +686,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 473 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 495 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 

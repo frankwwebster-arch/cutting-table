@@ -1971,6 +1971,94 @@ const SHAPE = `(function () {
             home.says === "" && !home.later, home);
     }
 
+    /* ⭐️⭐️ THE CHECKLIST LEARNT FROM WHAT IS CUT. The inverse of Match, for
+       a game whose contents list nobody has typed out — which is most games.
+       ⚠️ The GROUPING is done in the page, off the same look-alike rule the
+       review uses, so this is where it has to be checked: the room's side is
+       checked through the API in check.sh, and fault 61's lesson is that a
+       check through the API is a green light over a button that does nothing. */
+    {
+      console.log("\nlearning the checklist from the pieces already cut");
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=wanted`);
+      await sleep(1200);
+      const shown = await page.val(`(function () {
+        var b = document.getElementById("wLearnBtn") || document.getElementById("wStartLearn");
+        if (b) b.click();
+        return !!b; })()`);
+      check("there is a way to build the list from the pieces", shown, shown);
+      await sleep(2500);
+      const rows = await page.val(`(function () {
+        var out = [];
+        document.querySelectorAll("#wLearnRows .grp").forEach(function (r) {
+          out.push({ said: (r.querySelector(".said") || {}).textContent || "",
+                     pics: r.querySelectorAll(".pics img").length,
+                     each: (r.querySelector(".leach") || {}).textContent || "" });
+        });
+        return { rows: out, says: document.getElementById("wLearnSays").textContent }; })()`);
+      check("the pieces that answer to nothing are gathered into groups",
+            rows.rows.length >= 1, rows.rows.length);
+      check("and each group says how many pieces and how many designs it holds",
+            rows.rows.every((r) => /\d+ piece/.test(r.said) &&
+                                   /design/.test(r.said)), rows.rows);
+      /* ⭐️ ONE IS ENOUGH, UNLESS EVERY ONE IS DIFFERENT (fault 36) — the one
+         thing a printed contents list can never tell you, and the one thing
+         the pieces themselves CAN. It is offered, not decided: it is a
+         control, and pressing it changes the answer. */
+      check("and offers an answer to whether one of them is enough",
+            rows.rows.every((r) => /all different|one is enough/.test(r.each)),
+            rows.rows.map((r) => r.each));
+      check("and it says plainly that nothing is added until you name something",
+            /not added/.test(rows.says || "") && /Nothing is cut/.test(rows.says || ""),
+            rows.says);
+      /* ⭐️ A NAME ALREADY TYPED IS OFFERED BACK. Where every named piece in a
+         group agrees about what it is called, the box arrives filled in —
+         there is no sense making somebody type their own answer twice. ⚠️ Only
+         where they agree: two names in a group is a question, and the room
+         does not answer questions about what a thing is called. */
+      check("a group whose pieces are already named offers that name back",
+            rows.rows.length && (await page.val(
+              `(document.querySelector("#wLearnRows input.lname") || {}).value`)),
+            await page.val(`(document.querySelector("#wLearnRows input.lname") || {}).value`));
+
+      // ⚠️ NAMING IS THE ONE THING THE ROOM CANNOT DO. A group with no name is
+      // a group nobody has decided about, and must not be added.
+      const was = await page.val(`({ rows:
+        document.querySelectorAll("#wBody tr input[data-k=name]").length })`);
+      const refused = await page.val(`(function () {
+        document.querySelectorAll("#wLearnRows input.lname").forEach(function (i) {
+          i.value = ""; i.dispatchEvent(new Event("input"));
+        });
+        document.getElementById("wLearnGo").click(); return true; })()`);
+      await sleep(900);
+      // ⚠️ this game already has a checklist, so what must not change is the
+      // NUMBER of components on it
+      const nothing = await page.val(`(function () { return {
+        rows: document.querySelectorAll("#wBody tr input[data-k=name]").length,
+        said: (document.querySelector(".flash") || {}).textContent || "" }; })()`);
+      check("pressing Add with nothing named adds nothing, and says why",
+            nothing.rows === was.rows && /cannot know what a piece is called/.test(nothing.said),
+            [was.rows, nothing]);
+      // and now name one group and add it
+      await page.val(`(function () {
+        var one = document.querySelector("#wLearnRows input.lname");
+        one.value = "A learnt component";
+        one.dispatchEvent(new Event("input"));
+        document.getElementById("wLearnGo").click(); return true; })()`);
+      await sleep(2500);
+      const landed = await page.val(`(function () { return {
+        names: Array.prototype.map.call(document.querySelectorAll("#wBody tr input[data-k=name]"),
+          function (i) { return i.value; }),
+        gone: document.getElementById("wLearn").hidden }; })()`);
+      check("naming one group and pressing Add puts it on the checklist",
+            (landed.names || []).indexOf("A learnt component") >= 0, landed.names);
+      const kept = await (await fetch(`${ROOM}/api/p/${PROJECT}/wanted`)).json();
+      const it = (kept.items || []).filter((i) => i.name === "A learnt component")[0];
+      check("with the pieces of that group tied to it",
+            it && (it.pieces || []).length >= 1, it && (it.pieces || []).length);
+      check("so the checklist counts it as cut, off the pieces it was made from",
+            it && (it.state === "cut"), it && it.state);
+    }
+
     /* ⭐️⭐️ A WAY IN TO A SECTION OF THE CHECKLIST ITSELF. The designer, 25
        August 2026: "very obvious quirk I just noticed - I cant see how to add
        a new section to the checklist (eg to add details of the new sail set I

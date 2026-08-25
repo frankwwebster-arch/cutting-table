@@ -162,6 +162,13 @@
         <div class="row" style="margin-top:14px">
           <button class="primary" id="wStart" data-tip="Type or paste the box's own contents list — one component a line. The room then keeps score of how much of the game you have cut.">Paste the contents list</button>
           <button id="wStartOne" data-tip="Start the checklist with a single line, rather than pasting a whole list.">Add one component</button>
+          <!-- ⭐️⭐️ FOR A GAME WHOSE CONTENTS LIST NOBODY HAS TYPED OUT, WHICH
+               IS MOST GAMES. The pieces are already cut, already measured and
+               already grouped by the look-alike hash — so the list can be
+               learnt from them instead of read out of a rulebook. Naming is
+               the expensive part of the whole business, and this is the only
+               idea on the list that takes a step out of it. -->
+          <button id="wStartLearn" data-tip="Build the list from the pieces you have already cut: the room gathers them into groups of the same size and design, and you give each group one name. Nothing is cut, moved or renamed — and nothing is added until you press Add.">Learn it from the pieces</button>
         </div>
         <p class="note" style="margin-top:12px">A line each. A number at either end becomes the quantity:<br>
         <code>26 Damage counters</code> · <code>Turning template x2</code> · <code>Long range ruler</code> · <code>9 | Large templates | template</code></p>
@@ -193,9 +200,24 @@
            from a component's own Set box, or from the panel that pastes a
            whole list in — so somebody who wanted the SECTION first had
            nowhere to press. -->
+      <button id="wLearnBtn" data-tip="Build more of the list from pieces that are not yet linked to anything: the room gathers them into groups of the same size and design, and you give each group one name. Nothing is cut, moved or renamed.">Learn from the pieces</button>
       <button id="wSetAdd" data-tip="Start a new section of the checklist — a box: the core game, or one of its supplements. The sets of sheets you have imported are offered by name, so the two agree.">+ Add a set</button>
       <button id="wAdd" data-tip="Add one line to the checklist by hand.">+ Add a component</button>
       <button id="wImportBtn" data-tip="Paste several components at once, one a line. A number at either end is read as the quantity.">Paste a list</button>
+    </div>
+    <!-- ⭐️⭐️ THE CHECKLIST LEARNT FROM WHAT IS CUT. ⚠️ The room proposes the
+         groups; what a group is CALLED is a judgement and stays the person's,
+         exactly as with the kinds (fault 25), the look-alikes (fault 18) and
+         the splitting (fault 34). A group nobody names is not added. -->
+    <div id="wLearn" hidden style="margin:0 0 12px">
+      <p class="note" style="margin:0 0 8px" id="wLearnSays"></p>
+      <div class="row" style="margin-bottom:8px">
+        <label class="tiny muted" data-tip="Which box these components belong to. The sets of sheets you have imported are offered by name, so the sheets and the list agree.">into <select id="wLearnGroup"></select></label>
+        <span class="spacer" style="flex:1"></span>
+        <button class="primary" id="wLearnGo" title="Add every group you have named to the checklist, and tie its pieces to it. Groups left unnamed are not added, and nothing is cut, moved or renamed.">Add the ones I have named</button>
+        <button class="quiet" id="wLearnCancel" title="Close this without adding anything.">Cancel</button>
+      </div>
+      <div id="wLearnRows"></div>
     </div>
     <div id="wNewSet" hidden style="margin:0 0 12px">
       <div class="row">
@@ -1235,10 +1257,19 @@
     }
     return n;
   }
-  function alike(p, q) {
-    if (!p.hash || !q.hash || p.hash.length !== q.hash.length) return false;
+  /* ⚠️ ONE RULE FOR "the same size", because two things ask it: whether two
+     pieces are the same piece, and whether they are the same SORT of piece —
+     which is what the checklist is learnt from. Written twice they would
+     drift, and the drift would show up as a deck that is one line here and
+     two lines there. */
+  function sameSize(p, q) {
     if (Math.abs(p.w_in - q.w_in) > Math.max(0.03, q.w_in * 0.03)) return false;
     if (Math.abs(p.h_in - q.h_in) > Math.max(0.03, q.h_in * 0.03)) return false;
+    return true;
+  }
+  function alike(p, q) {
+    if (!p.hash || !q.hash || p.hash.length !== q.hash.length) return false;
+    if (!sameSize(p, q)) return false;
     if (hamming(p.hash, q.hash) > Math.round((p.bits || 144) * 0.11)) return false;
     if (p.rgb && q.rgb) {
       var d = Math.sqrt(p.rgb.reduce(function (t, v, i) { return t + (v - q.rgb[i]) * (v - q.rgb[i]); }, 0));
@@ -3337,6 +3368,185 @@
       return '<option value="__book:' + esc(b.book) + '">' + esc(b.name) + "</option>";
     }).join("") + '<option value="__new">a set of some other name…</option>';
   }
+  /* ⭐️⭐️ THE CHECKLIST LEARNT FROM WHAT IS CUT — the inverse of Match, and
+     the answer for a game whose contents list nobody has typed out, which is
+     most games. Naming is the expensive part of the whole business, and it is
+     expensive because what a piece is CALLED comes from outside the room —
+     "3rd party lists etc, or rules manuals which may be tricky to
+     comprehend". But the pieces are already here, already measured, and
+     already grouped by the very look-alike rule the review uses: so twenty
+     identical damage counters can become one line in one typing, and a deck
+     of thirty-two one line with all thirty-two tied to it.
+
+     ⚠️⚠️ THE ROOM PROPOSES THE GROUPS AND NOTHING ELSE. What a group is
+     called is a judgement — fault 25's rule about the kinds, fault 18's about
+     the look-alikes, fault 34's about splitting a line — and a group nobody
+     names is not added. Nothing is cut, moved, renamed or thrown away.
+
+     ⚠️ The grouping is done HERE, off `alike()` and `sameSize()`, because
+     those already exist and there must be one of each (fault 24). What the
+     room is sent is stems and a name. */
+  var learning = null;
+  function learnGroups() {
+    /* Pieces that answer to nothing yet: a piece already tied to a component
+       is already on the list, and a piece set aside is put away on purpose. */
+    var open = (piecesData && piecesData.pieces || []).filter(function (p) {
+      var d = p.data || {};
+      return !d.wanted && !d.spare && p.w_in;
+    });
+    var fam = [];
+    open.forEach(function (p) {
+      for (var i = 0; i < fam.length; i++) {
+        if (sameSize(p, fam[i].ps[0])) { fam[i].ps.push(p); return; }
+      }
+      fam.push({ ps: [p] });
+    });
+    fam.forEach(function (f) {
+      /* ⭐️ HOW MANY DESIGNS, not just how many pieces — and this is the one
+         thing a printed contents list can never tell you (fault 36). Twenty
+         pieces of one design is a counter printed twenty times, and one is
+         enough; twenty pieces of twenty designs is a deck, and every one of
+         them has to be cut. The room can SEE which, so it offers an answer —
+         but the answer is still about what the game needs, so it is a
+         control and not a decision. */
+      var designs = [];
+      f.ps.forEach(function (p) {
+        for (var i = 0; i < designs.length; i++) {
+          if (alike(p, designs[i][0])) { designs[i].push(p); return; }
+        }
+        designs.push([p]);
+      });
+      f.designs = designs.length;
+      f.each = designs.length > 1;
+      f.size = f.ps[0].w_in + " × " + f.ps[0].h_in + " in";
+      // the kind the room offers for these, where it says the same thing
+      // about all of them and nobody has set one already
+      var kinds = {};
+      f.ps.forEach(function (p) {
+        var k = (p.data && p.data.kind) || (p.guess && p.guess.kind) || "";
+        if (k) kinds[k] = (kinds[k] || 0) + 1;
+      });
+      var only = Object.keys(kinds);
+      f.kind = (only.length === 1) ? only[0] : "";
+      /* ⭐️ If the person has already typed a name on these pieces — by hand,
+         or on the Pieces page — offer it back rather than making them type it
+         a second time. ⚠️ Only where every named piece in the group agrees:
+         two names in a group is a question, and the room does not answer
+         questions about what a thing is called. */
+      var said = {};
+      f.ps.forEach(function (p) {
+        var nm = ((p.data || {}).name || "").trim();
+        if (nm) said[nm] = 1;
+      });
+      var names = Object.keys(said);
+      f.name = names.length === 1 ? names[0] : "";
+    });
+    fam.sort(function (a, b) { return b.ps.length - a.ps.length; });
+    return fam;
+  }
+  function renderLearn() {
+    var box = document.getElementById("wLearnRows");
+    var says = document.getElementById("wLearnSays");
+    if (!learning || !learning.length) {
+      box.innerHTML = "";
+      says.textContent = "Every piece you have cut is already tied to something on this list. " +
+        "There is nothing left to learn from.";
+      document.getElementById("wLearnGo").disabled = true;
+      return;
+    }
+    document.getElementById("wLearnGo").disabled = false;
+    var n = learning.reduce(function (t, f) { return t + f.ps.length; }, 0);
+    says.innerHTML = "<b>" + n + " cut piece" + (n === 1 ? "" : "s") +
+      " answer to nothing on this list yet</b>, gathered into " + learning.length +
+      " group" + (learning.length === 1 ? "" : "s") + " by size and design. " +
+      "Name the ones you recognise — a group left unnamed is not added. " +
+      "Nothing is cut, moved or renamed.";
+    box.innerHTML = learning.map(function (f, i) {
+      var pics = f.ps.slice(0, 8).map(function (q) {
+        return '<img loading="lazy" src="' + BASE + "/piece-thumb/" + encodeURIComponent(q.stem) +
+               '.png"' + bigAttrs(q) + turned(q.data) + ">";
+      }).join("");
+      var more = f.ps.length > 8 ? '<span class="tiny muted">+' + (f.ps.length - 8) + " more</span>" : "";
+      return '<div class="grp" data-f="' + i + '"><div class="pics">' + pics + more + "</div>" +
+        '<div class="said"><b>' + f.ps.length + " piece" + (f.ps.length === 1 ? "" : "s") +
+        (f.designs > 1 ? ", " + f.designs + " different designs" : ", all the same design") +
+        "</b><br><span class=\"tiny muted\">" + esc(f.size) +
+        (f.kind ? " · looks like a " + esc(f.kind) : "") + "</span></div>" +
+        '<input class="lname" data-f="' + i + '" placeholder="what are these called?" value="' +
+        esc(f.name) + '" title="The one thing the room cannot work out for itself. Leave it empty and this group is not added.">' +
+        '<button class="quiet leach" data-f="' + i + '" title="' +
+        (f.each
+          ? "Every one of these is a different piece, so all of them must be cut before the line is done. Press to count them as one design printed many times."
+          : "One design, printed this many times — cutting one is enough. Press if these are all DIFFERENT, like a deck of cards.") +
+        '">' + (f.each ? "all different" : "one is enough") + "</button></div>";
+    }).join("");
+    box.querySelectorAll("input.lname").forEach(function (el) {
+      el.addEventListener("input", function () { learning[+el.dataset.f].name = el.value; });
+    });
+    box.querySelectorAll("button.leach").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var f = learning[+el.dataset.f];
+        f.each = !f.each;
+        renderLearn();
+      });
+    });
+  }
+  function openLearn() {
+    document.getElementById("wEmpty").hidden = true;
+    document.getElementById("wBody2").hidden = false;
+    document.getElementById("wLearn").hidden = false;
+    document.getElementById("wLearnGroup").innerHTML = setOptions("");
+    var box = document.getElementById("wLearnRows");
+    box.innerHTML = '<p class="note">Looking at the pieces…</p>';
+    var go = piecesData ? Promise.resolve() : loadPieces();
+    go.then(function () {
+      learning = learnGroups();
+      renderLearn();
+    });
+  }
+  document.getElementById("wLearnBtn").addEventListener("click", openLearn);
+  document.getElementById("wStartLearn").addEventListener("click", openLearn);
+  document.getElementById("wLearnCancel").addEventListener("click", function () {
+    document.getElementById("wLearn").hidden = true;
+    learning = null;
+  });
+  document.getElementById("wLearnGo").addEventListener("click", function () {
+    if (!learning) return;
+    var gid = chooseSet(document.getElementById("wLearnGroup").value);
+    var named = learning.filter(function (f) { return (f.name || "").trim(); });
+    if (!named.length) {
+      flash("Name at least one group first — the room cannot know what a piece is called.", true);
+      return;
+    }
+    var where = ((wantedData && wantedData.groups) || [])
+      .filter(function (g) { return g.id === gid; })[0];
+    var body = { groups: named.map(function (f) {
+      return { name: f.name.trim(), kind: f.kind, group: gid,
+               group_name: (where || {}).name || gid,
+               group_book: (where || {}).book || "",
+               each: !!f.each,
+               // ⭐️ thirty-two cards all called "Damage card" is fault 34's
+               // whole subject: whatever reads the manifest afterwards cannot
+               // tell one from another. Several designs means numbered names.
+               number: f.designs > 1,
+               stems: f.ps.map(function (p) { return p.stem; }) };
+    }) };
+    post(API + "/wanted/learn", body).then(function (d) {
+      if (d.error) { flash(d.error, true); return; }
+      wantedData = d;
+      piecesData = null;                 // every one of them has a name now
+      document.getElementById("wLearn").hidden = true;
+      learning = null;
+      document.getElementById("wEmpty").hidden = true;
+      document.getElementById("wBody2").hidden = false;
+      Fold.open("wanted", gid);          // never hide what was just made (fault 44)
+      loadWanted();
+      refreshCounts();
+      flash((d.added || []).length + " component" + ((d.added || []).length === 1 ? "" : "s") +
+            " added, with " + d.linked + " piece" + (d.linked === 1 ? "" : "s") + " tied to them.");
+    });
+  });
+
   document.getElementById("wSetAdd").addEventListener("click", function () {
     var pick = document.getElementById("wNewSetPick");
     pick.innerHTML = newSetOptions();

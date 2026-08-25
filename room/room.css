@@ -480,6 +480,18 @@ header.bar nav a.closelink:hover { color: var(--bad); opacity: 1; }
   background: var(--panel); border-radius: 3px; padding: 2px; }
 .guessbar .grp .said { flex: 1; min-width: 12em; }
 .guessbar .grp .said b { color: var(--ink); }
+/* ⭐️ the checklist learnt from what is cut: the same row as the kind offer —
+   pictures, what the room can say about them, and the one thing it cannot */
+#wLearnRows .grp { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px;
+  background: var(--panel); margin-bottom: 6px; }
+#wLearnRows .grp .pics { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; max-width: 42%; }
+#wLearnRows .grp .pics img { cursor: zoom-in; width: 38px; height: 38px; object-fit: contain;
+  background: #0A0F14; border-radius: 3px; }
+#wLearnRows .grp .said { flex: 1; min-width: 11em; }
+#wLearnRows .grp .said b { color: var(--ink); }
+#wLearnRows .grp .lname { min-width: 14em; flex: 1; }
+#wLearnRows .grp .leach { font-size: 11px; padding: 3px 9px; flex: none; }
 .guessbar .grp.maybe .said b { color: var(--dim); }
 /* the same offer, for the one piece being named */
 .kguess { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px;

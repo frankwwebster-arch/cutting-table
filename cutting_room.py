@@ -4081,6 +4081,24 @@ class Room(BaseHTTPRequestHandler):
                                            str(d.get("group_book") or ""))
                 return self.send_json(dict(added=added, **pr.wanted_status()))
 
+        # ⭐️⭐️ the checklist learnt from what has been cut — see
+        # learn_from_pieces(). The GROUPING is done in the page, off the very
+        # same look-alike rule the review uses (fault 24: there is one of it),
+        # so what arrives here is stems, a name and a decision.
+        if head == "wanted" and len(rest) == 2 and rest[1] == "learn" and method == "POST":
+            d = self.body_json()
+            groups = d.get("groups") or []
+            if not isinstance(groups, list) or not groups:
+                return self.send_json({"error": "nothing to learn from"}, 400)
+            if len(groups) > 500:
+                return self.send_json({"error": "too many groups at once"}, 400)
+            made, linked = learn_from_pieces(pr, groups)
+            if not made:
+                return self.send_json({"error": "every group needs a name and "
+                                                "at least one piece"}, 400)
+            return self.send_json(dict(added=made, linked=linked,
+                                       **pr.wanted_status()))
+
         if head == "wanted" and len(rest) == 2 and rest[1] == "split" and method == "POST":
             d = self.body_json()
             got = split_wanted_item(pr, str(d.get("id") or ""), d.get("names") or [])
@@ -4266,6 +4284,27 @@ def remove_sheets(pr, ids, with_pieces=False):
     return {"sheets": len(ids), "outlines": drawn, "pieces": took}
 
 
+def new_wanted(have, name, kind, group, qty, each):
+    """One line of a checklist, made the same way wherever it comes from.
+
+    ⚠️ THREE THINGS NOW MAKE COMPONENTS — a pasted contents list, a line split
+    into its parts, and a group of cut pieces named in one go — and an id made
+    three ways is fault 24 waiting to happen: two of them would agree and the
+    third would quietly file its components somewhere nothing else looks.
+    `have` is the ids already taken, and is added to."""
+    iid = (kind or "other") + "_" + slug(name, 40).replace("-", "_")
+    base, n = iid, 1
+    while iid in have:
+        n += 1
+        iid = "%s_%d" % (base, n)
+    have.add(iid)
+    return {"id": iid, "name": name, "kind": kind or "other", "group": group,
+            "qty": str(qty), "each": bool(each),
+            "source": "", "where": "",
+            "match": "(?i)" + re.escape(str(name).split("(")[0].strip()),
+            "notes": ""}
+
+
 def import_wanted_text(pr, text, group, each=False, group_name=None, group_book=None):
     """Lines like `26 Damage counters`, `Turning template x2`, `Long range ruler`,
     or `9 | Large templates | template` become wanted items.
@@ -4316,24 +4355,86 @@ def import_wanted_text(pr, text, group, each=False, group_name=None, group_book=
                 if k in low:
                     kind = k
                     break
-            iid = kind + "_" + slug(name, 40).replace("-", "_")
-            n = 1
-            base = iid
-            while iid in have:
-                n += 1
-                iid = "%s_%d" % (base, n)
-            have.add(iid)
-            item = {"id": iid, "name": name, "kind": kind, "group": group, "qty": str(qty),
-                    # ⭐️ said once for the whole list, because a contents list
-                    # pasted in is usually all one sort — a page of decks, or a
-                    # page of counters. Each line can still be changed after.
-                    "each": bool(each) and str(qty).strip() not in ("", "1"),
-                    "source": "", "where": "", "match": "(?i)" + re.escape(name.split("(")[0].strip()),
-                    "notes": ""}
+            # ⭐️ said once for the whole list, because a contents list pasted
+            # in is usually all one sort — a page of decks, or a page of
+            # counters. Each line can still be changed after.
+            item = new_wanted(have, name, kind, group, qty,
+                              bool(each) and str(qty).strip() not in ("", "1"))
             w["items"].append(item)
             added.append(item)
         pr.save_wanted(w)
     return added
+
+
+# ⭐️⭐️ THE CHECKLIST LEARNT FROM WHAT IS CUT — the inverse of Match, and the
+# answer for a game whose contents list nobody has typed out, which is most
+# games. Naming is the expensive part of this whole business and it is
+# expensive because it comes from OUTSIDE the room: "3rd party lists etc, or
+# rules manuals which may be tricky to comprehend". The pieces themselves are
+# already here, already measured and already grouped by the look-alike hash
+# the review uses — so twenty identical damage counters can become one line of
+# the checklist in one typing, and a deck of thirty-two can become one line
+# with all thirty-two tied to it.
+#
+# ⚠️⚠️ THE ROOM PROPOSES THE GROUPS; WHAT THEY ARE CALLED IS A JUDGEMENT AND
+# STAYS THE PERSON'S. The same rule as the kinds (fault 25), the look-alikes
+# (fault 18) and the splitting (fault 34): nothing here writes a name by
+# itself, and a group nobody names is not added.
+#
+# ⚠️ AND `each` IS THEIRS TOO (fault 36). The room can see how many DESIGNS a
+# group holds, which is real evidence a printed contents list never has — so
+# it offers an answer — but "one is enough, unless every one is different" is
+# still a decision about what the game needs, not about what was cut.
+def learn_from_pieces(pr, groups):
+    """Turn named groups of cut pieces into checklist lines, with the pieces
+    tied to them. Returns (the lines made, how many pieces were linked)."""
+    made, linked = [], 0
+    with pr.lock:
+        w = pr.wanted()
+        w.setdefault("items", [])
+        sets = w.setdefault("groups", [])
+        man = pr.manifest()
+        book = man.setdefault("pieces", {})
+        have = {it.get("id") for it in w["items"]}
+        for g in groups:
+            name = str(g.get("name") or "").strip()[:120]
+            stems = [str(x) for x in (g.get("stems") or [])]
+            if not name or not stems:
+                continue                    # unnamed is unasked-for
+            gid = str(g.get("group") or "").strip()
+            if gid and not any(x.get("id") == gid for x in sets):
+                made_set = {"id": gid, "name": str(g.get("group_name") or gid)[:80]}
+                # ⭐️ which BOX of sheets this set answers to, where the person
+                # picked one — fault 64. Without it the room is back to
+                # inferring that from the links (fault 51), which is no help
+                # at all until there are some.
+                if str(g.get("group_book") or "").strip():
+                    made_set["book"] = str(g["group_book"]).strip()[:80]
+                sets.append(made_set)
+            item = new_wanted(have, name, str(g.get("kind") or "").strip(),
+                              gid, len(stems), bool(g.get("each")))
+            w["items"].append(item)
+            made.append(item)
+            # ⚠️ A NAME SOMEBODY TYPED IS NEVER OVERWRITTEN, here as anywhere
+            # else — only a blank is filled. This is a bulk action, where a
+            # wrong rule is spread over hundreds of pieces before anybody looks.
+            # ⭐️ And where a group holds several DESIGNS, the pieces are
+            # numbered: thirty-two cards all called "Damage card" are exactly
+            # what fault 34 is about — whatever reads the manifest afterwards
+            # cannot tell one from another. The page says so before the press.
+            wide = len(str(len(stems)))
+            for n, st in enumerate(stems, 1):
+                cur = book.setdefault(st, {})
+                cur["wanted"] = item["id"]
+                if not (cur.get("name") or "").strip():
+                    cur["name"] = ("%s %0*d" % (name, wide, n)) if g.get("number") else name
+                if item["kind"] and item["kind"] != "other" and not cur.get("kind"):
+                    cur["kind"] = item["kind"]
+                linked += 1
+        if made:
+            pr.save_wanted(w)
+            pr.save_manifest(man)
+    return made, linked
 
 
 def split_wanted_item(pr, iid, names):
