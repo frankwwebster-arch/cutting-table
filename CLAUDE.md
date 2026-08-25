@@ -93,18 +93,18 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 510 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 513 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
 
-**25 August, last thing**: two keys, asked for in two messages — *"is there
+**25 August, last thing**: three keys, asked for in three messages — *"is there
 (or can there be) a shortcut for duplicate piece please - needs to be a button
 that won't trigger anything else though (maybe the + = key?)"* and *"also a
-shortcut to delete the selected piece (x maybe?)"*. Both were free, both are
-bound, and see fault 75 for the two things that made them more than a line of
-code each.
+shortcut to delete the selected piece (x maybe?)"* and *"another shortcut for
+work on this piece alone"*. All three were free, all three are bound, and see
+fault 75 for the things that made them more than a line of code each.
 
 **25 August, before that**: the designer, asked about the light ground that had
 been first on the list since 22 August: *"I'm no longer certain a white
@@ -1490,6 +1490,17 @@ rather than by reading the code.
     and it costs nothing: `typing(ev)` already stands the whole handler down
     inside a text field (fault 2). The check presses both keys in a note box
     and watches them do nothing but type.
+    ⭐️⚠️ **The third key, `O` — *work on this one alone* — is the same lesson
+    a third time and a fourth thing besides.** It hides every other outline,
+    so on a sheet of forty counters it takes thirty-nine off the picture at a
+    stroke and somebody who pressed it by accident is looking at an empty
+    sheet. It says **hidden, not deleted**, and how to bring them back. ⚠️ And
+    it is a **toggle**, undone by the same finger that did it — a key that
+    could only switch the hiding ON would be fault 50's shape, a state nothing
+    can clear. ⚠️ There were then **three** doors to it — the tick box, the
+    key, and arriving from a link sent to mend one piece — so there is one
+    `setSolo()` and all three go through it, or one of them would leave the
+    tick box saying the opposite of what the sheet shows.
 
 ---
 
@@ -1619,7 +1630,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 510 checks, about a minute
+check/check.sh          # 513 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1648,10 +1659,11 @@ ones about it keeping QUIET: that a counter printed twenty-six times is **not**
 reported as a deck counted short (fault 52), and that a game with no contents
 list **says so** rather than reporting every piece it has as an orphan.
 
-It works the **two keys at the table**: `+` lays another copy of the chosen
+It works the **three keys at the table**: `+` lays another copy of the chosen
 piece down and hands it to Adjust ready to be dragged, `X` takes it off again
-and says in the same breath how to put it back — and, the half that was asked
-for, **neither fires while you are typing**.
+and says in the same breath how to put it back, `O` works on it alone and says
+the others are **hidden, not deleted** before the same key brings them back —
+and, the half that was asked for, **none of them fires while you are typing**.
 
 It follows **the report's way in to a piece**: the served report links every
 stem it prints and says what an orphan measures, the copy that leaves the room

@@ -855,7 +855,8 @@
         </label>
         <p class="note">Hides every other outline on the sheet, so nothing
           else can be grabbed by accident while a shape is being trimmed.
-          Arriving here from a link opens this way.</p>
+          Nothing is deleted and the list keeps them all. Also the
+          <b>O</b> key. Arriving here from a link opens this way.</p>
         <label class="field">Name
           <input type="text" id="pieceName" maxlength="80"
                  placeholder="what you would call it"></label>
@@ -1299,11 +1300,38 @@
 
   function visible(i) { return !solo || i === current; }
 
-  elSolo.addEventListener("change", function () {
-    solo = elSolo.checked && current >= 0;
+  /* ⚠️ ONE WAY OF TURNING IT ON, because there are three doors to it: this
+     tick box, the O key, and arriving from a link sent to mend one piece.
+     Three copies of a thing that HIDES outlines is three chances for one of
+     them to leave the tick box saying the opposite of what the sheet shows
+     (fault 16 — two ways in must do the same thing). */
+  function setSolo(on) {
+    if (on && current < 0) {
+      elHint.innerHTML = "Choose a piece first &mdash; click one on the sheet " +
+        "or in the list &mdash; and <kbd>O</kbd> hides every other outline " +
+        "while you work on it";
+      elSolo.checked = false;
+      return;
+    }
+    solo = !!on && current >= 0;
+    elSolo.checked = solo;
     list();
     draw();
-  });
+    /* ⚠️⚠️ SAY THAT NOTHING WAS DELETED. On a sheet of forty counters this
+       key takes thirty-nine outlines off the picture at a stroke, and a
+       person who pressed it by accident — O is next to nothing else here, but
+       accidents are what shortcuts are for — is looking at an empty sheet.
+       The rail still lists every piece, dimmed, which is half the answer; the
+       other half is saying so in words, and saying how to get them back.
+       Fault 75's lesson: a key has no sentence on it the way a button does. */
+    elHint.innerHTML = solo
+      ? "<b>Piece " + String(current + 1).padStart(2, "0") + " alone</b> " +
+        "&middot; every other outline on this sheet is <b>hidden, not " +
+        "deleted</b> &middot; <kbd>O</kbd> brings them back"
+      : "Every outline on this sheet is back";
+  }
+
+  elSolo.addEventListener("change", function () { setSolo(elSolo.checked); });
 
   function naming() {
     var pc = current >= 0 ? pieces[current] : null;
@@ -2291,7 +2319,7 @@
            "pan &middot; <kbd>&#8984;</kbd>scroll to zoom",
     adjust: "Stretch by the box &middot; turn by the grip above &middot; move " +
             "from inside &middot; <kbd>+</kbd> duplicates the chosen piece, " +
-            "<kbd>X</kbd> removes it " +
+            "<kbd>X</kbd> removes it, <kbd>O</kbd> works on it alone " +
             "&middot; band off a run of nodes on open water and " +
             "drag or <kbd>arrow</kbd> them together",
     rect: "Drag out a rectangle &middot; <kbd>shift</kbd> for a square " +
@@ -2877,6 +2905,12 @@
        something else here (it drops picked NODES, or the last point of the
        outline being drawn) and one key must not mean two things. */
     if (k === "x") { ev.preventDefault(); deletePiece(); return; }
+    /* ⭐️ O for ON ITS OWN — the third of the same ask, 25 August 2026:
+       "another shortcut for work on this piece alone". ⚠️ It is a TOGGLE,
+       because the thing it does has to be undone by the same finger that did
+       it; a key that could only switch hiding ON would be fault 50's shape,
+       a state nothing can clear. */
+    if (k === "o") { ev.preventDefault(); setSolo(!solo); return; }
     if (k === "]") { spin(1); return; }
     if (k === "[") { spin(-1); return; }
     if (k === "t") setTool("trace");
@@ -4252,11 +4286,12 @@
     view.y = r.height / 2 - c[1];
     setCurrent(i);
     // Sent here to mend one piece: show that piece and nothing else, so
-    // the first drag cannot take hold of its neighbour.
-    solo = true;
+    // the first drag cannot take hold of its neighbour. ⚠️ Through setSolo()
+    // like every other door, or this one would be the copy that drifts — and
+    // it is the door somebody arrives at without having asked for it, so it
+    // is the one that most needs to say the others are hidden and not gone.
     naming();
-    list();
-    draw();
+    setSolo(true);
   }
 
   function fromHash() {

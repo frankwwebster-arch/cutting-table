@@ -279,6 +279,34 @@ const SHAPE = `(function () {
     // whole point of duplicating rather than drawing it again
     check("and hands it to Adjust, ready to be dragged into place",
           twinned && twinned.tool === "true", twinned);
+    /* ⭐️ AND THE THIRD KEY OF THE SAME ASK: "another shortcut for work on
+       this piece alone". With two pieces on the sheet it can be seen doing
+       something — one row dimmed in the rail, the other outline off the
+       picture. ⚠️ It is a TOGGLE, because a key that could only switch the
+       hiding ON would leave a state nothing could clear (fault 50). */
+    await page.press("o");
+    await sleep(500);
+    const only = await page.val(`(function () {
+      var rows = document.querySelectorAll("#pieces .piece");
+      return { hidden: document.querySelectorAll("#pieces .piece.hidden").length,
+               rows: rows.length,
+               ticked: document.getElementById("soloPiece").checked,
+               said: document.getElementById("hint").textContent }; })()`);
+    check("the O key works on the chosen piece alone, hiding the others",
+          only && only.hidden === 1 && only.ticked, only);
+    // ⚠️⚠️ On a sheet of forty counters this takes thirty-nine outlines off
+    // the picture at a stroke. It must say that nothing was deleted.
+    check("saying they are hidden and not deleted, and how to bring them back",
+          only && /hidden, not deleted/.test(only.said || "")
+          && only.rows === 2, only && only.said);
+    await page.press("o");
+    await sleep(500);
+    const backAgain = await page.val(`(function () { return {
+      hidden: document.querySelectorAll("#pieces .piece.hidden").length,
+      ticked: document.getElementById("soloPiece").checked }; })()`);
+    check("and the same key brings them back, the tick box following it",
+          backAgain && backAgain.hidden === 0 && backAgain.ticked === false, backAgain);
+
     await page.press("x");
     await sleep(500);
     const gone = await page.val(`(function () {

@@ -237,12 +237,13 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
-### `[x]` ⭐️ Two keys at the table — **built**, 25 August 2026
+### `[x]` ⭐️ Three keys at the table — **built**, 25 August 2026
 
-The designer, in two messages: *"is there (or can there be) a shortcut for
+The designer, in three messages: *"is there (or can there be) a shortcut for
 duplicate piece please - needs to be a button that won't trigger anything else
-though (maybe the + = key?)"*, and *"also a shortcut to delete the selected
-piece (x maybe?)"*. Both keys were free.
+though (maybe the + = key?)"*, *"also a shortcut to delete the selected
+piece (x maybe?)"*, and *"another shortcut for work on this piece alone"*. All
+three keys were free.
 
 - `[x]` **`+` (and `=`) duplicates the chosen piece** and hands it to Adjust,
   ready to be dragged where it belongs. There had been a shortcut all along —
@@ -250,12 +251,18 @@ piece (x maybe?)"*. Both keys were free.
 - `[x]` **`X` takes the chosen piece off the sheet.** ⚠️ Not Backspace:
   Backspace already drops picked nodes at this table, and one key must not
   mean two things.
-- `[x]` ⚠️ **Both say what they would have acted on when nothing is chosen** —
-  a button goes dim, a key cannot (fault 75).
+- `[x]` **`O` works on the chosen piece alone**, hiding every other outline.
+  ⚠️ A **toggle**, undone by the same finger, or it would be a state nothing
+  can clear (fault 50) — and it says the others are **hidden, not deleted**,
+  because on a sheet of forty counters it takes thirty-nine off the picture at
+  a stroke. ⚠️ One `setSolo()`, because there are three doors to it.
+- `[x]` ⚠️ **All three say what they would have acted on when nothing is
+  chosen** — a button goes dim, a key cannot (fault 75).
 - `[x]` ⚠️⚠️ **And the destructive one says how to undo it in the same
   breath**, because `X` is one finger where the button is a deliberate press.
-- `[x]` **6 new checks** — 504 to 510, including the half that was actually
-  asked for: neither key fires while you are typing. Teeth tried, three go red.
+- `[x]` **9 new checks** — 504 to 513, including the half that was actually
+  asked for: none of the keys fires while you are typing. Teeth tried on all
+  three bindings.
 
 ### `[x]` ⭐️⭐️ A report you can act on — **built**, 25 August 2026
 
@@ -782,13 +789,15 @@ anything that speeds up cutting.
 
 ## Done
 
-### 25 August 2026 — two keys at the table
+### 25 August 2026 — three keys at the table
 
-- `[x]` ⭐️ **`+` duplicates the chosen piece, `X` removes it**, both asked for
-  by name. ⚠️ The keys say what they would have acted on when nothing is
-  chosen, and `X` says how to put the piece back as it takes it away — a
-  button goes dim and carries a sentence, a key does neither. See CLAUDE.md 75.
-- `[x]` **6 new checks** — 504 to 510.
+- `[x]` ⭐️ **`+` duplicates the chosen piece, `X` removes it, `O` works on it
+  alone**, all three asked for by name. ⚠️ The keys say what they would have
+  acted on when nothing is chosen; `X` says how to put the piece back as it
+  takes it away; `O` says the outlines it hides are not deleted and is undone
+  by the same finger. A button goes dim and carries a sentence, a key does
+  neither. See CLAUDE.md 75.
+- `[x]` **9 new checks** — 504 to 513.
 
 ### 25 August 2026 — the report became a way in to the piece
 
