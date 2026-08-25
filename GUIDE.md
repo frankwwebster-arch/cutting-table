@@ -138,6 +138,11 @@ is no Save button and there does not need to be one.
 stops the moment you click into a box that expects typing, so naming a piece
 does not go rummaging through the toolbox on the way past.
 
+⭐️ **Two keys for the two things you do most to a piece you have chosen:**
+`+` lays another copy of it down beside it, ready to be dragged where it
+belongs, and `X` takes it off the sheet. `⌘Z` puts back anything either of
+them did.
+
 ⭐️ **Keep the shape** puts an outline you have drawn on a shelf, and you can
 lay it down again on any other sheet — in this game or any other. A door drawn
 once for one dungeon game is the same door in the next.

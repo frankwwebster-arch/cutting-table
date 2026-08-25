@@ -221,7 +221,8 @@ Press **Outline** on a sheet. The table opens with that sheet loaded.
 | `V` | step through sheet / cut / shapes |
 | `[` `]` | turn the sheet a quarter, to fit a wide screen |
 | `S` | lay a kept shape down — one click each, or drag out a size |
-| `⌘D` | duplicate a piece, for a shape that repeats off-grid |
+| `+` | duplicate the chosen piece, for a shape that repeats off-grid. `⌘D` does the same |
+| `X` | take the chosen piece off the sheet. `⌘Z` puts it back, and nothing already cut is touched |
 | `⌘Z` | undo, sixty steps deep |
 | `esc` | abandon what you are drawing |
 
@@ -963,7 +964,8 @@ tool four times on the way past.
 | Table | `T` `A` `R` `E` | outline · adjust · rectangle · ellipse |
 | Table | `G` `V` `[` `]` | guides · change the view · turn the sheet |
 | Table | `S` | lay a kept shape down, one click each |
-| Table | `⏎` `esc` `⌘Z` `⌘D` | close the outline · abandon · undo · duplicate |
+| Table | `⏎` `esc` `⌘Z` | close the outline · abandon · undo |
+| Table | `+` `X` | duplicate the chosen piece · take it off the sheet |
 | Pieces | `←` `→` | the piece before / after |
 | Pieces | `⏎` *in the name box* | save it and go on to the next |
 

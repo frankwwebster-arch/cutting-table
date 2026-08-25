@@ -93,13 +93,20 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 504 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 510 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
 
-**25 August, last thing**: the designer, asked about the light ground that had
+**25 August, last thing**: two keys, asked for in two messages — *"is there
+(or can there be) a shortcut for duplicate piece please - needs to be a button
+that won't trigger anything else though (maybe the + = key?)"* and *"also a
+shortcut to delete the selected piece (x maybe?)"*. Both were free, both are
+bound, and see fault 75 for the two things that made them more than a line of
+code each.
+
+**25 August, before that**: the designer, asked about the light ground that had
 been first on the list since 22 August: *"I'm no longer certain a white
 background view is worthwhile."* Agreed, and it came off — but there was a real
 fault underneath the cosmetic one, and it is *NOW* item 2. See fault 74. What
@@ -1456,6 +1463,34 @@ rather than by reading the code.
     a preference, look for the judgement it is getting in the way of.** The
     preference can be argued with; the judgement cannot.
 
+75. ⭐️⚠️ **A SHORTCUT IS NOT THE SAME PRESS AS A BUTTON, IN TWO WAYS.** The
+    designer, 25 August 2026, asked for `+` to duplicate the chosen piece and
+    `X` to remove it. Both keys were free and the actions already existed —
+    and the interesting part is neither of those.
+    ⚠️ **A BUTTON THAT WOULD DO NOTHING GOES DIM; A KEY CANNOT.** `says()`
+    disables *Duplicate* and *Delete* when no piece is chosen, so pressing
+    them is self-explanatory. The same action on a key, with nothing chosen,
+    did nothing whatever and said nothing either — which is exactly how
+    somebody decides a new shortcut is broken (fault 58: silence reads as not
+    working). Both now say what they would have acted on.
+    ⚠️⚠️ **AND A DESTRUCTIVE THING ON ONE KEY MUST SAY HOW TO UNDO IT, IN THE
+    SAME BREATH.** *Delete piece* is a deliberate press with a sentence on it;
+    `X` is one finger and the piece simply vanishes. It says what went, that
+    ⌘Z puts it back, and that nothing already cut is touched.
+    ⭐️ **`X`, not Backspace, and the reason matters**: Backspace already means
+    something else at this table — it drops picked NODES, or the last point of
+    the outline being drawn — and **one key must not mean two things**, least
+    of all when one of them destroys more than the other.
+    ⭐️ And `=`/`+` sits BELOW the meta/ctrl guard in the handler, so ⌘= is
+    still the browser's zoom and has not been quietly taken away.
+    ⚠️ The delete is **one `deletePiece()`** now, called by the button and the
+    key. It was written out twice for about a minute, which is fault 16 and
+    fault 24 arriving on the one action in the editor that throws work away.
+    ⭐️ *"Won't trigger anything else"* is the half the checks are pointed at,
+    and it costs nothing: `typing(ev)` already stands the whole handler down
+    inside a text field (fault 2). The check presses both keys in a note box
+    and watches them do nothing but type.
+
 ---
 
 ## Architecture
@@ -1584,7 +1619,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 504 checks, about a minute
+check/check.sh          # 510 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1612,6 +1647,11 @@ cut piece answering to nothing — and the two checks that matter most are the
 ones about it keeping QUIET: that a counter printed twenty-six times is **not**
 reported as a deck counted short (fault 52), and that a game with no contents
 list **says so** rather than reporting every piece it has as an orphan.
+
+It works the **two keys at the table**: `+` lays another copy of the chosen
+piece down and hands it to Adjust ready to be dragged, `X` takes it off again
+and says in the same breath how to put it back — and, the half that was asked
+for, **neither fires while you are typing**.
 
 It follows **the report's way in to a piece**: the served report links every
 stem it prints and says what an orphan measures, the copy that leaves the room

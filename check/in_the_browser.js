@@ -243,6 +243,57 @@ const SHAPE = `(function () {
       check("the outline reached the project's own file", kept.length === 1, { sheet: sid, pieces: kept.length });
       check("its name went with it", kept[0] && kept[0].name === NAME, kept[0] && kept[0].name);
     }
+    /* ⭐️ TWO ACTIONS ON ONE KEY EACH. The designer, 25 August 2026: "is there
+       (or can there be) a shortcut for duplicate piece please - needs to be a
+       button that won't trigger anything else though (maybe the + = key?)",
+       and then "also a shortcut to delete the selected piece (x maybe?)".
+       ⚠️ The "won't trigger anything else" half is the half worth checking, so
+       it is checked first: both keys pressed with the pointer in a text box
+       must do nothing but type (fault 2). The note box is used for it, and
+       emptied again, so nothing is left behind for the checks after this. */
+    await page.val(`document.getElementById("pieceNote").focus(); true`);
+    await page.press("+");
+    await page.press("x");
+    await sleep(300);
+    const inBox = await page.val(`(function () {
+      var n = document.getElementById("pieceNote");
+      var was = { typed: n.value, pieces: document.querySelectorAll("#pieces .piece").length };
+      n.value = "";
+      n.dispatchEvent(new Event("input", { bubbles: true }));
+      n.blur();
+      return was; })()`);
+    check("the duplicate and delete keys do not fire while you are typing",
+          inBox && inBox.pieces === 1 && inBox.typed === "+x", inBox);
+    await sleep(400);
+
+    await page.press("+");
+    await sleep(500);
+    const twinned = await page.val(`(function () {
+      var rows = document.querySelectorAll("#pieces .piece");
+      var adj = document.getElementById("tAdjust");
+      return { n: rows.length,
+               tool: adj ? adj.getAttribute("aria-pressed") : "" }; })()`);
+    check("the + key lays another copy of the chosen piece down",
+          twinned && twinned.n === 2, twinned);
+    // ⭐️ the copy arrives ready to be dragged where it belongs, which is the
+    // whole point of duplicating rather than drawing it again
+    check("and hands it to Adjust, ready to be dragged into place",
+          twinned && twinned.tool === "true", twinned);
+    await page.press("x");
+    await sleep(500);
+    const gone = await page.val(`(function () {
+      return { n: document.querySelectorAll("#pieces .piece").length,
+               said: document.getElementById("hint").textContent,
+               name: (document.querySelector("#pieces .piece .nm") || {}).textContent }; })()`);
+    check("and the X key takes the chosen piece off the sheet again",
+          gone && gone.n === 1, gone);
+    // ⚠️⚠️ A DESTRUCTIVE THING ON ONE KEY MUST SAY HOW TO UNDO IT. The button
+    // is a deliberate press with a sentence on it; X is one finger.
+    check("saying in the same breath how to put it back",
+          gone && /puts it back/.test(gone.said || ""), gone && gone.said);
+    check("and it took the copy, leaving the named original where it was",
+          gone && gone.name === NAME, gone && gone.name);
+
     check("the page says the work is kept",
           /kept in the room/.test(await page.val(`document.getElementById("roomState").textContent`)));
 

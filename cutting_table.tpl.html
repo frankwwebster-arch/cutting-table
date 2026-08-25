@@ -710,9 +710,9 @@
     <button class="btn" id="aUndo" type="button" title="Undo the last thing you did here — sixty steps deep. Also Cmd-Z.">Undo</button>
     <button class="btn" id="aClose" type="button" title="Join the outline you are drawing back to where it started, and finish it. Also the Enter key.">Close outline</button>
     <span class="sep"></span>
-    <button class="btn" id="aDup" type="button" title="Another copy of the chosen piece, put down beside it to be dragged where it belongs. For a shape that repeats but not on any regular spacing.">Duplicate piece</button>
+    <button class="btn" id="aDup" type="button" title="Another copy of the chosen piece, put down beside it to be dragged where it belongs. For a shape that repeats but not on any regular spacing. Also the + key, or Cmd-D.">Duplicate piece</button>
     <button class="btn" id="aTidy" type="button" title="Drop the points that stand out of line with their neighbours — the shake in a freehand line. The shape stays as drawn; it just gets fewer points to grab hold of.">Tidy piece</button>
-    <button class="btn" id="aDel" type="button" title="Remove the chosen outline from this sheet. Undo puts it back. Nothing already cut is touched.">Delete piece</button>
+    <button class="btn" id="aDel" type="button" title="Remove the chosen outline from this sheet. Undo puts it back. Nothing already cut is touched. Also the X key.">Delete piece</button>
     <span class="which" id="aWhich">no piece chosen</span>
     <span class="sep"></span>
     <button class="btn" id="aGuide" type="button" title="Drop a cross of lines where the pointer is. Everything snaps to them, so two crosses give you a box to pull a piece exactly into.">Guides here</button>
@@ -2290,7 +2290,9 @@
     trace: "Click round a piece, or drag to sketch &middot; <kbd>space</kbd> to " +
            "pan &middot; <kbd>&#8984;</kbd>scroll to zoom",
     adjust: "Stretch by the box &middot; turn by the grip above &middot; move " +
-            "from inside &middot; band off a run of nodes on open water and " +
+            "from inside &middot; <kbd>+</kbd> duplicates the chosen piece, " +
+            "<kbd>X</kbd> removes it " +
+            "&middot; band off a run of nodes on open water and " +
             "drag or <kbd>arrow</kbd> them together",
     rect: "Drag out a rectangle &middot; <kbd>shift</kbd> for a square " +
           "&middot; <kbd>G</kbd> drops guides to snap to",
@@ -2857,6 +2859,24 @@
       setLook(order[(order.indexOf(look) + 1) % 3]);
       return;
     }
+    /* ⭐️ DUPLICATE ON ONE KEY. The designer, 25 August 2026: "is there (or can
+       there be) a shortcut for duplicate piece please - needs to be a button
+       that won't trigger anything else though (maybe the + = key?)". There
+       was a shortcut, but it was the chord Cmd-D, which is two hands and is
+       also the browser's own bookmark key. `=` and `+` are the same physical
+       key with and without shift, and neither was doing anything here.
+       ⚠️ It is safe in a name box for the same reason every other key here is:
+       typing(ev) stands the whole handler down inside a text field (fault 2),
+       which is precisely what "won't trigger anything else" is asking for.
+       ⚠️ And it sits BELOW the meta/ctrl guard above, so Cmd-= is still the
+       browser's zoom and has not been quietly taken away. */
+    if (k === "=" || k === "+") { ev.preventDefault(); duplicate(); return; }
+    /* ⭐️ And the other half of the same ask, 25 August 2026: "also a shortcut
+       to delete the selected piece (x maybe?)". X was free, and it is nowhere
+       near Backspace — which is right, because Backspace already means
+       something else here (it drops picked NODES, or the last point of the
+       outline being drawn) and one key must not mean two things. */
+    if (k === "x") { ev.preventDefault(); deletePiece(); return; }
     if (k === "]") { spin(1); return; }
     if (k === "[") { spin(-1); return; }
     if (k === "t") setTool("trace");
@@ -3631,8 +3651,19 @@
 
   document.getElementById("aUndo").addEventListener("click", undo);
   document.getElementById("aClose").addEventListener("click", closeDraft);
-  document.getElementById("aDel").addEventListener("click", function () {
-    if (current < 0 || !pieces[current]) return;
+  /* ⚠️ ONE WAY OF REMOVING A PIECE, because there are two doors to it now:
+     this button and the X key. Two copies would drift, and the one that
+     drifted would be the destructive one (fault 16 — two ways in must do the
+     same thing; fault 24 — a thing written out twice disagrees with itself). */
+  function deletePiece() {
+    /* ⚠️ Nothing chosen: the button is dim and explains itself, a key press
+       does not. Say what would have happened rather than nothing at all. */
+    if (current < 0 || !pieces[current]) {
+      elHint.innerHTML = "Choose a piece first &mdash; click one on the sheet " +
+        "or in the list &mdash; and <kbd>X</kbd> takes it off this sheet";
+      return;
+    }
+    var was = String(current + 1).padStart(2, "0");
     mark();
     pieces.splice(current, 1);
     hover = -1;
@@ -3640,7 +3671,15 @@
     current = pieces.length ? Math.min(current, pieces.length - 1) : -1;
     refresh();
     save();
-  });
+    /* ⚠️⚠️ A DESTRUCTIVE THING ON ONE KEY MUST SAY HOW TO UNDO IT, in the
+       same breath. The button is a deliberate press with a sentence on it;
+       X is one finger, and the piece simply vanishes. Nothing already cut is
+       touched either way, and this says so. */
+    elHint.innerHTML = "Piece <b>" + was + "</b> taken off this sheet &middot; " +
+      "<kbd>&#8984;Z</kbd> puts it back &middot; nothing already cut is touched";
+  }
+
+  document.getElementById("aDel").addEventListener("click", deletePiece);
   document.getElementById("aGuide").addEventListener("click", function () {
     if (!cursor) cursor = [sheet.w / 2, sheet.h / 2];
     addGuides(true);
@@ -3682,7 +3721,17 @@
      where it belongs. For a piece that repeats without repeating on any
      regular pitch, which no amount of arithmetic in a step box will do. */
   function duplicate() {
-    if (current < 0 || !pieces[current]) return;
+    /* ⚠️ A SHORTCUT HAS NO GREYED-OUT BUTTON TO READ. `says()` dims Duplicate
+       when no piece is chosen, so pressing the button is self-explanatory —
+       but a KEY press in the same state did nothing whatever and said nothing
+       either, which is exactly how somebody decides a new shortcut is broken
+       (fault 58: half working, and silence, read as not working). */
+    if (current < 0 || !pieces[current]) {
+      elHint.innerHTML = "Choose a piece first &mdash; click one on the sheet " +
+        "or in the list &mdash; and <kbd>+</kbd> lays another copy of it " +
+        "beside it";
+      return;
+    }
     mark();
     var from = pieces[current];
     var step = 0.2 * dpi();
