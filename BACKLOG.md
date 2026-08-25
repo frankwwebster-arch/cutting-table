@@ -789,6 +789,26 @@ anything that speeds up cutting.
 
 ## Done
 
+### 25 August 2026 — the automatic pass throws its own rubbish away
+
+- `[x]` ⭐️⭐️ **Nothing insanely small is offered any more.** The designer:
+  the pass *"sometimes creates insanely small artefacts, which it should have
+  the nous to manually remove before it presents its final suggestions."* The
+  test asked whether a blob was small in **both** directions, so a hairline
+  crack 1.3in long and four hundredths wide passed everything; and the area
+  floor was four hundredths of a square inch.
+- `[x]` ⭐️⭐️ **The two numbers were read off a real game**, not reasoned out:
+  322 cut pieces whose smallest short side is 0.28in and smallest area 0.288
+  square inches. The floor is 0.25in and 0.05 square inches — it cannot drop
+  anything that game holds. Habit 2 again.
+- `[x]` ⚠️ **Measured on the outline, in printed inches**, because that is what
+  is handed over — and deliberately **not** in `keep()`, which the cut uses: a
+  thin outline somebody drew is a decision.
+- `[x]` ⭐️⭐️ **One `trace_all()`, shared by the room and the baker.** Fault 71
+  shared the tracing and left the choosing written out twice, so this would
+  have reached the room and not the baked page.
+- `[x]` **8 new checks** — 513 to 521, on a grubby scan. Teeth tried.
+
 ### 25 August 2026 — three keys at the table
 
 - `[x]` ⭐️ **`+` duplicates the chosen piece, `X` removes it, `O` works on it

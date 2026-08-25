@@ -93,11 +93,18 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 513 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 521 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**25 August, after that**: *"the suggested outline feature is improved, still
+rough though. It sometimes creates insanely small artefacts."* Right on both
+counts — there was no floor under the automatic pass worth the name, and the
+number that fixed it was **read off the designer's own 322 cut pieces** rather
+than reasoned out. See fault 76, and note what it turned up: fault 71 shared
+the tracing and left the **choosing** written out twice.
 
 **25 August, last thing**: three keys, asked for in three messages — *"is there
 (or can there be) a shortcut for duplicate piece please - needs to be a button
@@ -1502,6 +1509,45 @@ rather than by reading the code.
     `setSolo()` and all three go through it, or one of them would leave the
     tick box saying the opposite of what the sheet shows.
 
+76. ⭐️⭐️ **THE AUTOMATIC PASS HAD NO FLOOR UNDER IT WORTH THE NAME, AND THE
+    NUMBER THAT FIXED IT WAS READ OFF A REAL GAME.** The designer, 25 August
+    2026: *"the suggested outline feature is improved, still rough though. It
+    sometimes creates insanely small artefacts, which it should have the nous
+    to manually remove before it presents its final suggestions."*
+    ⚠️ **The test asked whether a blob was small in BOTH directions.** So a
+    hairline crack between two counters — 1.3 inches long and four hundredths
+    of an inch wide — was not small in both directions, cleared the area floor,
+    and arrived on the sheet as a suggested piece. **The short side is the one
+    that matters** and nothing was asking about it.
+    ⚠️ **And the area floor was in the wrong units and seven times too low.**
+    `(0.25 × 300 × 0.8)²` is 3600 pixels — four hundredths of a square inch.
+    ⭐️⭐️ **Habit 2 settled both numbers in ten minutes.** The designer's own
+    project has **322 cut pieces** with their sizes already in
+    `cache/stats.json`: the smallest **short side** in the whole game is
+    **0.28in** and the smallest **area** is **0.288 square inches**. So a floor
+    at 0.25in and 0.05 square inches cannot drop anything that game holds, and
+    the second is five times under its smallest piece. No amount of reasoning
+    would have produced those; reading did, exactly as it did for the kinds
+    (fault 25).
+    ⚠️ **It is asked of the OUTLINE, not of the blob**, in printed inches,
+    after the scaling — that is the thing being handed over, and `outline_of()`
+    insets it by six pixels on the way past, which is what turns a scratch into
+    nothing at all.
+    ⚠️⚠️ **And it must NOT be part of `keep()`**, which the CUT uses as well: a
+    thin outline somebody **drew** is a decision, and the room does not
+    overrule those. This only refuses to make the suggestion in the first
+    place.
+    ⭐️⭐️ **Writing it turned up fault 71's other half.** That fault put the
+    **tracing** in one place; the **choosing** — which blobs become
+    suggestions — was still written out twice, in `cutting_room.py` and in
+    `cutting_table.py`. So this rule would have reached the room and not the
+    baked page, and an offline table would have gone on offering hairline
+    cracks for ever with nothing to say why. There is one `trace_all()` now
+    and both drafters call it. *A comment saying "one copy of the tracing" is
+    not the same as one copy of the pass.*
+    ⚠️ `SUGGEST_VERSION` bumped, or every sheet already drafted goes on being
+    offered the old answer.
+
 ---
 
 ## Architecture
@@ -1630,7 +1676,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 513 checks, about a minute
+check/check.sh          # 521 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1701,6 +1747,12 @@ thing by hand in the browser — a shape kept off one sheet, **laid down twice
 on another**, read back off the disk at the printed size it was kept at, and a
 shape belonging to a different game found by search and brought over with a
 star.
+
+It gives the automatic pass a **grubby scan** — a hairline crack, a speck and
+a scratch across the glass, each of which cleared every test the room used to
+have — and holds it to both halves at once: not one of them is offered, **and**
+every piece really printed on the sheet is still found, because the cheap way
+to pass the first is to raise the floor until real counters go too.
 
 `check/the_automatic_pass.py` is the **first attempt at a sheet** on its own —
 no browser and no project, because it is arithmetic over a picture. It draws

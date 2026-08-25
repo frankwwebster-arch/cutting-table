@@ -227,7 +227,11 @@ Press **Outline** on a sheet. The table opens with that sheet loaded.
 | `⌘Z` | undo, sixty steps deep |
 | `esc` | abandon what you are drawing |
 
-**Add the suggested outlines** does the easy sheets for you. On cards and
+**Add the suggested outlines** does the easy sheets for you. ⭐️ It throws its
+own rubbish away first: a hairline crack between two counters, a speck of dirt,
+a scratch across the scanner glass — anything too small or too thin to be a
+piece of a board game is dropped before you are shown anything, so what arrives
+is only what might be real. On cards and
 counters printed on a plain ground it finds every piece exactly and there is
 nothing left to draw. On terrain it is a rough start to correct — the sea
 painted *inside* an island is the same blue as the sheet, so the automatic

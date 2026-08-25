@@ -105,7 +105,7 @@ PIECE_THUMB_PX = 260
 MIN_PIECE_IN = 0.25
 # ⚠️ ONE SET OF NUMBERS FOR THE AUTOMATIC PASS, in sheets.py, or the room and
 # the baked table would draft the same sheet two different ways (fault 24)
-SUGGEST_VERSION = 2     # bump when the automatic pass changes; see /suggest
+SUGGEST_VERSION = 3     # bump when the automatic pass changes; see /suggest
 SUGGEST_TOL = sheetlib.SUGGEST_TOL
 SUGGEST_INSET = sheetlib.SUGGEST_INSET
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".bmp", ".gif")
@@ -295,7 +295,7 @@ contour = sheetlib.contour
 thin = sheetlib.thin
 
 
-def suggest_outlines(rgb, mask_path=None):
+def suggest_outlines(rgb, mask_path=None, dpi=DPI):
     """The automatic attempt at a sheet, as outlines with nodes on them.
     From a mask if one is lying about; otherwise from the colour flood,
     which is right for cards and counters on a plain ground and only a
@@ -316,21 +316,11 @@ def suggest_outlines(rgb, mask_path=None):
             lab[p["mask"]] = i
         n = len(found)
         sx = sy = 1.0
-    smallest = (MIN_PIECE_IN * DPI * 0.8) ** 2
-    out = []
-    for i in range(1, n + 1):
-        m = lab == i
-        if m.sum() < smallest:
-            continue
-        got = sheetlib.outline_of(m, SUGGEST_INSET, SUGGEST_TOL)
-        if not got:
-            continue
-        out.append({"pts": [[round(p[0] * sx, 1), round(p[1] * sy, 1)]
-                            for p in got["pts"]],
-                    "curve": bool(got["curve"])})
-    out.sort(key=lambda o: (min(q[1] for q in o["pts"]) // (DPI // 2),
-                            min(q[0] for q in o["pts"])))
-    return out
+    # ⚠️ ONE COPY OF WHICH BLOBS BECOME SUGGESTIONS, in `sheets.py`, for the
+    # same reason as the tracing itself: the baked table drafts the same
+    # sheets and a second copy here would drift (fault 71's lesson, arriving
+    # one function further out).
+    return sheetlib.trace_all(lab, n, sx, sy, dpi)
 
 
 # ------------------------------------------------- guessing what a piece is
@@ -3819,7 +3809,7 @@ class Room(BaseHTTPRequestHandler):
                     if os.path.exists(cand):
                         mask = cand
                 got = {"v": SUGGEST_VERSION,
-                       "suggested": suggest_outlines(rgb, mask)}
+                       "suggested": suggest_outlines(rgb, mask, pr.dpi)}
                 write_json(cache, got)
             return self.send_json(got)
 

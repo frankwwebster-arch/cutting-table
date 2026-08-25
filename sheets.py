@@ -53,6 +53,31 @@ FIELD_STEP = BG_TOLERANCE / 2.0    # how far the ground may change, cell to cell
 FIELD_FLAT = BG_TOLERANCE / 2.0    # how mixed a cell may be and still be ground
 SNAP_DEG = 2.0          # a scan is never straight; a printed square is
 
+# ⭐️⭐️ WHAT IS TOO SMALL TO BE A PIECE OF A BOARD GAME. The designer, 25
+# August 2026: the automatic pass "sometimes creates insanely small artefacts,
+# which it should have the nous to manually remove before it presents its final
+# suggestions."
+#
+# ⭐️ These two numbers were READ OFF A REAL GAME rather than reasoned out —
+# 322 pieces already cut and kept. The smallest SHORT SIDE anywhere in it is
+# 0.28in and the smallest AREA is 0.288 square inches, so a floor at 0.25in and
+# 0.05 square inches cannot drop anything that game holds, and the second is
+# five times under its smallest piece. (Habit 2 in CLAUDE.md, earning its keep
+# again: the flood's own area floor was 0.04 square inches — SEVEN times
+# smaller than the smallest real component.)
+#
+# ⚠️ THE SHORT SIDE IS THE ONE THAT MATTERS, and it is what was missing. The
+# flood asked whether a blob was small in BOTH directions, so a hairline crack
+# between two counters — 1.3in long and four hundredths of an inch wide —
+# passed every test there was and arrived on the sheet as a suggested piece.
+# Nothing a box holds is that thin; a printed strip is a strip, not a hair.
+#
+# ⚠️ The area is measured on the outline itself, not on its box, because a
+# diagonal scratch has a bounding box the size of a counter and almost no
+# shape inside it.
+SUGGEST_MIN_SIDE_IN = 0.25    # a piece thinner than this, either way, is dirt
+SUGGEST_MIN_AREA_IN2 = 0.05   # and one holding less than this is a scratch
+
 STARTER_GROW = 14       # how far a starter shape is grown past the artwork
 STARTER_COLOURS = [(255, 60, 60), (60, 220, 90), (255, 210, 40), (90, 160, 255),
                    (255, 120, 220), (120, 240, 240), (255, 150, 40), (170, 120, 255),
@@ -690,6 +715,65 @@ def outline_of(m, inset=SUGGEST_INSET, tol=SUGGEST_TOL):
     if len(pts) < 3:
         return None
     return {"pts": [[float(p[0]), float(p[1])] for p in pts], "curve": True}
+
+
+def worth_offering(pts, dpi=DPI):
+    """⭐️ IS THIS OUTLINE BIG ENOUGH TO BE A PIECE OF A BOARD GAME?
+
+    The last word before a suggestion is handed to somebody, and it is asked
+    of the OUTLINE rather than of the blob it came from — that is what they
+    will see, and `outline_of()` insets it a little on the way past.
+
+    ⚠️ It is deliberately not part of `keep()`, which the CUT uses as well: a
+    thin outline somebody DREW is a decision, and the room does not overrule
+    those. This only refuses to make the suggestion in the first place.
+    """
+    if len(pts) < 3:
+        return False
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    d = float(dpi or DPI)
+    if min(max(xs) - min(xs), max(ys) - min(ys)) / d < SUGGEST_MIN_SIDE_IN:
+        return False
+    twice = 0.0
+    for i in range(len(pts)):
+        x1, y1 = pts[i]
+        x2, y2 = pts[(i + 1) % len(pts)]
+        twice += x1 * y2 - x2 * y1
+    return abs(twice) / 2.0 / (d * d) >= SUGGEST_MIN_AREA_IN2
+
+
+def trace_all(lab, n, sx=1.0, sy=1.0, dpi=DPI):
+    """⭐️ EVERY LABELLED BLOB ON A SHEET, TRACED AND OFFERED — the whole of
+    "which blobs become suggestions", in one place.
+
+    ⚠️ It lives here because there are TWO drafters: the room, which flood-fills
+    a sheet on demand, and the baker, which reads a starter mask off the disk.
+    Fault 71 put the TRACING in one place and left the SELECTION written out
+    twice — so the smallness rule below, added on 25 August 2026, would have
+    reached the room and not the baked page, and an offline table would have
+    gone on offering hairline cracks for ever with nothing to say why.
+    """
+    out = []
+    smallest = (MIN_PIECE_IN * DPI * 0.8) ** 2
+    for i in range(1, n + 1):
+        m = lab == i
+        if m.sum() < smallest:            # cheap: skip the tracing entirely
+            continue
+        got = outline_of(m, SUGGEST_INSET, SUGGEST_TOL)
+        if not got:
+            continue
+        pts = [[round(p[0] * sx, 1), round(p[1] * sy, 1)] for p in got["pts"]]
+        # ⭐️⭐️ THE LAST WORD BEFORE IT IS OFFERED. A suggestion nobody would
+        # ever accept is worse than no suggestion, because it has to be found
+        # and deleted. Asked of the OUTLINE, in printed inches, after the
+        # scaling — that is the thing being handed over.
+        if not worth_offering(pts, dpi):
+            continue
+        out.append({"pts": pts, "curve": bool(got["curve"])})
+    out.sort(key=lambda o: (min(q[1] for q in o["pts"]) // (DPI // 2),
+                            min(q[0] for q in o["pts"])))
+    return out
 
 
 def starter(rgb, path):

@@ -69,8 +69,13 @@ def coastline(cx, cy, r, seed):
 DRAWN = []
 
 
-def sheet(gradient=36, noise=10, quality=55):
-    """A sheet of the shapes a box really holds, printed as a scan really is."""
+def sheet(gradient=36, noise=10, quality=55, dirt=False):
+    """A sheet of the shapes a box really holds, printed as a scan really is.
+
+    ⚠️ `dirt` adds what a scanner adds and a box does not: a hairline crack
+    between two counters, a speck, and a scratch across the glass. They are
+    deliberately NOT in DRAWN — nothing here is meant to find them.
+    """
     im = Image.new("RGB", (W, H), GROUND)
     d = ImageDraw.Draw(im)
     del DRAWN[:]
@@ -101,6 +106,15 @@ def sheet(gradient=36, noise=10, quality=55):
     d.polygon([(1000, 1000), (1400, 1000), (1400, 1150), (1150, 1150),
                (1150, 1330), (1000, 1330)], fill=(170, 170, 210), outline=EDGE)
     DRAWN.append(("a big pale board", (1050, 1050), None))
+
+    if dirt:
+        # ⭐️ EACH OF THESE PASSED EVERY TEST THE ROOM HAD. The flood asked
+        # whether a blob was small in BOTH directions and whether it held more
+        # than four hundredths of a square inch, and all three of these clear
+        # both — which is how "insanely small artefacts" reached the sheet.
+        d.rectangle([80, 1380, 480, 1392], fill=EDGE)      # a hairline crack
+        d.rectangle([700, 1380, 770, 1445], fill=EDGE)     # a speck of dirt
+        d.line([(1500, 1360), (1750, 1470)], fill=EDGE, width=22)   # a scratch
 
     a = np.asarray(im).astype(np.int16)
     yy, xx = np.mgrid[0:H, 0:W]
@@ -243,6 +257,51 @@ one = room.suggest_outlines(sheet(gradient=0))[0]
 check("every suggested outline says whether it is straight or curved",
       isinstance(one, dict) and "pts" in one and isinstance(one.get("curve"), bool),
       sorted(one.keys()) if isinstance(one, dict) else type(one).__name__)
+
+# ⭐️⭐️ AND THE NOUS TO THROW ITS OWN RUBBISH AWAY BEFORE ANYBODY SEES IT.
+# The designer, 25 August 2026: the pass "sometimes creates insanely small
+# artefacts, which it should have the nous to manually remove before it
+# presents its final suggestions." A suggestion nobody would ever accept is
+# worse than no suggestion at all, because it has to be found and deleted.
+print("")
+print("  the artefacts it must not offer")
+clean = room.suggest_outlines(sheet())
+grubby = room.suggest_outlines(sheet(dirt=True))
+check("a hairline crack, a speck and a scratch add nothing to the suggestions",
+      len(grubby) == len(clean), [len(clean), len(grubby)])
+# ⚠️ AND IT MUST NOT HAVE BOUGHT THAT BY GOING DEAF. The cheap way to pass the
+# check above is to raise the floor until real counters go too, so the same
+# sheet is asked again for everything that really is printed on it.
+still = drafted(sheet(dirt=True))
+check("while every piece really printed on it is still found",
+      len(still) == len(DRAWN), sorted(set(n for n, _, _ in DRAWN) - set(still)))
+
+# ⭐️ THE THREE ARMS OF THE RULE, one at a time and in printed inches, because
+# the numbers came off a real game — 322 cut pieces whose smallest short side
+# is 0.28in and whose smallest area is 0.288 square inches (CLAUDE.md habit 2).
+D = S.DPI
+
+
+def box_in(w_in, h_in):
+    return [[0, 0], [w_in * D, 0], [w_in * D, h_in * D], [0, h_in * D]]
+
+
+check("a hairline 1.3in long and four hundredths wide is not a piece",
+      not S.worth_offering(box_in(1.3, 0.04)))
+check("nor is a speck a fifth of an inch across",
+      not S.worth_offering(box_in(0.2, 0.2)))
+# a scratch: a long thin diagonal whose BOX is big and whose shape is not
+check("nor is a scratch whose box is big and whose shape is almost nothing",
+      not S.worth_offering([[0, 0], [D, D * 0.5], [D, D * 0.53], [0, 0.03 * D]]))
+# ⚠️⚠️ AND THE HALF THAT MATTERS, as everywhere else in this file: the floor
+# must not eat anything a box really holds. The smallest piece in that real
+# game measures 0.28in on its short side.
+check("but the smallest piece in a real game is still offered",
+      S.worth_offering(box_in(0.28, 1.03)))
+check("and so is a plain half-inch counter",
+      S.worth_offering(box_in(0.5, 0.5)))
+check("and a printed strip, which is long and thin and perfectly real",
+      S.worth_offering(box_in(0.3, 6.0)))
 
 print("")
 if bad:

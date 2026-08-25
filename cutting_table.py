@@ -91,24 +91,12 @@ def outlines_for(sheet_id, w, h):
     ink = a[:, :, 3] > 128
     lab, n = sheets.label_shapes(ink, a[:, :, :3])
     sx, sy = w / float(im.width), h / float(im.height)
-    smallest = (MIN_PIECE_IN * DPI * 0.8) ** 2
 
-    # ⚠️ ONE COPY OF THE TRACING, in sheets.py — the room and this baker draft
-    # the same sheets and two copies of it would drift apart (fault 24).
-    out = []
-    for i in range(1, n + 1):
-        m = lab == i
-        if m.sum() < smallest:
-            continue
-        got = sheets.outline_of(m, SUGGEST_INSET, SUGGEST_TOL)
-        if not got:
-            continue
-        out.append({"pts": [[round(p[0] * sx, 1), round(p[1] * sy, 1)]
-                            for p in got["pts"]],
-                    "curve": bool(got["curve"])})
-    out.sort(key=lambda o: (min(q[1] for q in o["pts"]) // (DPI // 2),
-                            min(q[0] for q in o["pts"])))
-    return out
+    # ⚠️ ONE COPY OF THE DRAFTING, in sheets.py — the room and this baker draft
+    # the same sheets and two copies of it would drift apart (fault 24). It was
+    # the TRACING that was shared before; the choosing was still written out
+    # twice, so the rule that drops hairline artefacts reached the room alone.
+    return sheets.trace_all(lab, n, sx, sy, DPI)
 
 
 def pack(path, sheet_id, label, name, quality, draft=False):
