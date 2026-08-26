@@ -16,9 +16,9 @@ only, fetches nothing over the network, and never sends a scan anywhere.
 
 ## Starting it, and stopping it
 
-Double-click **`Cutting Room.command`** on the Desktop. The browser opens on
-the room. A terminal window opens behind it and can be ignored — it is only
-where the room writes down what it is doing.
+Double-click **Cutting Room** on the Desktop. The browser opens on the room.
+**There is no terminal window** — the launcher starts the room, opens the tab
+and gets out of the way.
 
 **If you have no launcher yet**, make one. You only ever do this once:
 
@@ -26,13 +26,29 @@ where the room writes down what it is doing.
 /usr/bin/python3 ~/Projects/cutting-table/cutting_room.py --install-launcher
 ```
 
-That writes `Cutting Room.command` onto your Desktop, pointing at wherever you
-put this folder. If you move the folder, run it again. (If a launcher is
-already there and says something different, the old one is kept beside it as
-`Cutting Room.command.was` — nothing is thrown away.)
+That writes `Cutting Room.app` onto your Desktop, pointing at wherever you put
+this folder. If you move the folder, run it again.
+
+Press it again at any time — if the room is already open it simply brings the
+tab back, which is what to do when you have closed the browser and want the
+room again.
+
+**If the room will not start**, the launcher says so in a message box, with
+the room's own last words in it. Everything the room says is written down in
+`~/Library/Logs/Cutting Room.log`. To watch it happen instead, ask for the
+older launcher, which opens a terminal window and shows its working:
+
+```sh
+/usr/bin/python3 ~/Projects/cutting-table/cutting_room.py --install-launcher --terminal-window
+```
+
+(If a launcher of that name is already there and is not one of ours, nothing
+is touched — the room says so and stops.)
 
 **To stop the room, press *Close the Cutting Room*** at the top right of any
-of its pages. You do not need to find the terminal window. The room checks
+of its pages. That is the only way out, and it is meant to be: the launcher
+puts nothing in the Dock, so there is no *Quit* that could stop the room
+without asking what is half-finished. The room checks
 first that nothing is half-finished: if an import or a cut is still running,
 or a cutting table is open somewhere with an edit that has not reached the
 disk yet, it says exactly what it is waiting for and lets you decide. When it

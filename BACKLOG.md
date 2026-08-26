@@ -47,21 +47,7 @@ people than the one who commissioned it. Cosmetic last.
 
 ---
 
-### 1. `[ ]` No terminal window at all
-
-The last of the designer's *"a simpler way to open and quit. I don't like
-terminal at the best of times."* Quitting, and starting the room again, are
-both a press on the page now; **opening still shows a terminal window.**
-
-A minimal `.app` bundle — a folder with an `Info.plist` and a shell script in
-`MacOS/` — launches with none, and can carry an icon.
-
-⚠️ Whatever is built must still work when the room is started the old way, and
-must not need anything installed. ⚠️ And it must not become a second place that
-knows where this copy was cloned to: `--install-launcher` already works that
-out, so the bundle should be written by the same code.
-
-### 2. `[ ]` ⭐️ What a piece sits on
+### 1. `[ ]` ⭐️ What a piece sits on
 
 **This replaces *a light ground***, which was on the list from 22 August as
 *"I'd like to consider some different displays (eg white background rather than
@@ -87,7 +73,7 @@ be right for both, so the ground has to be a control rather than a decision.
   one look on purpose. Leave it alone until the designer has looked at a light
   one on a real counter sheet.
 
-### 3. `[ ]` A demo sheet, so a stranger can try it with nothing
+### 2. `[ ]` A demo sheet, so a stranger can try it with nothing
 
 `demo/make_demo_sheet.py` already draws a pretend sheet — deliberately awkward
 in the one way that matters, with the same colour inside a piece as outside it.
@@ -100,7 +86,7 @@ author. Today somebody who finds it has to own a board game, scan it, and read
 a guide before anything happens. ⚠️ Nothing in the demonstration sheet is
 anybody's artwork, so this is safe to ship.
 
-### 4. `[ ]` ⚠️ The two places it is macOS-only, needlessly
+### 3. `[ ]` ⚠️ The two places it is macOS-only, needlessly
 
 - `doc_to_docx()` shells out to **`textutil`**, which exists only on a Mac. On
   anything else an old binary `.doc` should say so plainly rather than fail
@@ -114,7 +100,7 @@ which is what makes these two worth an hour. ⚠️ A button that silently does
 nothing is fault 58's shape: half working reads as broken and teaches you to
 stop trusting the room.
 
-### 5. `[ ]` The guide's last mile
+### 4. `[ ]` The guide's last mile
 
 - `[ ]` **Arrows on the pictures.** The designer's original point was *"one
   screenshot with an arrow on it"*; they are honest screenshots with no arrows
@@ -123,7 +109,7 @@ stop trusting the room.
 - `[ ]` **An Artifact of it**, for reading on a phone or handing to somebody.
   ⚠️ Generated FROM `GUIDE.md`, never written twice (fault 24).
 
-### 6. `[ ]` Three small known faults, cheap to clear
+### 5. `[ ]` Three small known faults, cheap to clear
 
 - `[ ]` **The suggestion cache is not invalidated by a new mask.**
   `cache/<sheet>.suggest.json` is written once, so if a `-starter.png` mask
@@ -236,6 +222,48 @@ Nothing here should know what a rulebook is.
 ⭐️ Moved out of *NOW* so the live list stays a list. The full account of
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
+
+### `[x]` ⭐️⭐️ No terminal window at all — **built**, 26 August 2026
+
+The last of the designer's *"a simpler way to open and quit. I don't like
+terminal at the best of times."* Quitting was a press on the page, and so was
+starting the room again; **opening still put a Terminal window on the screen**.
+
+`--install-launcher` now writes **`Cutting Room.app`** — a bundle of three
+generated files, made by the same code that already worked out where this copy
+was cloned to and which python can run it, so there is still only one place in
+the whole tool that knows either.
+
+- ⭐️ **It lets go of the room.** The launcher starts the room, waits only
+  until it is answering, opens the browser and finishes. A bundle that stayed
+  running would be one the Finder thinks is already open, and the **second**
+  press — the one somebody makes when they have closed the tab and want the
+  room back — would have done nothing at all. As it is, every later press
+  finds the room up and opens a tab.
+- ⚠️⚠️ **The Finder does not launch an app the way a shell does.** Written
+  without saying so, the bundle came up **under Rosetta** and numpy, built for
+  one architecture only, refused to load. The same script run from a terminal
+  worked perfectly. See fault 79 — this is the one that only launching it
+  could find.
+- ⚠️ **A failure must still be seen.** With no window there is nowhere for a
+  moved folder or a missing numpy to appear, and silence reads as a broken
+  button (fault 58). It says so in a message box with the room's own last
+  words in it, and everything the room says is kept in
+  `~/Library/Logs/Cutting Room.log`.
+- ⚠️ **No Dock icon**, on purpose: a Dock icon carries a *Quit* that stops the
+  room without asking what is half-finished, and the room asks (fault 21).
+- ⚠️ The older launcher is still there for the asking —
+  `--install-launcher --terminal-window` — because a window is exactly what
+  you want when the room will not start.
+- ⭐️ The icon is **drawn**, not committed: Pillow is already here, and the
+  `.icns` container is written by hand rather than by `iconutil`, which is one
+  of the names that belongs to the developer tools. Nothing to install.
+
+Seventeen checks, and trying their teeth changed two of them: one blunt reading
+of the script stayed green with the fault put back and was taken out, and
+making the launcher wait for the room did not turn the section red — it hung
+the whole run for ever. **A check that hangs reports nothing at all**, so no
+press is waited on unboundedly now.
 
 ### `[x]` ⭐️ Three keys at the table — **built**, 25 August 2026
 
@@ -788,6 +816,33 @@ anything that speeds up cutting.
 ---
 
 ## Done
+
+### 26 August 2026 — no terminal window at all
+
+- `[x]` ⭐️⭐️ **`Cutting Room.app`** — the last of *"a simpler way to open and
+  quit. I don't like terminal at the best of times."* Written by the same
+  `--install-launcher` that already knew where this copy was cloned to, so
+  there is still only one place in the tool that knows.
+- `[x]` ⭐️ **It lets go of the room** — starts it, waits until it answers,
+  opens the browser, finishes. A bundle that stayed running is one the Finder
+  thinks is already open, and the second press would have done nothing.
+- `[x]` ⚠️⚠️ **The architecture is named**, in the Info.plist and again on the
+  command. Without it the Finder launched the bundle under **Rosetta** and
+  numpy would not load — while the identical script from a terminal worked
+  perfectly. Fault 79; only launching it could have found it.
+- `[x]` ⚠️ **A failure is still seen**: a message box with the room's own last
+  words, and everything it says kept in `~/Library/Logs/Cutting Room.log`.
+- `[x]` ⚠️ **No Dock icon**, so there is no *Quit* that skips the question the
+  room asks before it closes (fault 21). And `--terminal-window` still writes
+  the older launcher, because a window is what you want when it will not start.
+- `[x]` ⭐️ **The icon is drawn, not committed** — no binary in the repository,
+  and the `.icns` is packed by hand rather than by `iconutil`, which is not on
+  every Mac.
+- `[x]` **17 new checks** — 547 to 564. ⭐️ Trying their teeth changed two:
+  a reading of the script stayed green with the fault put back and was taken
+  out, and the fault that makes the launcher wait **hung the whole run**
+  instead of reporting. A check that hangs reports nothing at all, so no press
+  is waited on unboundedly now.
 
 ### 26 August 2026 — one set taken away on its own
 

@@ -53,9 +53,11 @@ import io
 import json
 import math
 import os
+import platform
 import re
 import shlex
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -4773,6 +4775,26 @@ HOW_TO_OPEN = ["Open it again by running cutting_room.py."]
 
 LAUNCHER_NAME = "Cutting Room.command"
 
+# ⭐️ THE ONE WITHOUT A TERMINAL WINDOW. The designer, having been given a
+# press to quit the room and a press to start it again: "a simpler way to open
+# and quit. I don't like terminal at the best of times." Opening was the last
+# of the three that still showed one. A .app bundle is a FOLDER — an
+# Info.plist and a shell script — so it can be written by the same code that
+# already works out where this copy was cloned to, and it opens with no window
+# at all.
+APP_NAME = "Cutting Room.app"
+APP_EXEC = "cutting-room"                       # Contents/MacOS/<this>
+APP_ICON = "cutting-room.icns"
+# ⚠️ Written into the Info.plist and read back before anything is replaced, so
+# the install can tell ITS OWN bundle from something else that happens to be
+# called the same thing. The bundle is rebuilt whole (there is nothing in it
+# anybody would edit), and replacing a stranger's app whole would be the worst
+# thing in this file.
+APP_ID = "org.cuttingroom.launcher"
+# ⚠️ Somewhere to put the room's words, because a window that does not exist
+# cannot show them. The Mac's own place for it, so Console can read it.
+APP_LOG = "~/Library/Logs/Cutting Room.log"
+
 # ⚠️ The launcher is GENERATED, never committed: it has to carry the path this
 # copy was cloned to, and that path is different for everybody. It is also the
 # only file in the whole tool that knows where anything is.
@@ -4788,6 +4810,146 @@ echo "Opening the Cutting Room..."
 echo ""
 echo "The Cutting Room is closed. You can close this window."
 """
+
+# The same job with no window on it. Three things make it different from the
+# .command above, and each of them is a fault waiting if it is left out:
+#
+# ⚠️ THE ROOM IS LET GO OF, not waited for. A .app that stays running is an
+#    app the Finder thinks is already open, so the SECOND double-click — the
+#    one somebody makes when they have closed the browser tab and want it back
+#    — would quietly do nothing at all. So this script starts the room, waits
+#    only until it is answering, opens the browser and gets out of the way.
+#    Every later double-click finds the room already up and just opens a tab.
+# ⚠️ A FAILURE MUST BE SEEN. With no window there is nowhere for a missing
+#    numpy or a moved folder to appear, and silence reads as a broken button
+#    (fault 58). If the room does not come up, this says so in a dialog with
+#    the room's own last words in it.
+# ⚠️ AND THE ROOM'S WORDS ARE KEPT. Everything it prints goes to the log, and
+#    the log is rolled over before it can eat a disk.
+APP_SCRIPT = """#!/bin/sh
+# The Cutting Room. Made by "python3 cutting_room.py --install-launcher";
+# remake it if you move the folder it points at.
+#
+# Close the room from the link on its own front page. There is no window here
+# to close: this script has done its work by the time the browser opens.
+here=%(here)s
+port=%(port)d
+url="http://127.0.0.1:%(port)d/"
+log=%(log)s
+
+mkdir -p "$(dirname "$log")"
+# a day of cutting is a lot of lines; keep one old log and start a fresh one
+if [ -f "$log" ] && [ "$(wc -c < "$log")" -gt 2000000 ]; then
+  mv -f "$log" "$log.1"
+fi
+touch "$log"
+
+answering() {
+  /usr/bin/curl -fsS -o /dev/null --max-time 2 "$url" 2>/dev/null
+}
+
+if ! answering; then
+  echo "" >> "$log"
+  echo "--- $(date): opening the Cutting Room" >> "$log"
+  # let go of it: the room outlives this script, which is the whole point
+  ( cd "$here" && exec %(arch)s%(python)s cutting_room.py --port "$port" ) >> "$log" 2>&1 &
+  room=$!
+  waited=0
+  while [ "$waited" -lt 60 ]; do
+    answering && break
+    kill -0 "$room" 2>/dev/null || break
+    sleep 0.5
+    waited=$((waited + 1))
+  done
+fi
+
+if answering; then
+  /usr/bin/open "$url"
+  exit 0
+fi
+
+# ⚠️ fault 58: half working reads as broken, and nothing at all reads as
+# broken hardest. Say what happened, in the room's own words.
+/usr/bin/osascript <<APPLESCRIPT
+set itsWords to do shell script "tail -n 12 " & quoted form of "$log"
+display dialog "The Cutting Room could not open." & return & return & itsWords & return & return & "The whole of what it said is in:" & return & "$log" with title "The Cutting Room" buttons {"OK"} default button 1 with icon caution
+APPLESCRIPT
+exit 1
+"""
+
+# ⚠️ LSUIElement: no Dock icon, and that is deliberate. A Dock icon carries a
+# Quit that kills the room without asking, and the room asks before it closes
+# because a table may be holding an edit not yet written down (fault 21). The
+# only doors out stay the ones that ask.
+INFO_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>Cutting Room</string>
+  <key>CFBundleDisplayName</key><string>Cutting Room</string>
+  <key>CFBundleIdentifier</key><string>%(id)s</string>
+  <key>CFBundleExecutable</key><string>%(exec)s</string>
+  <key>CFBundleIconFile</key><string>%(icon)s</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>LSUIElement</key><true/>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>LSArchitecturePriority</key><array><string>%(arch)s</string></array>
+</dict>
+</plist>
+"""
+
+
+def room_icon(px=1024):
+    """The launcher's picture: a piece cut out of a sheet.
+
+    ⭐️ Drawn rather than committed. A binary in the repository is a thing
+    nobody can read the change to, and Pillow is already here — so the icon is
+    made at install time along with the rest of the bundle, in the room's own
+    colours, and there is nothing to keep in step.
+
+    It is drawn big and shrunk, so the 32-pixel one is a photograph of the
+    large one rather than a separate small drawing that would drift from it.
+    """
+    big = 1024
+    im = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    panel, edge = (20, 27, 35, 255), (38, 49, 61, 255)
+    paper, brass = (220, 227, 235, 255), (201, 162, 39, 255)
+    d.rounded_rectangle([76, 76, 948, 948], radius=210, fill=panel, outline=edge, width=8)
+    d.rounded_rectangle([200, 260, 824, 764], radius=18, fill=paper)
+    # the pieces: holes in the sheet, so the ground shows through them
+    d.rounded_rectangle([446, 336, 716, 688], radius=44, fill=panel, outline=brass, width=14)
+    d.ellipse([256, 396, 406, 546], fill=panel, outline=brass, width=14)
+    if px != big:
+        im = im.resize((px, px), Image.LANCZOS)
+    return im
+
+
+def icns_bytes():
+    """Pack the icon into an .icns, by hand.
+
+    ⚠️ `iconutil` would do this, and it is not always on the machine — it is
+    one of the names that belongs to the developer tools, so on a Mac without
+    them it is a stub that asks you to install Xcode. The room must not need
+    anything installed, so the container is written here: it is a header and
+    a length in front of each picture, and macOS takes a PNG for every one of
+    these types.
+    """
+    order = [(b"ic11", 32), (b"ic12", 64), (b"ic07", 128), (b"ic13", 256),
+             (b"ic08", 256), (b"ic14", 512), (b"ic09", 512), (b"ic10", 1024)]
+    big = room_icon(1024)
+    parts = []
+    for kind, px in order:
+        buf = io.BytesIO()
+        (big if px == 1024 else big.resize((px, px), Image.LANCZOS)).save(buf, "PNG")
+        data = buf.getvalue()
+        parts.append(kind + struct.pack(">I", len(data) + 8) + data)
+    body = b"".join(parts)
+    return b"icns" + struct.pack(">I", len(body) + 8) + body
 
 
 def launcher_python():
@@ -4812,11 +4974,81 @@ def launcher_python():
     return sys.executable or "python3"
 
 
-def install_launcher(where, port):
-    """Write a double-clickable launcher that knows where this copy lives."""
+def native_arch():
+    """How to run python as this machine's own architecture, if it must be said.
+
+    ⚠️⚠️ THE FINDER DOES NOT LAUNCH AN APP THE WAY A SHELL DOES. Written
+    without this, the bundle came up under Rosetta on an Apple silicon Mac —
+    LaunchServices chose x86_64 for an unsigned bundle that had not said
+    otherwise — and numpy, which is built for one architecture only, refused
+    to load: "incompatible architecture (have 'arm64', need 'x86_64')". The
+    same script run from a terminal worked perfectly, which is exactly the
+    sort of difference that never gets found by reading.
+
+    So the architecture is said twice, and they are not two copies of one
+    rule: the Info.plist states a PREFERENCE, and this states a FACT that
+    holds however the bundle was started.
+    """
+    here = platform.machine()
+    if sys.platform == "darwin" and os.path.exists("/usr/bin/arch") and here:
+        return "/usr/bin/arch -%s " % here
+    return ""
+
+
+def install_folder(where):
     folder = os.path.abspath(os.path.expanduser(where or "~/Desktop"))
     if not os.path.isdir(folder):
         sys.exit("no folder at %s" % folder)
+    return folder
+
+
+def ours(app):
+    """Is this bundle one the room wrote? Read it, do not assume."""
+    try:
+        with open(os.path.join(app, "Contents", "Info.plist")) as fh:
+            return APP_ID in fh.read()
+    except OSError:
+        return False
+
+
+def install_app(where, port):
+    """Write the double-clickable app that opens the room with no window."""
+    folder = install_folder(where)
+    path = os.path.join(folder, APP_NAME)
+    if os.path.exists(path) and not ours(path):
+        sys.exit("There is already something called %s in %s and it is not "
+                 "one of ours.\nNothing has been touched. Move it aside, or "
+                 "name another folder." % (APP_NAME, folder))
+    # ⚠️ Built beside the real name and moved into place, so a bundle that is
+    # half written is never a bundle anybody can press. The same reasoning as
+    # the export folder: replaced WHOLE or not at all.
+    making = path + ".being-made"
+    shutil.rmtree(making, ignore_errors=True)
+    macos = os.path.join(making, "Contents", "MacOS")
+    resources = os.path.join(making, "Contents", "Resources")
+    os.makedirs(macos)
+    os.makedirs(resources)
+    script = os.path.join(macos, APP_EXEC)
+    with open(script, "w") as fh:
+        fh.write(APP_SCRIPT % {"here": shlex.quote(HERE),
+                               "python": shlex.quote(launcher_python()),
+                               "arch": native_arch(),
+                               "port": port,
+                               "log": shlex.quote(os.path.expanduser(APP_LOG))})
+    os.chmod(script, 0o755)
+    with open(os.path.join(making, "Contents", "Info.plist"), "w") as fh:
+        fh.write(INFO_PLIST % {"id": APP_ID, "exec": APP_EXEC, "icon": APP_ICON,
+                               "arch": platform.machine()})
+    with open(os.path.join(resources, APP_ICON), "wb") as fh:
+        fh.write(icns_bytes())
+    shutil.rmtree(path, ignore_errors=True)
+    os.rename(making, path)
+    return path, None
+
+
+def install_command(where, port):
+    """Write the plain shell launcher — the one that shows a window."""
+    folder = install_folder(where)
     path = os.path.join(folder, LAUNCHER_NAME)
     body = LAUNCHER % {"here": shlex.quote(HERE),
                        "python": shlex.quote(launcher_python()),
@@ -4832,12 +5064,26 @@ def install_launcher(where, port):
     return path, kept
 
 
+def install_launcher(where, port, terminal_window=False):
+    """Write a double-clickable launcher that knows where this copy lives.
+
+    ⚠️ ONE door, because this is the only place in the whole tool that works
+    out where this copy was cloned to and which python can run it. A second
+    place knowing that is a second place to be wrong when the folder moves.
+    """
+    if sys.platform == "darwin" and not terminal_window:
+        return install_app(where, port)
+    return install_command(where, port)
+
+
 def launcher_on_the_desktop():
     """The launcher this machine has, if it has one — for the closed page."""
-    for folder in ("~/Desktop", "~"):
-        path = os.path.join(os.path.expanduser(folder), LAUNCHER_NAME)
-        if os.path.exists(path):
-            return path
+    for folder in ("~/Desktop", "~", "/Applications"):
+        for name in (APP_NAME, LAUNCHER_NAME):
+            # ⚠️ The app first: where somebody has both, it is the one to press.
+            path = os.path.join(os.path.expanduser(folder), name)
+            if os.path.exists(path):
+                return path
     return None
 
 
@@ -4851,14 +5097,28 @@ def main():
     ap.add_argument("--register", help="register an existing project folder and exit")
     ap.add_argument("--install-launcher", nargs="?", const="~/Desktop", metavar="FOLDER",
                     help="write a double-clickable launcher (default: the Desktop) and exit")
+    ap.add_argument("--terminal-window", action="store_true",
+                    help="with --install-launcher: write the old shell launcher, "
+                         "which opens a Terminal window and shows what the room says. "
+                         "Useful when the room will not start.")
     args = ap.parse_args()
 
     if args.install_launcher:
-        path, kept = install_launcher(args.install_launcher, args.port)
+        path, kept = install_launcher(args.install_launcher, args.port,
+                                      args.terminal_window)
         print("Launcher written to %s" % path)
         if kept:
             print("The one that was there is kept at %s" % kept)
         print("Double-click it to open the Cutting Room.")
+        if path.endswith(".app"):
+            print("No Terminal window: it opens the room and then gets out of the way.")
+            print("Whatever the room says goes to %s" % os.path.expanduser(APP_LOG))
+            # ⚠️ Two launchers side by side is a question nobody should have to
+            # answer, so say which is which rather than leaving both unexplained.
+            old_one = os.path.join(os.path.dirname(path), LAUNCHER_NAME)
+            if os.path.exists(old_one):
+                print("The older %s is still beside it and still works; "
+                      "you can throw it away." % LAUNCHER_NAME)
         print("Close the room from the link on its own front page.")
         return
 

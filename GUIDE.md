@@ -40,10 +40,11 @@ travels with the pieces.
 
 ## Opening it, and closing it
 
-Double-click **Cutting Room.command** on the Desktop. A window of writing
-appears — ignore it — and the room opens in your browser.
+Double-click **Cutting Room** on the Desktop and the room opens in your
+browser. Nothing else appears — no terminal window, nothing in the Dock.
+Press it again whenever you want the room back.
 
-If there is no such file yet, open Terminal once and run:
+If there is no such icon yet, open Terminal once and run:
 
 ```sh
 python3 cutting_room.py --install-launcher

@@ -229,8 +229,15 @@ Pillow already; `brew install poppler` supplies the rest.
 On a Mac, make a launcher once and forget the command line:
 
 ```sh
-./cutting_room.py --install-launcher     # writes "Cutting Room.command" to the Desktop
+./cutting_room.py --install-launcher     # writes "Cutting Room.app" to the Desktop
 ```
+
+That is a small app bundle carrying this copy's own path and an icon; it opens
+the room **with no terminal window at all**, and pressing it again while the
+room is open just brings the tab back. If the room will not start it says so
+in a message box and keeps the room's own words in
+`~/Library/Logs/Cutting Room.log`. Add `--terminal-window` for the older
+launcher that shows its working in a Terminal instead.
 
 Double-click it to open the room; press **Close the Cutting Room** at the top
 of any of its pages to stop it, or **Start it again** to stop and restart it

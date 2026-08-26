@@ -18,6 +18,9 @@ cd "$(dirname "$0")/.."
 
 PY=${PYTHON:-python3}
 PORT=${PORT:-8799}
+# a port of its own for the launcher section, which starts a room of its own
+APPPORT=$((PORT + 3))
+BROKENPORT=$((PORT + 4))
 HERE=$(pwd)
 TMP=$(mktemp -d /tmp/cutting-check.XXXXXX)
 
@@ -65,6 +68,10 @@ code=0
 clear_up() {
   if [ -n "$ROOM_PID" ]; then kill "$ROOM_PID" 2>/dev/null || true; fi
   if [ -n "$SLOW_PID" ]; then kill "$SLOW_PID" 2>/dev/null || true; fi
+  # ⚠️ The launcher LETS GO of the room it starts, so there is no pid here to
+  # keep — it has to be found by the port it was told to use, or a run that
+  # stops half way leaves a room of its own behind (fault 53's other cost).
+  if [ -n "$APPPORT" ]; then pkill -f "cutting_room.py --port $APPPORT" 2>/dev/null || true; fi
   rm -rf "$TMP" || true
 }
 trap clear_up EXIT INT TERM
@@ -111,6 +118,241 @@ for mod in ("cutting_room.py", "cutting_table.py", "cut.py", "sheets.py"):
         break
 sys.exit(1 if bad else 0)
 PYTWICE
+
+
+# ------------------------------------------ the launcher with no terminal window
+# ⭐️ The last of the designer's "a simpler way to open and quit. I don't like
+# terminal at the best of times." Quitting and starting again were already a
+# press on the page; opening still put a Terminal window on the screen.
+say "the launcher that opens the room with no terminal window"
+
+APPDESK="$TMP/desk"
+mkdir -p "$APPDESK" "$TMP/apphome"
+$PY cutting_room.py --install-launcher "$APPDESK" --port "$APPPORT" > "$TMP/install.txt" 2>&1 || code=1
+
+if [ "$(uname)" != "Darwin" ]; then
+  # ⚠️ The bundle is a Mac thing. Everywhere else the plain shell launcher is
+  # what gets written, and that must go on being true rather than failing.
+  if [ -f "$APPDESK/Cutting Room.command" ]; then
+    echo "  ok   off a Mac, the plain launcher is still what gets written"
+  else
+    echo "  WRONG no launcher was written at all"; code=1
+  fi
+else
+
+$PY - "$APPDESK" "$HERE" <<'PYAPPSHAPE' || code=1
+import os, platform, plistlib, struct, sys
+desk, here = sys.argv[1], sys.argv[2]
+app = os.path.join(desk, "Cutting Room.app")
+bad = []
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % saw if saw else ""))
+    if not ok:
+        bad.append(what)
+
+check("a double-click launcher is written as an app bundle, not a shell script",
+      os.path.isdir(app), os.path.basename(app))
+plist = {}
+try:
+    with open(os.path.join(app, "Contents", "Info.plist"), "rb") as fh:
+        plist = plistlib.load(fh)
+except Exception as e:                                       # noqa: BLE001
+    check("its Info.plist reads as a property list", False, e)
+else:
+    check("its Info.plist reads as a property list", True, plist.get("CFBundleName"))
+
+# ⚠️ No Dock icon, and that is the point: a Dock icon carries a Quit that
+# kills the room without asking, and the room asks before it closes because a
+# table may be holding an edit not yet written down (fault 21).
+check("it asks for no Dock icon, so there is no Quit that skips the question",
+      plist.get("LSUIElement") is True, plist.get("LSUIElement"))
+
+# ⚠️⚠️ THE FINDER DOES NOT LAUNCH AN APP THE WAY A SHELL DOES. Written without
+# this, the bundle came up under Rosetta on an Apple silicon Mac and numpy —
+# built for one architecture only — refused to load. The same script run from
+# a terminal worked perfectly, which is why nothing but launching it found it.
+check("and it says which architecture to run as, or the Finder may choose Rosetta",
+      plist.get("LSArchitecturePriority") == [platform.machine()],
+      plist.get("LSArchitecturePriority"))
+
+script = os.path.join(app, "Contents", "MacOS", plist.get("CFBundleExecutable") or "x")
+check("the executable the plist names is there and can be run",
+      os.path.exists(script) and os.access(script, os.X_OK), os.path.basename(script))
+body = open(script).read() if os.path.exists(script) else ""
+check("it knows where this copy of the room was cloned to",
+      here in body, here)
+# the same fact again, where no preference can be ignored
+check("and the architecture is named on the command that starts the room too",
+      ("-%s " % platform.machine()) in body, platform.machine())
+icns = os.path.join(app, "Contents", "Resources", plist.get("CFBundleIconFile") or "x")
+raw = open(icns, "rb").read() if os.path.exists(icns) else b""
+check("it carries an icon that is a real icns, made here rather than committed",
+      raw[:4] == b"icns" and len(raw) > 8
+      and struct.unpack(">I", raw[4:8])[0] == len(raw), "%d bytes" % len(raw))
+kinds = set()
+at = 8
+while at + 8 <= len(raw):
+    kind = raw[at:at + 4]
+    size = struct.unpack(">I", raw[at + 4:at + 8])[0]
+    if size < 8:
+        break
+    kinds.add(kind)
+    at += size
+check("with the sizes the Finder asks for in it",
+      {b"ic11", b"ic07", b"ic08", b"ic09", b"ic10"} <= kinds,
+      " ".join(sorted(k.decode() for k in kinds)))
+sys.exit(1 if bad else 0)
+PYAPPSHAPE
+
+# ⚠️ THE ROOM MUST BE LET GO OF — a bundle that stays running is one the
+# Finder thinks is already open, so the second double-click, the one somebody
+# makes when they have closed the tab and want it back, would do nothing at
+# all. That is NOT asked of the text of the script: a reading of it stayed
+# green with the fault deliberately put back, and a check that cannot fail is
+# a green light over the fault (fault 54). It is asked by pressing it, below.
+#
+# ⭐️ AND RUN IT. A bundle of the right shape that does not open the room is
+# fault 54 exactly — the easy question asked in place of the real one.
+# ⚠️ THREE LINES ARE CHANGED IN A COPY, AND ONLY THREE, each because a check
+# must not reach out of its own sandpit: the browser, so no tab lands on
+# anybody's screen; the room's own command line, which gains a --home so not
+# one of these checks can see a real project; and the log, which otherwise
+# goes to the person's own ~/Library/Logs. Everything else is the script as
+# the room wrote it.
+# ⚠️⚠️ A CHECK THAT HANGS REPORTS NOTHING AT ALL, which is worse than one
+# that reports the wrong thing. Trying the teeth of "it lets go of the room"
+# — by making the launcher wait for the room the way the old .command does —
+# did not turn this section red: it stopped the whole run dead, for ever, and
+# every check after it went unrun. So a press is never waited on unboundedly.
+# 99 back means it never let go.
+press() {
+  "$1" > "$2" 2>&1 &
+  pressed=$!
+  n=0
+  while kill -0 "$pressed" 2>/dev/null && [ $n -lt 60 ]; do
+    sleep 0.5
+    n=$((n + 1))
+  done
+  if kill -0 "$pressed" 2>/dev/null; then
+    kill "$pressed" 2>/dev/null || true
+    return 99
+  fi
+  wait "$pressed"
+}
+
+cp -R "$APPDESK/Cutting Room.app" "$TMP/try.app"
+sed -i.bak \
+    -e "s|/usr/bin/open \"\$url\"|touch $TMP/opened|" \
+    -e "s|cutting_room.py --port \"\$port\"|cutting_room.py --port \"\$port\" --home $TMP/apphome|" \
+    -e "s|^log=.*|log=$TMP/room.log|" \
+    "$TMP/try.app/Contents/MacOS/cutting-room"
+rm -f "$TMP/try.app/Contents/MacOS/cutting-room.bak" "$TMP/opened"
+
+if press "$TMP/try.app/Contents/MacOS/cutting-room" "$TMP/press.txt"; then
+  appstatus=0
+else
+  appstatus=$?
+fi
+if [ "$appstatus" -eq 99 ]; then
+  echo "  WRONG the launcher never let go of the room — a second press would do nothing"; code=1
+elif [ "$appstatus" -eq 0 ] && [ -f "$TMP/opened" ]; then
+  echo "  ok   pressing it starts the room and opens the browser at it"
+else
+  echo "  WRONG pressing it did not open the room   — exit $appstatus, $(tail -3 "$TMP/room.log" 2>/dev/null)"
+  code=1
+fi
+if curl -s -o /dev/null --max-time 4 "http://127.0.0.1:$APPPORT/api/projects"; then
+  echo "  ok   and the room is answering after the launcher has finished with it"
+else
+  echo "  WRONG the room is not answering on $APPPORT"; code=1
+fi
+
+# ⚠️ The second press is the one that matters. The Finder will not run an app
+# it thinks is already open, so the launcher has to be finished by now — and
+# what a second press must do is open a tab, not a second room.
+rm -f "$TMP/opened"
+press "$TMP/try.app/Contents/MacOS/cutting-room" "$TMP/press2.txt" || code=1
+rooms=$(pgrep -f "cutting_room.py --port $APPPORT" | wc -l | tr -d ' ')
+if [ -f "$TMP/opened" ] && [ "$rooms" = "1" ]; then
+  echo "  ok   pressing it again opens another tab at the room already running   — saw $rooms room"
+else
+  echo "  WRONG a second press did not do the right thing   — saw $rooms rooms"; code=1
+fi
+
+# ⚠️⚠️ WITH NO WINDOW THERE IS NOWHERE FOR A FAILURE TO APPEAR, and silence
+# reads as a broken button (fault 58). Point a copy at a python that cannot
+# work and it must say so rather than nothing at all.
+# (The dialog itself is swapped for an echo here — a check must not put a box
+# on somebody's screen and then wait for them to press OK.)
+# ⚠️ And on a port of ITS OWN. Written against the same port as the working
+# copy, this check passed for the wrong reason every time: the room started
+# two presses ago was still answering, so the broken launcher never tried to
+# start anything and cheerfully exited 0. (Fault 54, caught by trying it.)
+cp -R "$TMP/try.app" "$TMP/broken.app"
+sed -i.bak \
+    -e "s|^port=.*|port=$BROKENPORT|" \
+    -e "s|^url=.*|url=\"http://127.0.0.1:$BROKENPORT/\"|" \
+    -e "s|cutting_room.py|no_such_room.py|" \
+    -e "s|^/usr/bin/osascript|echo THE-ROOM-COULD-NOT-OPEN|" \
+    -e "s|^log=.*|log=$TMP/broken.log|" \
+    "$TMP/broken.app/Contents/MacOS/cutting-room"
+if press "$TMP/broken.app/Contents/MacOS/cutting-room" "$TMP/broken.txt"; then
+  brokenstatus=0
+else
+  brokenstatus=$?
+fi
+if [ "$brokenstatus" -ne 0 ] && grep -q "THE-ROOM-COULD-NOT-OPEN" "$TMP/broken.txt"; then
+  echo "  ok   a room that will not start says so, rather than nothing at all"
+else
+  echo "  WRONG a room that will not start said nothing   — exit $brokenstatus"; code=1
+fi
+if [ -s "$TMP/broken.log" ]; then
+  echo "  ok   and the room's own words are kept, because there is no window to read them in"
+else
+  echo "  WRONG nothing was written down about why it would not start"; code=1
+fi
+
+# and put the room it started away again, from the room, as everything else does
+curl -s -o /dev/null -X POST -H "Content-Type: application/json" -d "{}" \
+     "http://127.0.0.1:$APPPORT/api/close" || true
+i=0; appgone=0
+while [ $i -lt 20 ]; do
+  if ! curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$APPPORT/api/projects"; then appgone=1; break; fi
+  sleep 0.5
+  i=$((i + 1))
+done
+if [ $appgone -eq 1 ]; then
+  echo "  ok   and a room opened this way still closes from its own front page"
+else
+  echo "  WRONG the room the launcher started would not close"; code=1
+fi
+
+# ⚠️⚠️ The bundle is rebuilt WHOLE, so the one thing it must never do is
+# rebuild something that is not its own over the top of somebody's app.
+mkdir -p "$TMP/notours/Cutting Room.app/Contents"
+echo "<plist>somebody else's</plist>" > "$TMP/notours/Cutting Room.app/Contents/Info.plist"
+if $PY cutting_room.py --install-launcher "$TMP/notours" > "$TMP/refused.txt" 2>&1; then
+  echo "  WRONG it replaced an app that was not one of ours"; code=1
+else
+  if grep -q "not one of ours" "$TMP/refused.txt" \
+     && grep -q "somebody else" "$TMP/notours/Cutting Room.app/Contents/Info.plist"; then
+    echo "  ok   an app of that name that is not ours is refused, and left exactly as it was"
+  else
+    echo "  WRONG it refused for the wrong reason, or touched it anyway"; code=1
+  fi
+fi
+
+# ⚠️ The old launcher stays reachable, because a window is what you want when
+# the room will not start and you would rather read than be told.
+$PY cutting_room.py --install-launcher "$TMP/desk" --terminal-window --port "$APPPORT" \
+   > "$TMP/plain.txt" 2>&1 || code=1
+if [ -x "$TMP/desk/Cutting Room.command" ]; then
+  echo "  ok   and the launcher with a window on it can still be asked for"
+else
+  echo "  WRONG there is no longer any way to get a launcher that shows its working"; code=1
+fi
+
+fi
 
 # ⭐️ A GOOGLE DOC IS NOT A FILE, IT IS A THING GOOGLE WILL MAKE A FILE OUT OF.
 # The designer, 24 August 2026, trying one: a document has no download at its own

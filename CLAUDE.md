@@ -93,13 +93,21 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 547 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 564 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
 
-**26 August**: *"I'd like to be able to just export a set of cut pieces, rather
+**26 August**: the last of *"a simpler way to open and quit. I don't like
+terminal at the best of times."* Quitting and restarting were already a press
+on the page; **opening still put a Terminal window on the screen**, and now it
+does not — `--install-launcher` writes **`Cutting Room.app`**. See fault 79,
+whose whole content is that **the Finder does not launch an app the way a
+shell does**: the bundle came up under Rosetta and numpy would not load, while
+the identical script run from a terminal worked perfectly every time.
+
+**26 August, earlier**: *"I'd like to be able to just export a set of cut pieces, rather
 than everything in one project folder."* Built — **Take away** offers the whole
 game or one box of sheets, and a set goes into a folder of its own. See fault
 78, whose careful part is that an export folder is replaced **whole**, so a set
@@ -1644,6 +1652,49 @@ rather than by reading the code.
     grows a piece in another box and puts itself back afterwards. Teeth tried:
     with the filter removed, three go red.
 
+79. ⚠️⚠️ **THE FINDER DOES NOT LAUNCH AN APP THE WAY A SHELL DOES, AND
+    NOTHING BUT LAUNCHING IT WILL SHOW YOU.** The last of the designer's *"a
+    simpler way to open and quit. I don't like terminal at the best of
+    times."* — `Cutting Room.app`, which opens the room with no window at all.
+    ⚠️⚠️ **It came up under Rosetta.** LaunchServices chose **x86_64** for an
+    unsigned bundle that had not said otherwise, and numpy — built for one
+    architecture only — refused to load: *"incompatible architecture (have
+    'arm64', need 'x86_64')"*. The identical script run from a terminal worked
+    **perfectly, every time**, which is exactly the sort of difference that
+    can only be found by pressing the thing. So the architecture is said
+    twice, and those are not two copies of one rule: the Info.plist states a
+    **preference**, and `/usr/bin/arch -<machine>` on the command states a
+    **fact** that holds however the bundle was started.
+    ⭐️⭐️ **AND IT LETS GO OF THE ROOM.** A bundle that stays running while the
+    room runs is a bundle the Finder thinks is already open — so the **second**
+    double-click, which is the one somebody makes when they have closed the tab
+    and want the room back, would do **nothing at all**. The launcher starts
+    the room, waits only until it answers, opens the browser and finishes;
+    every later press finds the room up and opens a tab.
+    ⚠️ **With no window there is nowhere for a failure to appear**, and silence
+    reads as a broken button (fault 58). A room that will not start says so in
+    a message box carrying the room's own last words, and everything it says
+    goes to `~/Library/Logs/Cutting Room.log` — rolled over, because a day of
+    cutting is a lot of lines.
+    ⚠️ **No Dock icon** (`LSUIElement`), on purpose: a Dock icon carries a
+    *Quit* that stops the room without asking what is half-finished, and fault
+    21 is the whole reason the room asks.
+    ⚠️ **It is rebuilt WHOLE and so must never rebuild something that is not
+    its own** — the bundle is read before it is replaced, and an app of that
+    name that the room did not write is refused with a sentence and left
+    exactly as it was.
+    ⭐️ The icon is **drawn** rather than committed (a binary in a repository is
+    a change nobody can read), and the `.icns` is packed by hand rather than by
+    `iconutil`, which belongs to the developer tools and is a stub on a Mac
+    without them. *The room must not need anything installed.*
+    ⭐️⭐️ **Two of its checks were changed by trying their teeth**, and both
+    lessons outlive this feature: a reading of the script that asked whether it
+    let go of the room stayed **green with the fault deliberately put back**, so
+    it came out — and the fault that makes the launcher wait did not turn the
+    section red at all, it **hung the whole run for ever**. ⚠️⚠️ **A check that
+    hangs reports nothing**, which is worse than one that reports the wrong
+    thing (fault 53's family). No press is waited on unboundedly now.
+
 ---
 
 ## Architecture
@@ -1671,6 +1722,13 @@ cutting_room.py          the app: HTTP server, projects, import, cut, API
 cutting_table.tpl.html   THE EDITOR. Shared by the room and the baked page.
 cutting_table.py         bakes the editor + sheets into one offline HTML file
 cut.py                   cuts pieces from a sheet + mask, standalone
+  (the launcher)         ⭐️ `--install-launcher` writes `Cutting Room.app` —
+                         an Info.plist, a shell script and an icon drawn here
+                         with Pillow. ⚠️ ONE place works out where this copy
+                         was cloned to and which python can run it; a second
+                         would be a second thing to be wrong when the folder
+                         moves. `--terminal-window` writes the older launcher
+                         that shows its working. See fault 79.
 sheets.py                the image work: flood, label, separate, draft — and
                          ⭐️ the AUTOMATIC PASS: `local_field()` (the ground as
                          it falls on this sheet), `outline_of()` and
@@ -1776,7 +1834,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 547 checks, about a minute
+check/check.sh          # 564 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1804,6 +1862,17 @@ cut piece answering to nothing — and the two checks that matter most are the
 ones about it keeping QUIET: that a counter printed twenty-six times is **not**
 reported as a deck counted short (fault 52), and that a game with no contents
 list **says so** rather than reporting every piece it has as an orphan.
+
+It presses **the launcher that opens the room with no terminal window**: the
+bundle is the right shape, says which architecture to run as — ⭐️ the fault
+that only launching it could find — carries an icon that is a real `icns`, and
+refuses to replace an app of that name it did not write. Then it is **pressed**,
+because a bundle of the right shape that does not open the room is fault 54: it
+starts the room and lets go of it, a second press opens another tab rather than
+a second room, a room that will not start **says so** instead of nothing at
+all, and a room opened this way still closes from its own front page. ⚠️ Three
+lines are changed in a copy first, and only three — the browser, the room's
+`--home`, and the log — because a check must not reach out of its own sandpit.
 
 It works the **three keys at the table**: `+` lays another copy of the chosen
 piece down and hands it to Adjust ready to be dragged, `X` takes it off again
