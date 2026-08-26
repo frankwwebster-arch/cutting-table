@@ -93,11 +93,22 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 564 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 573 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**26 August, the same day and the important half of it**: the app was built,
+signed, and *correct in every particular* — and it **did not work**. macOS
+keeps an app out of `Documents`, `Desktop` and `Downloads`, and for a bundle
+whose executable is a script it does not even put up the box that asks: it
+simply refuses. The designer's projects lived in `~/Documents/Cutting Room`, so
+the room opened and then said *"Operation not permitted"* about its own folder.
+See fault 80 — ⭐️ and note that **nothing but pressing it on a real machine
+would ever have shown that**, which is this file's oldest lesson arriving on a
+new subject. The folder moved; the launcher can be told where it is; and the
+room now says so at the moment the launcher is written.
 
 **26 August**: the last of *"a simpler way to open and quit. I don't like
 terminal at the best of times."* Quitting and restarting were already a press
@@ -1695,6 +1706,45 @@ rather than by reading the code.
     hangs reports nothing**, which is worse than one that reports the wrong
     thing (fault 53's family). No press is waited on unboundedly now.
 
+80. ⚠️⚠️⚠️ **macOS KEEPS AN APP OUT OF `Documents`, `Desktop` AND
+    `Downloads` — AND WILL NOT EVEN ASK.** Fault 79's launcher was built,
+    ad-hoc signed, given the four `NS...UsageDescription` sentences that are
+    supposed to be the words in the permission box, and was **correct in every
+    particular**. It did not work. The room came up, served its front page,
+    and answered `PermissionError: Operation not permitted` for
+    `~/Documents/Cutting Room` — the folder its projects live in.
+    ⚠️⚠️ **There is no prompt to wait for.** For a bundle whose executable is
+    a shell script running Apple's own python, macOS does not attribute the
+    request to the app, so it never asks and simply refuses. `tccutil reset`
+    on the bundle's identifier changed nothing. It is not a thing the room can
+    fix from inside.
+    ⭐️⭐️ **What settled it was two experiments, not reasoning.** First: an app
+    that HOLDS ON to its child and one that LETS GO were refused identically,
+    so fault 79's design was not the cause. Second: the same bundle reading
+    `~/Projects` and a folder made in the home directory was allowed
+    **instantly** — so it is those three folders and nothing else. Ten minutes
+    of pressing it, against an afternoon of plausible theories about
+    responsible processes.
+    ⭐️ **The answer is where the projects live.** `~/Documents/Cutting Room` is
+    a poor home on a modern Mac and always was; moved one level up, everything
+    works with no permission, no System Settings and no prompt. So
+    `--install-launcher` takes `--home`, and ⚠️ **the room says so at the
+    moment the launcher is written**, while somebody is there to read it —
+    which is the only thing it CAN do. ⚠️ It warns and still writes the
+    launcher: somebody may have granted the permission by hand, and a tool
+    that refuses to do as it is told because it suspects trouble is worse than
+    one that warns.
+    ⚠️ **The default home is left alone.** Changing `DEFAULT_HOME` would strand
+    the projects of everybody who already has one.
+    ⭐️⭐️ **And a bare `open` is not good enough either.** The designer, in the
+    same breath: *"NEVER open it when I am using my work chrome profile."* A
+    launcher that opens a browser hands the tab to whichever profile the Mac
+    thinks is current, and somebody with a work account and a personal one
+    wants their games in exactly one of them. So `--install-launcher` takes
+    `--browser`, and ⚠️ **both launchers open the browser themselves** rather
+    than one of them leaning on the room's `--open` — or the setting would hold
+    for one door out and not the other (fault 24, tenth time).
+
 ---
 
 ## Architecture
@@ -1728,7 +1778,10 @@ cut.py                   cuts pieces from a sheet + mask, standalone
                          was cloned to and which python can run it; a second
                          would be a second thing to be wrong when the folder
                          moves. `--terminal-window` writes the older launcher
-                         that shows its working. See fault 79.
+                         that shows its working; `--home` says where the
+                         projects are and `--browser` says what opens the tab.
+                         See faults 79 and ⚠️⚠️ 80, which is the one that
+                         decides whether any of it works at all.
 sheets.py                the image work: flood, label, separate, draft — and
                          ⭐️ the AUTOMATIC PASS: `local_field()` (the ground as
                          it falls on this sheet), `outline_of()` and
@@ -1834,7 +1887,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 564 checks, about a minute
+check/check.sh          # 573 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1862,6 +1915,13 @@ cut piece answering to nothing — and the two checks that matter most are the
 ones about it keeping QUIET: that a counter printed twenty-six times is **not**
 reported as a deck counted short (fault 52), and that a game with no contents
 list **says so** rather than reporting every piece it has as an orphan.
+
+⚠️ It also holds the launcher to the two settings that decide whether it is
+any use: that a home macOS will keep an app out of is **recognised and said
+out loud** (and that a folder merely beginning with the same letters is not),
+that the warning is a warning and still writes the launcher, and that a
+launcher told where the projects are and which browser to open carries both —
+in the app and in the plain one alike.
 
 It presses **the launcher that opens the room with no terminal window**: the
 bundle is the right shape, says which architecture to run as — ⭐️ the fault

@@ -232,6 +232,13 @@ On a Mac, make a launcher once and forget the command line:
 ./cutting_room.py --install-launcher     # writes "Cutting Room.app" to the Desktop
 ```
 
+⚠️ **Keep your projects out of `Documents`, `Desktop` and `Downloads`** —
+macOS keeps apps out of those three and does not ask, so the room would open
+and then refuse to read its own folder. `--home <folder>` tells the launcher
+where they are, and `--browser <command>` says what opens the tab if you have
+more than one browser profile. The room warns you about the first when it
+writes the launcher.
+
 That is a small app bundle carrying this copy's own path and an icon; it opens
 the room **with no terminal window at all**, and pressing it again while the
 room is open just brings the tab back. If the room will not start it says so

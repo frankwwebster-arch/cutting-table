@@ -29,6 +29,27 @@ and gets out of the way.
 That writes `Cutting Room.app` onto your Desktop, pointing at wherever you put
 this folder. If you move the folder, run it again.
 
+⚠️⚠️ **Your games must not live in `Documents`, `Desktop` or `Downloads`.**
+macOS keeps apps out of those three folders and will not even ask — the room
+opens and then says *"Operation not permitted"* about its own folder. Put them
+anywhere else (`~/Cutting Room` does nicely) and tell the launcher where:
+
+```sh
+/usr/bin/python3 ~/Projects/cutting-table/cutting_room.py \
+    --install-launcher --home "~/Cutting Room"
+```
+
+The room says so when you write the launcher, so you will not find out the
+hard way.
+
+**If you have more than one browser profile** — a work one and a personal one,
+say — a launcher left to itself hands the tab to whichever the Mac thinks is
+current. Say which you want:
+
+```sh
+... --browser "'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --profile-directory='Profile 1'"
+```
+
 Press it again at any time — if the room is already open it simply brings the
 tab back, which is what to do when you have closed the browser and want the
 room again.
@@ -93,7 +114,9 @@ same notice goes into every folder step 6 writes, so it travels with the pieces.
 ### 1 · A project, one per game
 
 Type the game's name and press **Start it**. That is the whole of it — a folder
-appears in `~/Documents/Cutting Room/<name>/` and everything about that game
+appears in the room's home — `~/Documents/Cutting Room/<name>/` unless you
+have said otherwise, and ⚠️ if you open the room from the app you will have,
+because macOS keeps apps out of `Documents` — and everything about that game
 lives in it.
 
 Or skip even that: **drop the game's scans on the front page** — a folder will
@@ -952,7 +975,7 @@ will save what is on its screen over the top of them.
   manifest.json       what each piece IS: name, kind, note, turn, component
   wanted.json         the checklist: what the game should have
 
-<the room's home, e.g. ~/Documents/Cutting Room/>
+<the room's home, e.g. ~/Cutting Room/>
   projects.json       where the projects are
   shapes.json         the shelf of kept shapes, shared by every game
 ```

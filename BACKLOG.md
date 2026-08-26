@@ -259,7 +259,24 @@ the whole tool that knows either.
   `.icns` container is written by hand rather than by `iconutil`, which is one
   of the names that belongs to the developer tools. Nothing to install.
 
-Seventeen checks, and trying their teeth changed two of them: one blunt reading
+⚠️⚠️ **And then it did not work, and that was the day's real work.** macOS
+keeps an app out of `Documents`, `Desktop` and `Downloads` and **will not even
+ask** — so a room whose projects live in one of them opens perfectly and then
+says *"Operation not permitted"* about its own folder. Nothing in the room can
+grant itself the permission. See fault 80: the folder is what moves, the
+launcher takes `--home` to be told where, and the room **says so when the
+launcher is written**, which is the only thing it can do. ⭐️ Two experiments
+settled it in ten minutes where an afternoon of reasoning would not have: an
+app that holds on to its child and one that lets go are refused **identically**
+(so fault 79's design was not the cause), and the same bundle reads `~/Projects`
+**instantly** (so it is those three folders and nothing else).
+
+⭐️ **A bare `open` is not good enough either.** The designer: *"NEVER open it
+when I am using my work chrome profile."* `--browser` says what opens the tab,
+and both launchers obey it — one of them leaning on the room's own `--open`
+would have made the setting hold for one door out and not the other.
+
+Twenty-six checks, and trying their teeth changed two of them: one blunt reading
 of the script stayed green with the fault put back and was taken out, and
 making the launcher wait for the room did not turn the section red — it hung
 the whole run for ever. **A check that hangs reports nothing at all**, so no
@@ -838,7 +855,16 @@ anything that speeds up cutting.
 - `[x]` ⭐️ **The icon is drawn, not committed** — no binary in the repository,
   and the `.icns` is packed by hand rather than by `iconutil`, which is not on
   every Mac.
-- `[x]` **17 new checks** — 547 to 564. ⭐️ Trying their teeth changed two:
+- `[x]` ⚠️⚠️ **And it did not work.** macOS keeps an app out of `Documents`,
+  `Desktop` and `Downloads` and does not even ask, so the room opened and then
+  refused to read its own projects. The folder moved out of `Documents`,
+  `--home` tells the launcher where it went, and the room warns at the moment
+  the launcher is written. Fault 80 — ⭐️ settled by two experiments in ten
+  minutes, not by reasoning.
+- `[x]` ⭐️ **`--browser`**, because a bare `open` hands the tab to whichever
+  browser profile the Mac thinks is current: *"NEVER open it when I am using
+  my work chrome profile."* Both launchers obey it.
+- `[x]` **26 new checks** — 547 to 573. ⭐️ Trying their teeth changed two:
   a reading of the script stayed green with the fault put back and was taken
   out, and the fault that makes the launcher wait **hung the whole run**
   instead of reporting. A check that hangs reports nothing at all, so no press

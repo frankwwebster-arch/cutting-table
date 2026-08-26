@@ -342,6 +342,85 @@ else
   fi
 fi
 
+# ⚠️⚠️ macOS KEEPS APPS OUT OF Documents, Desktop AND Downloads, and will not
+# even ask — a bundle whose executable is a script is simply refused. The room
+# cannot grant itself the permission, so the ONE thing it can do is say so
+# while somebody is there to read it. See fault 80: the launcher was built,
+# signed, correct in every particular, and useless, because the projects lived
+# in ~/Documents/Cutting Room.
+$PY - <<'PYKEPTOUT' || code=1
+import os, sys
+sys.path.insert(0, ".")
+import cutting_room as room
+bad = []
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % saw if saw else ""))
+    if not ok:
+        bad.append(what)
+home = os.path.expanduser("~")
+check("a home inside a folder macOS keeps apps out of is recognised",
+      room.home_kept_from_apps(os.path.join(home, "Documents", "Cutting Room")) == "Documents",
+      room.home_kept_from_apps(os.path.join(home, "Documents", "Cutting Room")))
+check("and so is the Desktop, and Downloads",
+      room.home_kept_from_apps(os.path.join(home, "Desktop", "x")) == "Desktop"
+      and room.home_kept_from_apps(os.path.join(home, "Downloads", "x")) == "Downloads")
+# ⚠️ It must not cry wolf: a name that merely BEGINS with one of them is a
+# different folder, and a warning nobody needs is a warning nobody reads.
+check("a folder that merely starts with the same letters is not one of them",
+      room.home_kept_from_apps(os.path.join(home, "Documentsss")) is None,
+      room.home_kept_from_apps(os.path.join(home, "Documentsss")))
+check("and an ordinary folder is left alone",
+      room.home_kept_from_apps(os.path.join(home, "Cutting Room")) is None)
+sys.exit(1 if bad else 0)
+PYKEPTOUT
+
+mkdir -p "$TMP/warned" "$TMP/told" "$TMP/elsewhere"
+if $PY cutting_room.py --install-launcher "$TMP/warned" --home "$HOME/Documents/Whatever" \
+   > "$TMP/warned.txt" 2>&1; then :; else code=1; fi
+if grep -q "does not" "$TMP/warned.txt" && grep -q "Documents" "$TMP/warned.txt"; then
+  echo "  ok   a launcher whose projects macOS will keep it out of says so at the time"
+else
+  echo "  WRONG nothing was said about a home the app will not be allowed to read"; code=1
+fi
+# ⚠️ And it is a WARNING, not a refusal: somebody may have granted the
+# permission by hand, and a tool that will not do as it is told because it
+# suspects trouble is worse than one that warns.
+if [ -d "$TMP/warned/Cutting Room.app" ]; then
+  echo "  ok   and it writes the launcher anyway, because it is a warning and not a refusal"
+else
+  echo "  WRONG it refused to write the launcher instead of warning"; code=1
+fi
+
+# ⭐️ A launcher can be told where the projects are and which browser to open,
+# because the default of each is wrong for somebody: the room's own home may be
+# where macOS will not let an app read, and a bare `open` hands the tab to
+# whichever browser profile the Mac thinks is current — which on a machine with
+# a work profile and a personal one is not the one anybody wants their games in.
+$PY cutting_room.py --install-launcher "$TMP/told" --home "$TMP/elsewhere" \
+   --browser "/somewhere/mybrowser --profile=mine" > "$TMP/told.txt" 2>&1 || code=1
+told="$TMP/told/Cutting Room.app/Contents/MacOS/cutting-room"
+if grep -q -- "--home" "$told" && grep -q "$TMP/elsewhere" "$told"; then
+  echo "  ok   a launcher told where the projects are carries it"
+else
+  echo "  WRONG the launcher forgot the home it was given"; code=1
+fi
+if grep -q "/somewhere/mybrowser --profile=mine" "$told" && ! grep -q '/usr/bin/open "\$url"' "$told"; then
+  echo "  ok   and one told which browser to open uses it instead of whatever is current"
+else
+  echo "  WRONG the launcher opened the browser its own way regardless"; code=1
+fi
+# ⚠️ and the plain launcher obeys the same two, or the setting would hold for
+# one door out of the room and not the other (fault 24)
+$PY cutting_room.py --install-launcher "$TMP/told" --terminal-window --home "$TMP/elsewhere" \
+   --browser "/somewhere/mybrowser --profile=mine" > "$TMP/told2.txt" 2>&1 || code=1
+if grep -q -- "--home" "$TMP/told/Cutting Room.command" \
+   && grep -q "$TMP/elsewhere" "$TMP/told/Cutting Room.command" \
+   && grep -q "/somewhere/mybrowser --profile=mine" "$TMP/told/Cutting Room.command"; then
+  echo "  ok   and the launcher with a window on it obeys both the same way"
+else
+  echo "  WRONG the two launchers disagree about where the projects are or how to open a browser"; code=1
+fi
+
 # ⚠️ The old launcher stays reachable, because a window is what you want when
 # the room will not start and you would rather read than be told.
 $PY cutting_room.py --install-launcher "$TMP/desk" --terminal-window --port "$APPPORT" \

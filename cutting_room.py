@@ -4806,7 +4806,10 @@ LAUNCHER = """#!/bin/sh
 # and this window will say so and can then be closed.
 cd %(here)s || exit 1
 echo "Opening the Cutting Room..."
-%(python)s cutting_room.py --port %(port)d --open
+# ⚠️ The browser is opened HERE rather than by the room's own --open, so that
+# both launchers obey the one --browser setting instead of two.
+( sleep 2; %(browser)s "http://127.0.0.1:%(port)d/" >/dev/null 2>&1 ) &
+%(python)s cutting_room.py --port %(port)d%(home)s
 echo ""
 echo "The Cutting Room is closed. You can close this window."
 """
@@ -4852,7 +4855,7 @@ if ! answering; then
   echo "" >> "$log"
   echo "--- $(date): opening the Cutting Room" >> "$log"
   # let go of it: the room outlives this script, which is the whole point
-  ( cd "$here" && exec %(arch)s%(python)s cutting_room.py --port "$port" ) >> "$log" 2>&1 &
+  ( cd "$here" && exec %(arch)s%(python)s cutting_room.py --port "$port"%(home)s ) >> "$log" 2>&1 &
   room=$!
   waited=0
   while [ "$waited" -lt 60 ]; do
@@ -4864,7 +4867,11 @@ if ! answering; then
 fi
 
 if answering; then
-  /usr/bin/open "$url"
+  # ⚠️ NOT a bare `open`: that hands the tab to whichever browser profile the
+  # Mac happens to think is current, and somebody with a work profile and a
+  # personal one does not want their games landing in the work one. Whatever
+  # --browser was told at install time is what opens it.
+  %(browser)s "$url" >/dev/null 2>&1
   exit 0
 fi
 
@@ -4876,6 +4883,19 @@ display dialog "The Cutting Room could not open." & return & return & itsWords &
 APPLESCRIPT
 exit 1
 """
+
+# ⚠️⚠️ AN APP MAY NOT READ YOUR OWN FOLDERS UNTIL YOU SAY SO, AND A ROOM
+# STARTED FROM A TERMINAL NEVER HAD TO ASK. macOS keeps Documents, Desktop and
+# Downloads behind a permission; a room run from a terminal quietly borrows the
+# Terminal's, which is why this never came up until the launcher became an app
+# of its own. Without it the room started perfectly and then answered
+# "Operation not permitted" for the folder its projects live in — fault 58's
+# shape, working right up to the moment it matters.
+# ⚠️ These strings are not decoration: they are the SENTENCE in the box macOS
+# puts up, and an app that asks without one can be refused before anybody is
+# asked anything. Say what the room wants and why, in the room's own voice.
+WHY_IT_ASKS = ("The Cutting Room keeps your games, your scans and the pieces "
+               "you cut in this folder, so it needs to read and write there.")
 
 # ⚠️ LSUIElement: no Dock icon, and that is deliberate. A Dock icon carries a
 # Quit that kills the room without asking, and the room asks before it closes
@@ -4896,6 +4916,10 @@ INFO_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
   <key>CFBundleShortVersionString</key><string>1.0</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>LSUIElement</key><true/>
+  <key>NSDocumentsFolderUsageDescription</key><string>%(why)s</string>
+  <key>NSDesktopFolderUsageDescription</key><string>%(why)s</string>
+  <key>NSDownloadsFolderUsageDescription</key><string>%(why)s</string>
+  <key>NSRemovableVolumesUsageDescription</key><string>%(why)s</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>LSArchitecturePriority</key><array><string>%(arch)s</string></array>
 </dict>
@@ -4995,6 +5019,37 @@ def native_arch():
     return ""
 
 
+DEFAULT_BROWSER = "/usr/bin/open"
+
+# ⚠️⚠️ macOS KEEPS APPS OUT OF THESE, AND WILL NOT EVEN ASK. An app bundle may
+# read anything on the disk except Documents, Desktop and Downloads — and for
+# a bundle whose executable is a script it does not put up the "would like to
+# access" box at all, it simply refuses. So a room whose projects live in one
+# of them starts perfectly from the app and then answers "Operation not
+# permitted" for its own folder, which is fault 58's shape exactly. Nothing in
+# the room can grant itself the permission, so all it can do is SAY SO at the
+# moment the launcher is written, while somebody is there to read it.
+# ⚠️ It is not a refusal: the launcher is still written. Somebody may well
+# have granted the permission by hand, and a tool that will not do as it is
+# told because it suspects trouble is worse than one that warns.
+KEPT_FROM_APPS = ("Documents", "Desktop", "Downloads")
+
+
+def home_argument(home):
+    """The --home to bake into a launcher, if one was asked for."""
+    return (" --home " + shlex.quote(os.path.abspath(os.path.expanduser(home)))) if home else ""
+
+
+def home_kept_from_apps(home):
+    """Is this home somewhere macOS will not let an app read? Say which."""
+    path = os.path.abspath(os.path.expanduser(home or DEFAULT_HOME))
+    for name in KEPT_FROM_APPS:
+        top = os.path.join(os.path.expanduser("~"), name)
+        if path == top or path.startswith(top + os.sep):
+            return name
+    return None
+
+
 def install_folder(where):
     folder = os.path.abspath(os.path.expanduser(where or "~/Desktop"))
     if not os.path.isdir(folder):
@@ -5011,7 +5066,7 @@ def ours(app):
         return False
 
 
-def install_app(where, port):
+def install_app(where, port, home=None, browser=None):
     """Write the double-clickable app that opens the room with no window."""
     folder = install_folder(where)
     path = os.path.join(folder, APP_NAME)
@@ -5034,24 +5089,54 @@ def install_app(where, port):
                                "python": shlex.quote(launcher_python()),
                                "arch": native_arch(),
                                "port": port,
+                               "home": home_argument(home),
+                               "browser": browser or DEFAULT_BROWSER,
                                "log": shlex.quote(os.path.expanduser(APP_LOG))})
     os.chmod(script, 0o755)
     with open(os.path.join(making, "Contents", "Info.plist"), "w") as fh:
         fh.write(INFO_PLIST % {"id": APP_ID, "exec": APP_EXEC, "icon": APP_ICON,
-                               "arch": platform.machine()})
+                               "arch": platform.machine(), "why": WHY_IT_ASKS})
     with open(os.path.join(resources, APP_ICON), "wb") as fh:
         fh.write(icns_bytes())
     shutil.rmtree(path, ignore_errors=True)
     os.rename(making, path)
+    sign(path)
     return path, None
 
 
-def install_command(where, port):
+def sign(app):
+    """Give the bundle an identity of its own, if this Mac can.
+
+    ⚠️ macOS remembers "you said this app may read your Documents" against the
+    app's SIGNATURE. An unsigned bundle is remembered by a weaker mark that
+    changes whenever the bundle is rebuilt — so the permission would be
+    forgotten every time the launcher was made again, and the room would go
+    back to answering "Operation not permitted" with nothing to say why.
+    An ad-hoc signature costs nothing and is stable for a given bundle.
+
+    ⚠️ It is an IMPROVEMENT, never a requirement: `codesign` belongs to the
+    developer tools and is not on every Mac, and the room must not need
+    anything installed. If it cannot be done, the app still works — macOS just
+    asks again after a rebuild.
+    """
+    if sys.platform != "darwin" or not os.path.exists("/usr/bin/codesign"):
+        return False
+    try:
+        return subprocess.run(["/usr/bin/codesign", "--force", "--sign", "-", app],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                              timeout=60).returncode == 0
+    except Exception:                          # noqa: BLE001
+        return False
+
+
+def install_command(where, port, home=None, browser=None):
     """Write the plain shell launcher — the one that shows a window."""
     folder = install_folder(where)
     path = os.path.join(folder, LAUNCHER_NAME)
     body = LAUNCHER % {"here": shlex.quote(HERE),
                        "python": shlex.quote(launcher_python()),
+                       "home": home_argument(home),
+                       "browser": browser or DEFAULT_BROWSER,
                        "port": port}
     kept = None
     if os.path.exists(path) and open(path).read() != body:
@@ -5064,7 +5149,7 @@ def install_command(where, port):
     return path, kept
 
 
-def install_launcher(where, port, terminal_window=False):
+def install_launcher(where, port, terminal_window=False, home=None, browser=None):
     """Write a double-clickable launcher that knows where this copy lives.
 
     ⚠️ ONE door, because this is the only place in the whole tool that works
@@ -5072,8 +5157,8 @@ def install_launcher(where, port, terminal_window=False):
     place knowing that is a second place to be wrong when the folder moves.
     """
     if sys.platform == "darwin" and not terminal_window:
-        return install_app(where, port)
-    return install_command(where, port)
+        return install_app(where, port, home, browser)
+    return install_command(where, port, home, browser)
 
 
 def launcher_on_the_desktop():
@@ -5097,6 +5182,11 @@ def main():
     ap.add_argument("--register", help="register an existing project folder and exit")
     ap.add_argument("--install-launcher", nargs="?", const="~/Desktop", metavar="FOLDER",
                     help="write a double-clickable launcher (default: the Desktop) and exit")
+    ap.add_argument("--browser", metavar="COMMAND",
+                    help="with --install-launcher: the command that opens the browser, "
+                         "the address added on the end. The default hands it to whatever "
+                         "the Mac thinks is current, which on a machine with a work "
+                         "profile and a personal one may not be the one you want.")
     ap.add_argument("--terminal-window", action="store_true",
                     help="with --install-launcher: write the old shell launcher, "
                          "which opens a Terminal window and shows what the room says. "
@@ -5104,8 +5194,12 @@ def main():
     args = ap.parse_args()
 
     if args.install_launcher:
+        # ⚠️ --home is passed on only if it was actually asked for, so a
+        # launcher written without one goes on using the room's own default
+        # rather than freezing today's answer into a file on the Desktop.
+        chosen_home = args.home if args.home != DEFAULT_HOME else None
         path, kept = install_launcher(args.install_launcher, args.port,
-                                      args.terminal_window)
+                                      args.terminal_window, chosen_home, args.browser)
         print("Launcher written to %s" % path)
         if kept:
             print("The one that was there is kept at %s" % kept)
@@ -5119,6 +5213,16 @@ def main():
             if os.path.exists(old_one):
                 print("The older %s is still beside it and still works; "
                       "you can throw it away." % LAUNCHER_NAME)
+            # ⚠️⚠️ The one thing that makes a perfectly built launcher useless.
+            kept_out = home_kept_from_apps(chosen_home)
+            if kept_out:
+                print("")
+                print("⚠️  Your projects are in your %s folder, and macOS does not"
+                      % kept_out)
+                print("    let an app read that — it refuses without even asking.")
+                print("    The room will open and then say \"Operation not permitted\".")
+                print("    Move the folder somewhere else and write the launcher again")
+                print("    with --home, or use --terminal-window instead.")
         print("Close the room from the link on its own front page.")
         return
 
