@@ -159,7 +159,14 @@ once for one dungeon game is the same door in the next.
 
 ### 3 · Cut
 
-**Cut this sheet** on the sheet, or **Cut everything** for the lot.
+**Cut this sheet** on the sheet, or **Cut the sheets waiting here** above the
+list for a run of them.
+
+⭐️ **That button only ever does the work that is left.** It skips sheets you
+have already cut, and it acts on the sheets **shown** — so narrow the list
+first, by box or by search or with the filters, and it does just those. It
+says both on its own face: how many it will cut, how many it is skipping, and
+how many are waiting that this list is not showing.
 
 Each piece comes out as its own picture: full resolution, transparent
 background, the edge smoothed and bitten very slightly *inside* the printed

@@ -2074,6 +2074,79 @@ const SHAPE = `(function () {
        ⚠️ The API is checked elsewhere; this is the half that goes wrong
        unwatched — fault 61's lesson, that a check going through the API is a
        green light over a button that does nothing. */
+    /* ⚠️⚠️ THE BUTTON THAT CUTS A RUN OF SHEETS SAYS WHAT IT WILL DO.
+       The designer, 26 August 2026: "I think pressed 'cut every outlined
+       sheet', next to which it said '22 not cut yet'. But it then started
+       cutting every single page I have ever outlined in the entire game."
+       The words and the action were worked out separately and disagreed, so
+       what has to be checked is that the button's own face now names the
+       number the room will act on — and that narrowing the list changes it.
+       ⚠️ The API is checked elsewhere; this is fault 61's half, where a
+       green light over a button that does nothing gets written. */
+    {
+      console.log("\nthe button that cuts a run of sheets says what it will do");
+      // put fresh outlines on the two newbox sheets, so they are waiting
+      // again while oldbox-01 stays cut and untouched
+      for (const sid of ["newbox-01", "newbox-02"]) {
+        await fetch(`${ROOM}/api/p/the-cutting-queue/outlines/${sid}`,
+          { method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pieces: [
+              { pts: [[200, 200], [700, 200], [700, 700], [200, 700]] },
+              { pts: [[900, 900], [1400, 900], [1400, 1400], [900, 1400]] }] }) });
+      }
+      await page.go(`${ROOM}/p/the-cutting-queue/?tab=sheets`);
+      await sleep(500);
+      const all = await page.val(`(function () {
+        var a = document.querySelector('#sFilter button[data-f=""]');
+        if (a) a.click();
+        return true; })()`);
+      await sleep(500);
+      const face = await page.val(`(function () { return {
+        says: (document.getElementById("cutAll") || {}).textContent || "",
+        note: (document.getElementById("cutAllNote") || {}).textContent || "",
+        cards: document.querySelectorAll(".sheets .sheet").length }; })()`);
+      check("the button names the number of sheets it will cut, not the whole game",
+            /Cut the 2 sheets waiting here/.test(face.says), face.says);
+      // ⚠️ AND IT SAYS WHAT IT IS SKIPPING. The sheet already cut is the
+      // whole complaint; a button that silently left it out would be as hard
+      // to trust as one that silently cut it again.
+      check("and it says the sheet already cut is being skipped",
+            /1 already cut sheet is skipped/.test(face.note), face.note);
+
+      /* ⭐️ "OR JUST CUT THE ONES I'M LOOKING AT WITHIN THE CURRENT IMPORT."
+         The list is already held to a box, a search and a filter, so the
+         narrowing they have made IS the answer — and the number on the
+         button has to follow it. */
+      await page.val(`(function () { var f = document.getElementById("sFind");
+        f.value = "newbox-01"; f.dispatchEvent(new Event("input", {bubbles:true}));
+        return true; })()`);
+      await sleep(500);
+      const narrowed = await page.val(`(function () { return {
+        says: (document.getElementById("cutAll") || {}).textContent || "",
+        note: (document.getElementById("cutAllNote") || {}).textContent || "" }; })()`);
+      check("narrowing the list to one sheet narrows the button to one sheet",
+            /Cut the 1 sheet waiting here/.test(narrowed.says), narrowed.says);
+      // ⚠️ AND A NARROWING IS NEVER SILENT: a button quietly doing less than
+      // you think is the whole of what went wrong here.
+      check("and it says how many are waiting that this list is not showing",
+            /1 more sheet is waiting but not shown/.test(narrowed.note), narrowed.note);
+
+      // ⭐️ and pressing it really cuts THAT sheet and leaves the other waiting
+      await page.val(`(function () { document.getElementById("cutAll").click(); return true; })()`);
+      await sleep(6000);
+      const after = await fetch(`${ROOM}/api/p/the-cutting-queue`).then(r => r.json());
+      const state = {};
+      after.sheets.forEach(function (x) { state[x.id] = [x.cut, !!x.stale]; });
+      check("pressing it cuts the sheet it named and leaves the other waiting",
+            state["newbox-01"] && state["newbox-01"][1] === false &&
+            state["newbox-02"] && state["newbox-02"][1] === true, state);
+      // put the search back, so nothing after this looks at a narrowed list
+      await page.val(`(function () { var f = document.getElementById("sFind");
+        f.value = ""; f.dispatchEvent(new Event("input", {bubbles:true}));
+        return true; })()`);
+      await sleep(300);
+    }
+
     {
       console.log("\nputting a set by for later, from the page");
       await page.go(`${ROOM}/p/the-spare-room/?tab=sheets`);

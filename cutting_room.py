@@ -1051,6 +1051,52 @@ class Project:
                 "w": box[2] - box[0], "h": box[3] - box[1]}
 
     # ---- status
+    def cut_state(self, sid, book, idx, by_sheet):
+        """How one sheet stands: outlines on it, pieces cut off it, and
+        whether the outlines have MOVED since that cut.
+
+        ⚠️⚠️ ONE RULE, because four things ask it and a fifth acted on
+        no rule at all. *Cut every outlined sheet* re-cut the whole game
+        every time — the designer, 26 August 2026, having outlined 22 new
+        sheets: "it then started cutting every single page I have ever
+        outlined in the entire game." Its own tip said it cut sheets that
+        "[have] not been cut yet" and the note beside it counted exactly
+        those, while the room behind it cut everything with an outline on
+        it. Fault 24 for the eleventh time, and fault 16's shape as well:
+        the words and the action were worked out separately, so they
+        disagreed.
+        """
+        o = book.get(sid) or {}
+        cut = by_sheet.get(sid, [])
+        stale = bool(o.get("stamp") and cut and
+                     o.get("stamp", 0) > (idx.get(cut[0], {}).get("cut_at") or 0))
+        return len(o.get("pieces") or []), cut, stale
+
+    def waiting_to_cut(self, only=None):
+        """The sheets that really are waiting: outlined, and either never cut
+        or outlined again since. `only` holds it to a list of sheet ids — the
+        sheets the person is actually looking at.
+
+        ⚠️ It INTERSECTS rather than obeys: a page open for an hour may name
+        a sheet another tab has since cut, and cutting it again would be the
+        very waste this exists to stop. An id this game does not have is
+        ignored rather than refused, for the same reason.
+        """
+        book = self.outlines().get("sheets", {})
+        idx = self.index().get("pieces", {})
+        by_sheet = {}
+        for stem, v in idx.items():
+            by_sheet.setdefault(v.get("sheet", ""), []).append(stem)
+        want = None if only is None else set(only)
+        out = []
+        for s in self.sheets:
+            if want is not None and s["id"] not in want:
+                continue
+            n_out, cut, stale = self.cut_state(s["id"], book, idx, by_sheet)
+            if n_out and (not cut or stale):
+                out.append(s["id"])
+        return out
+
     def status(self):
         book = self.outlines().get("sheets", {})
         idx = self.index().get("pieces", {})
@@ -1061,8 +1107,7 @@ class Project:
         sheets = []
         for s in self.sheets:
             o = book.get(s["id"]) or {}
-            n_out = len(o.get("pieces") or [])
-            cut = by_sheet.get(s["id"], [])
+            n_out, cut, stale = self.cut_state(s["id"], book, idx, by_sheet)
             # a piece set aside is not waiting to be named — it is put away
             named = sum(1 for st in cut
                         if (man.get(st) or {}).get("name")
@@ -1074,8 +1119,7 @@ class Project:
                                # the thumbnail is drawn from the outlines, so the
                                # page has to know when they last moved
                                stamp=int(o.get("stamp") or 0),
-                               stale=bool(o.get("stamp") and cut and
-                                          o.get("stamp", 0) > (idx.get(cut[0], {}).get("cut_at") or 0))))
+                               stale=stale))
         wanted = self.wanted_status(man, idx)
         return {
             "id": self.id, "name": self.meta.get("name", self.id),
@@ -4034,8 +4078,17 @@ class Room(BaseHTTPRequestHandler):
             return self.send_json(job)
 
         if head == "cut-all" and method == "POST":
-            book = pr.outlines().get("sheets", {})
-            todo = [s["id"] for s in pr.sheets if (book.get(s["id"]) or {}).get("pieces")]
+            # ⚠️⚠️ SHEETS ALREADY CUT ARE SKIPPED. This read "every sheet with
+            # an outline on it" and so re-cut a whole 161-sheet game to get at
+            # 22 new ones. ⭐️ `sheets` holds it to the ones the person is
+            # looking at — "just cut the ones I'm looking at within the current
+            # import" — and an old page that sends none still gets the skipping.
+            # See waiting_to_cut(), which is the one rule.
+            d = self.body_json()
+            only = d.get("sheets")
+            todo = pr.waiting_to_cut(only if isinstance(only, list) else None)
+            if not todo:
+                return self.send_json({"error": "Nothing is waiting to be cut."}, 400)
 
             def run(progress):
                 out = {}

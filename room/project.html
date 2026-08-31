@@ -75,7 +75,7 @@
            sheets in front of you become one set in a press. -->
       <button id="sJoin" data-tip="Gather the sheets shown above into one set, under a name of your own. Nothing is renamed and nothing moves: a sheet only says which set it is in, so the pieces cut from it keep their names and this can be undone at any time by putting the same sheets back with an empty name.">Put these into one set…</button>
       <span class="spacer" style="flex:1"></span>
-      <button id="cutAll" data-tip="Cut every sheet that has outlines on it and has not been cut yet, one after another. Safe to press again later: cutting a sheet a second time keeps the names you have already given its pieces.">Cut every outlined sheet</button>
+      <button id="cutAll" data-tip="Cut the sheets shown below that are waiting: outlined, and either never cut or outlined again since. Sheets already cut are skipped, so this only ever does the work that is left. Narrow the list first — by box, by search, or with the filters — and it does just those. Safe to press again later: cutting a sheet a second time keeps the names you have already given its pieces.">Cut the sheets waiting here</button>
       <span class="tiny muted" id="cutAllNote"></span>
     </div>
     <div class="sheets" id="sheets"></div>
@@ -402,7 +402,7 @@
     if (!project) return;
     var sh = project.sheets;
     var toOutline = sh.filter(function (x) { return !x.outlines; }).length;
-    var toCut = sh.filter(function (x) { return x.outlines && !x.cut; }).length;
+    var toCut = sh.filter(needsCut).length;
     var cut = project.pieces, named = project.named;
     var w = project.wanted || { total: 0, done: 0, pct: 0 };
     var counts = { import: sh.length + (sh.length === 1 ? " sheet" : " sheets"),
@@ -436,7 +436,7 @@
     var say = ({
       import: "Start by dropping this game's scans below — a PDF, a picture, a Word file with pictures in it, or a ZIP.",
       outline: "Open a sheet and outline the pieces. On cards and counters, <b>Add the suggested outlines</b> usually does the whole sheet.",
-      cut: toCut + (toCut === 1 ? " sheet is" : " sheets are") + " outlined and not cut yet — <b>Cut every outlined sheet</b> does them all.",
+      cut: toCut + (toCut === 1 ? " sheet is" : " sheets are") + " outlined and not cut yet. The <b>Cut</b> button above the sheets does the ones shown, and skips anything already cut.",
       name: (cut - named) + " cut " + (cut - named === 1 ? "piece has" : "pieces have") + " no name. <b>Match</b> is the quick way: drag a component's name onto the piece.",
       check: "The checklist knows what this game should have. " + (w.total - w.done) + " components are not accounted for yet.",
       take: "Everything is cut and named. <b>Take it away</b> writes a plain folder of the pieces, a list, a page of every piece at true size, and cut files for a laser."
@@ -872,6 +872,49 @@
   /* ⚠️ ONE RULE FOR WHAT IS SHOWN, in one place: the list is drawn from it and
      "put these into one set" acts on it, and if those two ever disagreed the
      button would gather sheets that are not in front of the person. */
+  /* ⚠️⚠️ ONE RULE FOR "THIS SHEET IS WAITING TO BE CUT", because four things
+     ask it — the Cut step's count, the *Cut* filter chip, the note beside
+     *Cut every outlined sheet*, and that button's own action — and a fifth,
+     the room behind it, acted on no rule at all and cut the lot. The designer,
+     26 August 2026, having outlined 22 new sheets: "it then started cutting
+     every single page I have ever outlined in the entire game." Fault 24.
+     ⭐️ A sheet cut and then outlined AGAIN is waiting too: `stale` is the
+     room saying the outlines have moved since the pieces came off it. */
+  function needsCut(s) { return s.outlines > 0 && (!s.cut || s.stale); }
+  /* ⭐️⭐️ THE BUTTON SAYS THE NUMBER IT WILL ACT ON, and that number is the
+     sheets IN FRONT OF YOU — the same idiom as "Put these N into one set…"
+     beside it. The designer, 26 August 2026: "Or just cut the ones I'm looking
+     at within the current import." The sheet list is already held to a box, a
+     search and a filter, so the narrowing they have already made IS the answer;
+     nothing new to set, and nothing to get wrong.
+     ⚠️ AND IT SAYS WHAT IT IS LEAVING OUT. A button that quietly does less
+     than the whole game, while the game has thirty more sheets waiting behind
+     a filter, is two numbers disagreeing in silence — see faults 67 and 68. */
+  function sayCutAll(list) {
+    var b = document.getElementById("cutAll");
+    if (!b || !project) return;
+    var mine = list.filter(needsCut);
+    var waiting = project.sheets.filter(needsCut).length;
+    b.textContent = mine.length
+      ? "Cut the " + mine.length + " sheet" + (mine.length === 1 ? "" : "s") + " waiting here"
+      : "Nothing here is waiting to be cut";
+    b.disabled = !mine.length;
+    var said = [];
+    var done = list.filter(function (s) { return s.outlines && s.cut && !s.stale; }).length;
+    if (done) said.push(done + " already cut " + (done === 1 ? "sheet is" : "sheets are") + " skipped.");
+    /* ⚠️ AND IT NEVER LETS A NARROWING BE SILENT. The Sheets list opens on
+       *To outline*, so somebody can perfectly well be looking at a page that
+       shows none of the sheets waiting to be cut — and a button that quietly
+       did less than they thought is the whole of what went wrong here. */
+    var hidden = waiting - mine.length;
+    if (hidden) {
+      said.push(hidden + (mine.length ? " more " : " ") +
+                (hidden === 1 ? "sheet is" : "sheets are") +
+                " waiting but not shown — clear the search and filters to reach " +
+                (hidden === 1 ? "it." : "them."));
+    }
+    document.getElementById("cutAllNote").textContent = said.join(" ");
+  }
   function shownSheets() {
     var q = document.getElementById("sFind").value.trim().toLowerCase();
     return (project && project.sheets || []).filter(function (s) {
@@ -892,7 +935,7 @@
       if (sheetFilter === "later") return bookLater(bookOf(s.id));
       if (bookLater(bookOf(s.id)) && sheetFilter === "todo") return false;
       if (sheetFilter === "todo") return !s.outlines && !s.done;
-      if (sheetFilter === "uncut") return s.outlines && !s.cut;
+      if (sheetFilter === "uncut") return needsCut(s);
       if (sheetFilter === "cut") return s.cut > 0;
       if (sheetFilter === "done") return !!s.done;
       return true;
@@ -903,6 +946,7 @@
     box.innerHTML = "";
     var q = document.getElementById("sFind").value.trim().toLowerCase();
     var list = shownSheets();
+    sayCutAll(list);
     document.getElementById("noSheets").hidden = list.length > 0 || !project.sheets.length;
     if (!list.length && project.sheets.length) {
       /* ⭐️ The commonest way to see this is now a GOOD one — the room opens
@@ -928,8 +972,6 @@
     var jb = document.getElementById("sJoin");
     jb.textContent = "Put these " + list.length + " into one set…";
     jb.disabled = list.length < 2;
-    var uncut = project.sheets.filter(function (s) { return s.outlines > 0 && !s.cut; }).length;
-    document.getElementById("cutAllNote").textContent = uncut ? uncut + " not cut yet" : "";
     // group by prefix, so a forty-page book stays together
     var groups = {};
     list.forEach(function (s) {
@@ -1272,15 +1314,23 @@
   });
 
   document.getElementById("cutAll").addEventListener("click", function () {
-    var b = this; b.disabled = true;
-    post(API + "/cut-all").then(function (r) {
-      if (!r.job) { flash(r.error || "nothing to cut", true); b.disabled = false; return; }
+    var b = this, was = b.textContent;
+    /* ⭐️ THE SHEETS IT NAMED, worked out again at the moment of the press so
+       a filter changed since the last draw cannot send yesterday's list. The
+       room intersects this with what is really waiting (waiting_to_cut), so a
+       sheet cut in another tab meanwhile is still skipped. */
+    var ids = shownSheets().filter(needsCut).map(function (s) { return s.id; });
+    if (!ids.length) { flash("Nothing here is waiting to be cut.", true); return; }
+    b.disabled = true; b.textContent = "Cutting…";
+    post(API + "/cut-all", { sheets: ids }).then(function (r) {
+      if (!r.job) { flash(r.error || "nothing to cut", true); b.disabled = false; b.textContent = was; return; }
       return watchJob(r.job, "cutting").then(function (res) {
         var made = 0; Object.keys(res || {}).forEach(function (k) { if (typeof res[k] === "number") made += res[k]; });
-        flash(made + " pieces cut across " + Object.keys(res || {}).length + " sheets.");
-        b.disabled = false; piecesData = null; wantedData = null; load();
+        var n = Object.keys(res || {}).length;
+        flash(made + " pieces cut across " + n + (n === 1 ? " sheet." : " sheets."));
+        piecesData = null; wantedData = null; load();
       });
-    }).catch(function (e) { flash(e.message, true); b.disabled = false; });
+    }).catch(function (e) { flash(e.message, true); b.disabled = false; b.textContent = was; });
   });
 
   /* ----------------------------------------------------------- pieces */

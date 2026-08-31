@@ -387,6 +387,22 @@ finished piece, and each is measured in inches.
 Cut a sheet again after correcting an outline and the names already given to
 its pieces follow them, even where adding a piece renumbers the rest.
 
+⭐️ **Cut the sheets waiting here** — above the sheet list — does a run of them
+in one press. Two things about it are worth knowing, because they are what
+make it safe to press:
+
+- **It skips sheets already cut.** A sheet counts as waiting if it has
+  outlines on it and has either never been cut, or been outlined *again* since
+  it was. So pressing it a second time does not put the whole game through the
+  cutter over again.
+- **It acts on the sheets shown, not on the whole game.** The list is already
+  held to a box, a search and a filter, so whatever narrowing you have made is
+  what it does — import twenty-two new sheets, search for them, press once.
+
+The button says all of this on its own face: the number it will cut, how many
+of the sheets in front of you are being skipped as already done, and how many
+are waiting that this list is not showing you.
+
 ### 5 · Name, and match
 
 ⭐️ **A game is worked through a box at a time.** The designer, 24 August 2026: *"I

@@ -223,6 +223,38 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⚠️⚠️ Cutting a run of sheets does only the work that is left — **fixed**, 26 August 2026
+
+The designer, having outlined 22 new sheets: *"I think pressed 'cut every
+outlined sheet', next to which it said '22 not cut yet'. But it then started
+cutting every single page I have ever outlined in the entire game. It should
+surely skip finished sheets? Or just cut the ones I'm looking at within the
+current import."*
+
+Everything the room **said** was right and the room **did** something else: the
+button's tip and the note beside it both promised sheets *"not cut yet"*, while
+`/cut-all` behind them took every sheet with an outline on it and no rule about
+`cut` anywhere in it.
+
+- ⭐️ **One rule each side** — `needsCut()` in the page, `waiting_to_cut()` in
+  the room. It had been spelled out four times in the page and a fifth,
+  differently, in the room. Fault 24, eleventh time.
+- ⭐️ **A sheet outlined again since its cut is waiting too**, or fixing an
+  outline and pressing the button would do nothing at all — which is the same
+  complaint from the other end.
+- ⭐️ **"Just the ones I'm looking at" needed nothing new.** The list is already
+  held to a box, a search and a filter, so the button acts on the sheets shown
+  and **names its own number** — the idiom *"Put these N into one set…"* had
+  already established beside it.
+- ⚠️ **And it says what it is leaving out**: how many it skips as already done,
+  and how many are waiting that the list is not showing.
+- ⚠️⚠️ **There had been no check on this button at all** — not through the API,
+  not in the browser, not a word in `ROOM.md`. Fourteen now, teeth tried: put
+  the fault back and six go red while *"every sheet ended up cut"* stays green.
+
+See fault 81, whose lesson outlives it: **a sentence on a button is a claim
+nothing is checking.**
+
 ### `[x]` ⭐️⭐️ No terminal window at all — **built**, 26 August 2026
 
 The last of the designer's *"a simpler way to open and quit. I don't like
@@ -833,6 +865,29 @@ anything that speeds up cutting.
 ---
 
 ## Done
+
+### 26 August 2026 — cutting only the sheets that are waiting
+
+- `[x]` ⚠️⚠️ **`/cut-all` skips sheets already cut.** It read *"every sheet
+  with an outline on it"*, so 22 new sheets put a 161-sheet game through the
+  cutter. The button's own tip and the note beside it had both been promising
+  the opposite the whole time.
+- `[x]` ⭐️ **One rule each side** — `needsCut()` in the page and
+  `waiting_to_cut()` in the room, where it had been written out four times and
+  a fifth differently. Fault 24, eleventh time.
+- `[x]` ⭐️ **A sheet outlined again since its cut counts as waiting**, so
+  correcting an outline and pressing the button does something.
+- `[x]` ⭐️ **It acts on the sheets shown** — *"or just cut the ones I'm
+  looking at within the current import"* — and names that number on its own
+  face. ⚠️ The room intersects it with what is really waiting rather than
+  obeying a page that may be an hour old.
+- `[x]` ⚠️ **It says what it is leaving out**: how many are skipped as already
+  cut, and how many are waiting that this list is not showing.
+- `[x]` ⚠️⚠️ **14 new checks** — 573 to 587 — where there had been none at all
+  on this button. ⭐️ Teeth tried: the fault put back turns six red, while
+  *"every sheet ended up cut"* stays green, which is the guard against passing
+  by skipping everything.
+- `[x]` `ROOM.md` and `GUIDE.md` now describe the button, which neither did.
 
 ### 26 August 2026 — no terminal window at all
 

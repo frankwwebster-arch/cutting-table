@@ -794,7 +794,26 @@ json.dump({"sheets": {"throwaways-01": {"pieces": [{"pts": [[0, 0], [10, 0], [10
                                                    {"pts": [[0, 0], [5, 0], [5, 5]]}],
                                         "stamp": 1}}},
           open(os.path.join(spare, "outlines.json"), "w"), indent=1)
-json.dump({"projects": [bed, other, spare]},
+# ⭐️ a fourth game, for *Cut the sheets waiting here*: it is the one check
+# that really CUTS a run of sheets, so it gets a game nothing else reads —
+# two boxes, everything outlined, nothing cut yet.
+queue = os.path.join(tmp, "home", "the-cutting-queue")
+os.makedirs(os.path.join(queue, "sheets"))
+qsheets, qout = [], {}
+for book, pages in (("newbox", 2), ("oldbox", 1)):
+    for n in range(1, pages + 1):
+        sid = "%s-%02d" % (book, n)
+        shutil.copyfile("demo/demo-sheet.png", os.path.join(queue, "sheets", sid + ".png"))
+        qsheets.append({"id": sid, "label": "%s p.%d" % (book, n),
+                        "name": "", "w": 1800, "h": 2400})
+        qout[sid] = {"pieces": [{"pts": [[200, 200], [700, 200], [700, 700], [200, 700]]}],
+                     "stamp": 1}
+json.dump({"id": "the-cutting-queue", "name": "The Cutting Queue", "game": "nothing real",
+           "dpi": 300, "notes": "", "paths": {}, "hooks": [], "sheets": qsheets},
+          open(os.path.join(queue, "project.json"), "w"), indent=1)
+json.dump({"sheets": qout}, open(os.path.join(queue, "outlines.json"), "w"), indent=1)
+
+json.dump({"projects": [bed, other, spare, queue]},
           open(os.path.join(tmp, "home", "projects.json"), "w"), indent=1)
 print("   %d sheets out of %d books" % (len(sheets), len(books)))
 PY
@@ -912,6 +931,122 @@ code, d = call("/sheet/" + SID, {"skip": []})
 
 sys.exit(1 if bad else 0)
 PYSKIP
+
+# ⚠️⚠️ CUTTING THE SHEETS WAITING, AND ONLY THOSE. The designer, 26 August
+# 2026, having outlined 22 new sheets: "I think pressed 'cut every outlined
+# sheet', next to which it said '22 not cut yet'. But it then started cutting
+# every single page I have ever outlined in the entire game. It should surely
+# skip finished sheets? Or just cut the ones I'm looking at within the current
+# import."
+# The button's own tip said it cut sheets that "[have] not been cut yet", the
+# note beside it counted exactly those, and the room behind it cut everything
+# with an outline on it. THERE WAS NO CHECK ON THIS AT ALL, which is how the
+# words and the action came to disagree — fault 24, and fault 16's shape.
+say "cutting the sheets that are waiting, and not the ones already done"
+$PY - "$TMP" "$PORT" <<'PYCUTALL' || code=1
+import json, sys, time, urllib.error, urllib.request
+tmp, port = sys.argv[1], sys.argv[2]
+ROOT = "http://127.0.0.1:%s" % port
+API = ROOT + "/api/p/the-cutting-queue"
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+def call(path, body=None, method="POST"):
+    req = urllib.request.Request(API + path, data=json.dumps(body or {}).encode(),
+                                 headers={"Content-Type": "application/json"},
+                                 method=method)
+    try:
+        return 200, json.load(urllib.request.urlopen(req))
+    except urllib.error.HTTPError as e:
+        return e.code, json.load(e)
+
+
+def finish(job):
+    """⚠️ Wait for the cut, but never for ever — a check that hangs reports
+    nothing, which is worse than one that reports the wrong thing (fault 79)."""
+    for _ in range(600):
+        st = json.load(urllib.request.urlopen(ROOT + "/api/jobs/" + job))
+        if st.get("state") != "running":
+            return st
+        time.sleep(0.2)
+    raise SystemExit("  WRONG the cut never finished")
+
+
+def waiting(body=None):
+    code, d = call("/cut-all", body)
+    if code != 200:
+        return code, d.get("error", "")
+    finish(d["job"])
+    return code, sorted(d.get("sheets") or [])
+
+
+def outlined():
+    d = json.load(urllib.request.urlopen(API))
+    return {s["id"]: (s["outlines"], s["cut"]) for s in d["sheets"]}
+
+
+# one sheet cut on its own first, so there is something already finished with
+code, d = call("/cut/oldbox-01")
+check("a sheet cuts on its own to begin with", code == 200 and d.get("made"),
+      len(d.get("made") or []))
+
+# ⭐️⭐️ THE ONE THAT MATTERS. Asked for the lot, the room offers only the
+# sheets still waiting — not the whole game over again.
+code, todo = waiting()
+check("asked for the lot, it takes only the sheets not cut yet",
+      todo == ["newbox-01", "newbox-02"], todo)
+check("and the sheet already cut was left alone",
+      "oldbox-01" not in todo, todo)
+
+# ⚠️ AND WITH EVERYTHING CUT IT REFUSES, rather than doing the whole game
+# again. This is the press the designer actually made.
+code, why = waiting()
+check("with nothing left, it refuses and says so in a sentence",
+      code == 400 and "waiting" in str(why).lower(), [code, why])
+
+# ⭐️ A SHEET OUTLINED AGAIN SINCE ITS CUT IS WAITING AGAIN. `stale` is the
+# room saying the outlines moved after the pieces came off, and needsCut()
+# and waiting_to_cut() are the one rule that knows it.
+code, d = call("/outlines/oldbox-01", {"pieces": [
+    {"pts": [[200, 200], [700, 200], [700, 700], [200, 700]]},
+    {"pts": [[900, 200], [1400, 200], [1400, 700], [900, 700]]}]}, "PUT")
+code, todo = waiting()
+check("a sheet outlined again after its cut is waiting again",
+      todo == ["oldbox-01"], todo)
+
+# ⭐️ "OR JUST CUT THE ONES I'M LOOKING AT" — the page sends the sheets it
+# named, and the room does those and no others.
+for sid in ("newbox-01", "newbox-02", "oldbox-01"):
+    call("/outlines/" + sid, {"pieces": [
+        {"pts": [[200, 200], [700, 200], [700, 700], [200, 700]]},
+        {"pts": [[900, 900], [1400, 900], [1400, 1400], [900, 1400]]}]}, "PUT")
+code, todo = waiting({"sheets": ["newbox-01"]})
+check("told which sheets are being looked at, it does those and no others",
+      todo == ["newbox-01"], todo)
+
+# ⚠️ IT INTERSECTS RATHER THAN OBEYS: a page open for an hour may name a
+# sheet since cut by another tab, and a sheet this game does not have at all.
+code, todo = waiting({"sheets": ["newbox-02", "newbox-01", "no-such-sheet"]})
+check("a sheet since cut elsewhere, and one this game has not got, are ignored",
+      todo == ["newbox-02"], todo)
+
+# ⚠️ and every sheet really was cut, or the skipping is just a way of doing
+# nothing — the cheap way to pass all of the above.
+waiting()                       # ⭐️ and the bench is left with nothing waiting,
+state = outlined()              # which is the state the browser check states
+check("and every sheet in the game ended up cut",
+      all(v[1] > 0 for v in state.values()), state)
+code, why = waiting()
+check("and nothing at all is left waiting afterwards", code == 400, [code, why])
+
+sys.exit(1 if bad else 0)
+PYCUTALL
 
 # ⭐️ SHAPES KEPT, AND KEPT BESIDE THE PROJECTS RATHER THAN INSIDE ONE.
 # The designer, 23 August 2026: "I will need to cut a number of pieces that are

@@ -93,11 +93,18 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 573 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 587 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**26 August, later**: *"I think pressed 'cut every outlined sheet', next to
+which it said '22 not cut yet'. But it then started cutting every single page I
+have ever outlined in the entire game."* Right, and the room's own words had
+been saying the correct thing the whole time while the code did something else.
+See fault 81 — ⭐️ whose lesson is that **a sentence on a button is a claim
+nothing is checking**, and this button had no check on it at all.
 
 **26 August, the same day and the important half of it**: the app was built,
 signed, and *correct in every particular* — and it **did not work**. macOS
@@ -1745,6 +1752,59 @@ rather than by reading the code.
     than one of them leaning on the room's `--open` — or the setting would hold
     for one door out and not the other (fault 24, tenth time).
 
+81. ⚠️⚠️⚠️ **A BUTTON'S WORDS AND A BUTTON'S ACTION WERE WORKED OUT
+    SEPARATELY, SO THEY DISAGREED — AND THERE WAS NO CHECK ON IT AT ALL.**
+    The designer, 26 August 2026, having outlined 22 new sheets: *"I think
+    pressed 'cut every outlined sheet', next to which it said '22 not cut
+    yet'. But it then started cutting every single page I have ever outlined
+    in the entire game. It should surely skip finished sheets? Or just cut
+    the ones I'm looking at within the current import. Total waste of time and
+    I don't like the though of any potential duplication of previously-prepared
+    elements."*
+    ⚠️⚠️ **Everything the room SAID was right and the room did something
+    else.** The tip on the button said it cut every sheet that *"has not been
+    cut yet"*; the note beside it counted exactly those and said *"22 not cut
+    yet"*; and `/cut-all` behind them read `[s for s in sheets if outlines]` —
+    no rule about `cut` anywhere in it. So a 161-sheet game went through the
+    cutter to get at 22. That is **fault 16's shape** (two routes to one thing
+    that disagree) over **fault 24's cause** (the same fact written out more
+    than once): *waiting to be cut* was spelled out in FOUR places in the page
+    — the Cut step's count, the *Cut* filter chip, the note, and nothing at
+    all in the button's own handler — and a fifth time, differently, in the
+    room.
+    ⭐️ There is one `needsCut()` in the page and one `waiting_to_cut()` in the
+    room now, and everything asks them.
+    ⚠️⚠️ **AND THERE WAS NO CHECK ON THIS BUTTON WHATEVER** — not through the
+    API, not in the browser, not a word in `ROOM.md`. That is why it could
+    drift: nothing was holding the words to the action. It has fourteen now,
+    and their teeth were tried — put the fault back and six go red, while
+    *"every sheet ended up cut"* stays green, which is the guard against the
+    cheap way to pass (skip everything and call it skipping).
+    ⭐️⭐️ **A SHEET OUTLINED AGAIN SINCE ITS CUT IS WAITING TOO.** "Skip what
+    is cut" written flatly would have been wrong in the other direction — you
+    fix an outline, press the run button, and it does nothing, which is fault
+    58 again. `stale` already existed and already coloured the sheet card; it
+    is now part of the one rule, so correcting an outline puts that sheet back
+    in the queue and nothing else with it.
+    ⭐️⭐️ **"OR JUST CUT THE ONES I'M LOOKING AT" NEEDED NOTHING NEW.** The
+    sheet list is already held to a box, a search and a filter (faults 35, 42,
+    62, 65), so **the narrowing they have already made is the answer** — the
+    button acts on the sheets shown and names its own number, which is the
+    idiom *"Put these N into one set…"* had already established two inches to
+    its left. ⚠️ The room INTERSECTS what the page names with what is really
+    waiting rather than obeying it, because a page open for an hour may name a
+    sheet another tab has since cut.
+    ⚠️⚠️ **AND A NARROWING MAY NEVER BE SILENT.** The Sheets list opens on *To
+    outline*, so somebody can be looking at a page showing none of the sheets
+    that are waiting — and a button quietly doing less than they think is the
+    whole of what went wrong here, from the other end. It says how many are
+    waiting that this list is not showing, and how to reach them. Two numbers
+    that disagree in silence, again — faults 67 and 68.
+    ⭐️ The general shape, worth more than the fix: **when a control carries a
+    sentence saying what it does, that sentence is a claim nothing is
+    checking.** Fault 31 put a sentence on every button in the room; this is
+    the first time one of them turned out to be a lie.
+
 ---
 
 ## Architecture
@@ -1887,7 +1947,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 573 checks, about a minute
+check/check.sh          # 587 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -1997,6 +2057,18 @@ nothing (fault 61): the tool is in the served table, `M` puts it in hand, a box
 dragged on the sheet **reaches the room's own file**, the table says nothing was
 deleted, clicking the box takes it off again — and the baked offline page does
 not offer the tool at all, measured rather than believed.
+
+It works **cutting a run of sheets**: asked for the lot, the room takes only
+the sheets not cut yet; with nothing left it refuses in a sentence rather than
+doing the game again; a sheet outlined AGAIN since its cut is waiting again;
+and told which sheets are being looked at it does those and no others — while
+ignoring one another tab has since cut and one the game has not got. ⚠️ And
+*every sheet ended up cut*, or the cheap way to pass all of that is to skip
+everything. Then in the browser, because the fault was that the button's words
+and its action disagreed: the button **names the number it will act on**, says
+how many it is skipping as already done, says how many are waiting that the
+list is not showing, and pressing it cuts the sheet it named and leaves the
+other one waiting.
 
 It gives the automatic pass a **grubby scan** — a hairline crack, a speck and
 a scratch across the glass, each of which cleared every test the room used to
