@@ -206,6 +206,11 @@ Things that make it quicker:
 - ⭐️ **Match** is the fastest way if you have typed the box's contents list:
   a board of every piece beside the list of components, and you drag a name
   onto the piece it is.
+- ⭐️ **A deck stays on that list until it has all its cards** — reading
+  *3 of 24* as you go — while a counter printed twenty-six times leaves on the
+  first piece, because one of it is the whole of it. Each such component also
+  carries an **its back** row: drag that onto the piece which is the back and
+  every card in the deck points at it, including the ones you link afterwards.
 - ⭐️ **The chips above the list** narrow it to the work: *No name*,
   *Look-alikes*, *Worth a look*, and **Held back** — the pieces you have
   marked as not ready yet, each row carrying the reason you gave. An empty

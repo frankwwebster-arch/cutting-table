@@ -93,11 +93,19 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 587 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 607 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**26 August, last thing**: *"in Checklist it's generally very apparent that
+certain elements comprise more than one piece (eg a deck of cards). But this
+isn't carried through to the Match drag and drop function."* Right, and the
+room had known the right answer the whole time — Match was the one list asking
+a cruder question of its own, in **two** places. See fault 82, whose careful
+half is the back: *"match should include an item for the relevant back of each
+deck."*
 
 **26 August, later**: *"I think pressed 'cut every outlined sheet', next to
 which it said '22 not cut yet'. But it then started cutting every single page I
@@ -1805,6 +1813,71 @@ rather than by reading the code.
     checking.** Fault 31 put a sentence on every button in the room; this is
     the first time one of them turned out to be a lie.
 
+82. ⭐️⭐️⚠️ **MATCH ASKED A CRUDER QUESTION THAN THE CHECKLIST, SO A DECK
+    LEFT THE LIST ON ITS FIRST CARD.** The designer, 26 August 2026: *"In
+    Checklist it's generally very apparent that certain elements comprise more
+    than one piece (eg a deck of cards). But this isn't carried through to the
+    Match drag and drop function. ie if I mark one magic card as part of a
+    deck, that then disappears from the left column, even though I might have
+    numerous more cards to mark as part of that deck. The only way to get it
+    back is to click 'show everything, including matched' which isn't a great
+    experience. There should be a linkage between checklist and match that only
+    marks a component as matched when user has dragged it onto the correct
+    number of cards. ALSO match should include an item for the relevant back of
+    each deck. These feel like obvous fixes to me."*
+    ⚠️⚠️ **THE ROOM HAD KNOWN THE RIGHT ANSWER THE WHOLE TIME.**
+    `wanted_status()` counts a deck against its quantity (fault 36) and lets
+    one design fill as many cards as the game wants of it (fault 56). Match was
+    the one list in the room that did not ask it — **twice**, in two different
+    copies of a cruder rule:
+    - `renderMatch()` dropped a component from the list on
+      `(w.pieces || []).length > 0` — *anything linked means done*.
+    - and `link()`, which keeps the two stores the page holds in step after a
+      drag rather than fetching them again, **re-derived `state` itself** with
+      the same crude rule — so even a correct filter would have been fed a
+      wrong answer a millisecond later. ⭐️ The bulk bar had already worked
+      this out and its comment says so in as many words: *"read the checklist
+      back from the room rather than working it out here: whether a component
+      is done depends on how many pieces a deck wants, which only the room
+      knows."* One door had the lesson written on it and the other did not.
+      **Fault 24, twelfth time.** `link()` reads it back from the room now, and
+      there is no second copy of the rule in any language.
+    ⭐️ **And the list says how far it has got** — *3 of 24*. A component that
+    merely vanished answered none of the question the designer was actually
+    asking of it.
+    ⚠️ **The badge over Match counted something else again** — only components
+    with nothing at all against them, while the column showed the part-done
+    too. Two numbers disagreeing in silence (faults 67, 68); it counts what the
+    column holds now.
+    ⭐️⭐️ **A BACK IS A ROW, BECAUSE A BACK IS ANOTHER PIECE.** *"Match should
+    include an item for the relevant back of each deck."* A back cannot be a
+    name dragged onto a card — fault 46 settled that it is another PIECE — so
+    the row is dragged the other way: drop **its back** onto the piece that is
+    the back and the whole deck points at it.
+    ⚠️ **The half that would otherwise silently not happen** is the cards
+    linked *afterwards*. The back lives on the **component** (`back` on the
+    wanted item) and a card linked to that component inherits it — ⚠️ filling
+    a blank only, because a set can have more than one back, and ⚠️ through
+    **one `inherit_back()`**, because two doors link a piece to a component
+    (the Match drag and the bulk bar) and a guard only one of them remembers is
+    fault 14 for the umpteenth time.
+    ⭐️ **The drag is the decision**, so the piece really is marked `card back`
+    — that is what lets the *only pieces marked as a card back* narrowing
+    (fault 51) find it later. Half of this working would read as broken.
+    ⚠️ **And it can be taken off**, or it is fault 50's shape: a mark nothing
+    can clear, over a decision spread across thirty-two cards.
+    ⭐️ **A component still needing a back stays on the list even when all its
+    pieces are matched**, showing only the row that is left to do — or the last
+    thing to do about a deck would be the one thing you could not see.
+    ⭐️ Teeth tried on both copies of the rule, separately: put the filter back
+    and the deck vanishes from the list; put `link()`'s own recompute back and
+    the deck vanishes **on the drop**, which is precisely what was reported.
+    ⚠️ Which components are offered a back row is a judgement: **kind `card` or
+    `deck`, or anything wanting more than one piece.** The last of those is
+    deliberately generous — a set of several different pieces may well be
+    printed two-sided — and it costs one ignorable row, which goes away the
+    moment the back is said.
+
 ---
 
 ## Architecture
@@ -1947,7 +2020,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 587 checks, about a minute
+check/check.sh          # 607 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -2057,6 +2130,17 @@ nothing (fault 61): the tool is in the served table, `M` puts it in hand, a box
 dragged on the sheet **reaches the room's own file**, the table says nothing was
 deleted, clicking the box takes it off again — and the baked offline page does
 not offer the tool at all, measured rather than believed.
+
+It works **a deck on the Match board**: a deck of 24 is not settled by one
+card or by two, while a counter printed 26 times still is on the first; the
+deck's back is said once and reaches every card already linked, and every card
+linked afterwards; a card given a back of its own keeps it; the back can be
+taken off again; and a back naming a piece the game has not got is refused.
+Then in the browser, because the fault was a list that emptied itself: a
+part-marked deck is **still there** with *4 of 24* on it, carries a row for its
+back, records that back when the row is dropped on a piece — and, the one that
+matters, **dropping a card on the deck leaves it on the list, one further on**,
+without the page being reloaded.
 
 It works **cutting a run of sheets**: asked for the lot, the room takes only
 the sheets not cut yet; with nothing left it refuses in a sentence rather than

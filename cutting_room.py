@@ -4193,6 +4193,9 @@ class Room(BaseHTTPRequestHandler):
                             cur.pop("wanted", None)
                     if back:
                         cur["back"] = back
+                    # ⭐️ and failing that, the back the component itself says
+                    # it has — see inherit_back()
+                    inherit_back(item, cur)
                     linked += 1
                     if item and not (cur.get("name") or "").strip():
                         cur["name"] = item.get("name") or ""
@@ -4314,6 +4317,13 @@ class Room(BaseHTTPRequestHandler):
                     # nothing — but the game reading the manifest has to be
                     # told that this one design is wanted twenty times, and
                     # until now there was nowhere to write that down.
+                    # ⭐️ LINKING A CARD TO A DECK GIVES IT THE DECK'S BACK.
+                    # The whole point of saying it once — see inherit_back(),
+                    # which is the one copy of this rule.
+                    if str(d.get("wanted") or "").strip():
+                        item = next((i for i in (pr.wanted().get("items") or [])
+                                     if i.get("id") == str(d["wanted"]).strip()), None)
+                        inherit_back(item, cur)
                     if "copies" in d:
                         try:
                             c = int(d["copies"])
@@ -4382,6 +4392,46 @@ class Room(BaseHTTPRequestHandler):
                                            str(d.get("group_name") or ""),
                                            str(d.get("group_book") or ""))
                 return self.send_json(dict(added=added, **pr.wanted_status()))
+
+        # ⭐️⭐️ WHICH PIECE IS THE BACK OF THIS COMPONENT. The designer, 26
+        # August 2026: "ALSO match should include an item for the relevant back
+        # of each deck." A back is another PIECE (fault 46) and a deck of
+        # thirty-two cards all point at the same one — so it is said ONCE,
+        # about the deck, rather than thirty-two times about the cards.
+        if head == "wanted" and len(rest) == 2 and rest[1] == "back" and method == "POST":
+            d = self.body_json()
+            wid = str(d.get("id") or "").strip()
+            stem = str(d.get("stem") or "").strip()
+            gave = 0
+            with pr.lock:
+                w = pr.wanted()
+                item = next((i for i in (w.get("items") or [])
+                             if i.get("id") == wid), None)
+                if item is None:
+                    return self.send_json({"error": "no such component"}, 400)
+                # ⚠️ a stem nothing answers to would be a back pointing at a
+                # piece that is not there — worse than no back at all
+                if stem and stem not in (set(pr.piece_files()) | pr.spare_stems()):
+                    return self.send_json({"error": "no such piece"}, 400)
+                if stem:
+                    item["back"] = stem
+                else:
+                    item.pop("back", None)
+                pr.save_wanted(w)
+                man = pr.manifest()
+                if stem:
+                    # ⭐️ THE DRAG IS THE DECISION, so the piece really is
+                    # marked a card back — it is what makes the "only pieces
+                    # marked as a card back" narrowing (fault 51) able to find
+                    # it afterwards. Half of this working would read as broken.
+                    man["pieces"].setdefault(stem, {})["kind"] = "card back"
+                    for st, v in man["pieces"].items():
+                        if st != stem and v.get("wanted") == wid \
+                           and inherit_back(item, v):
+                            gave += 1
+                pr.save_manifest(man)
+            return self.send_json(dict(ok=True, back=stem, gave=gave,
+                                       **pr.wanted_status()))
 
         # ⭐️⭐️ the checklist learnt from what has been cut — see
         # learn_from_pieces(). The GROUPING is done in the page, off the very
@@ -4588,6 +4638,30 @@ def remove_sheets(pr, ids, with_pieces=False):
             took += 1
         pr.save_index(idx)
     return {"sheets": len(ids), "outlines": drawn, "pieces": took}
+
+
+def inherit_back(item, cur):
+    """⭐️ A DECK'S BACK BELONGS TO THE DECK, so a card linked to the deck takes
+    it. The designer, 26 August 2026: "match should include an item for the
+    relevant back of each deck." Say once which piece is the back of these
+    thirty-two cards and every one of them points at it — including the ones
+    linked afterwards, which is the half that would otherwise silently not
+    happen.
+
+    ⚠️ IT FILLS A BLANK ONLY. A card given a back of its own keeps it: a set
+    can have more than one back (fault 46), and a rule spread over a whole deck
+    is exactly where a confident wrong answer does most damage (fault 43).
+
+    ⚠️ ONE OF IT, because TWO doors link a piece to a component — the drag on
+    the Match board (PUT /manifest/<stem>) and the bulk bar (POST
+    /pieces/link) — and a guard only one of them remembered would be fault 14
+    for the umpteenth time.
+    """
+    back = str((item or {}).get("back") or "").strip()
+    if back and not str(cur.get("back") or "").strip():
+        cur["back"] = back
+        return True
+    return False
 
 
 def new_wanted(have, name, kind, group, qty, each):

@@ -129,7 +129,7 @@
 
   <!-- ============================================================= MATCH -->
   <section id="tab-match" hidden>
-    <p class="note">The quickest way to say what a piece is: <b>drag a component's name from the left onto the piece it is</b>. The piece takes that name, and the Wanted list ticks it off. Drag a piece back onto the list to unlink it. ⚠️ A counter only needs cutting <b>once</b> — the game repeats it — so one cut piece is a whole component, however many are printed on the sheet.</p>
+    <p class="note">The quickest way to say what a piece is: <b>drag a component's name from the left onto the piece it is</b>. The piece takes that name, and the Wanted list ticks it off. Drag a piece back onto the list to unlink it. ⚠️ A counter only needs cutting <b>once</b> — the game repeats it — so one cut piece is a whole component, however many are printed on the sheet. ⭐️ A <b>deck is different</b>: it is marked <i>all different</i> on the checklist, so it stays here counting <i>3 of 24</i> until every card is marked. ⭐️ And each such component carries an <b>its back</b> row — drop it on the piece that is the back and every card in the deck points at it.</p>
     <div class="matchwrap">
       <div class="mcol">
         <div class="mhead">
@@ -2852,7 +2852,11 @@
     piecesData.pieces.forEach(function (p) { if (p.data && p.data.wanted) linkedBy[p.stem] = p.data.wanted; });
     var wantedById = {};
     wantedData.items.forEach(function (w) { wantedById[w.id] = w; });
-    document.getElementById("nMatch").textContent = wantedData.items.filter(function (w) { return w.state === "missing"; }).length || "";
+    /* ⚠️ THE BADGE COUNTS WHAT THE COLUMN HOLDS. It counted only components
+       with nothing at all against them, while the column also showed the
+       part-done and the ones still needing a back — two numbers disagreeing in
+       silence (faults 67, 68). It is worked out below, once the two rules that
+       decide it have been stated. */
 
     /* ---- the list of components */
     var q = document.getElementById("mFind").value.trim().toLowerCase();
@@ -2884,9 +2888,35 @@
     // ⚠️ gathered, not merely walked: a component added later sits at the end
     // of the list, and a heading started whenever the group changed would put
     // its set on the screen twice. See `gather`.
+    /* ⚠️⚠️ A COMPONENT LEAVES THIS LIST WHEN IT HAS ENOUGH PIECES, NOT WHEN
+       IT HAS ONE. The designer, 26 August 2026: "in Checklist it's generally
+       very apparent that certain elements comprise more than one piece (eg a
+       deck of cards). But this isn't carried through to the Match drag and
+       drop function… if I mark one magic card as part of a deck, that then
+       disappears from the left column, even though I might have numerous more
+       cards to mark as part of that deck. The only way to get it back is to
+       click 'show everything, including matched' which isn't a great
+       experience."
+       Quite so, and the room had known the right answer the whole time: the
+       checklist counts a deck against its quantity (fault 36) and lets one
+       design fill as many cards as the game wants of it (fault 56). Match was
+       the one list in the room asking a cruder question of its own. */
+    function settled(w) { return w.state === "cut"; }
+    /* ⭐️ WHICH COMPONENTS HAVE A BACK TO FIND. A deck of cards plainly does;
+       so does anything made of several different pieces, which may perfectly
+       well be printed two-sided. ⚠️ It is an OFFER — a row you can ignore —
+       and it goes away the moment the back is said, so a component it does not
+       apply to costs one line and nothing else. */
+    function wantsBack(w) {
+      return w.kind === "card" || w.kind === "deck" || (w.need || 1) > 1;
+    }
+    function backTodo(w) { return wantsBack(w) && !w.back; }
+    document.getElementById("nMatch").textContent =
+      wantedData.items.filter(function (w) { return !settled(w) || backTodo(w); }).length || "";
     var wanting = wantedData.items.filter(function (w) {
-      var isLinked = (w.pieces || []).length > 0;
-      if (!all && isLinked) return false;
+      // ⚠️ A component whose pieces are all matched but whose BACK is not yet
+      // said is still work: it stays, showing only the row that is left to do.
+      if (!all && settled(w) && !backTodo(w)) return false;
       if (q && (w.name + " " + (w.notes || "") + " " + (w.where || "")).toLowerCase().indexOf(q) < 0) return false;
       return true;
     });
@@ -2897,14 +2927,22 @@
       list.appendChild(head);
       mHeads.push([set.key, head]);
       set.rows.forEach(function (w) {
-      var isLinked = (w.pieces || []).length > 0;
+      var need = w.need || 1, got = w.got || 0;
+      if (all || !settled(w)) {
       var d = document.createElement("div");
       d.className = "mitem " + w.state;
       d.draggable = true;
       d.dataset.id = w.id;
+      /* ⭐️ AND IT SAYS HOW FAR IT HAS GOT. "3 of 24" is the answer to the
+         question the designer was really asking of the list — a component that
+         merely vanished told them nothing about how much of it was left. */
       d.innerHTML = "<b>" + esc(w.name) + "</b>" +
         '<span class="tiny muted">' + esc(w.kind || "") + (w.qty && w.qty !== "1" ? " · " + esc(w.qty) : "") + (w.where ? " · " + esc(w.where) : "") + "</span>" +
-        (isLinked ? '<span class="tag cut">cut</span>' : w.state === "probably" ? '<span class="tag probably">likely</span>' : "");
+        (need > 1
+          ? '<span class="tag ' + (got >= need ? "cut" : got ? "part" : "missing") + '">' +
+            got + " of " + need + "</span>"
+          : got ? '<span class="tag cut">cut</span>'
+          : w.state === "probably" ? '<span class="tag probably">likely</span>' : "");
       d.addEventListener("dragstart", function (e) {
         mDragItem = w.id;
         e.dataTransfer.setData("text/plain", w.id);
@@ -2920,6 +2958,44 @@
       d.dataset.fold = set.key;
       list.appendChild(d);
       shown++;
+      }
+      /* ⭐️⭐️ AND THE BACK OF THE DECK IS A ROW OF ITS OWN. The designer, 26
+         August 2026: "ALSO match should include an item for the relevant back
+         of each deck." A back is another PIECE (fault 46), so it cannot be a
+         name dragged onto a card — it is a card dragged onto by the deck. Drop
+         this row on the piece that is the back and every card in the deck
+         points at it, including the ones linked afterwards (inherit_back). */
+      if (wantsBack(w) && (all || !w.back)) {
+        var b = document.createElement("div");
+        b.className = "mitem mback" + (w.back ? " cut" : "");
+        b.draggable = !w.back;
+        b.dataset.back = w.id;
+        b.innerHTML = "<b>its back</b>" +
+          '<span class="tiny muted">' + esc(w.name) +
+          (w.back ? "" : " · drag me onto the piece that is the back of these") + "</span>" +
+          (w.back ? '<span class="tag cut">' + esc(w.back) + "</span>" : "");
+        if (w.back) {
+          /* ⚠️ A MARK NOTHING CAN CLEAR IS FAULT 50. Saying the wrong back
+             for a deck must be as easy to undo as it was to do. */
+          var off = document.createElement("button");
+          off.className = "quiet";
+          off.textContent = "take it off";
+          off.title = "Forget which piece is the back of this component. The cards already pointing at it keep the back they were given — change those from the piece itself or with “choose several at once” on Pieces.";
+          off.addEventListener("click", function (e) { e.stopPropagation(); setDeckBack(w.id, ""); });
+          b.appendChild(off);
+        } else {
+          b.addEventListener("dragstart", function (e) {
+            mDragItem = "back:" + w.id;
+            e.dataTransfer.setData("text/plain", "back:" + w.id);
+            e.dataTransfer.effectAllowed = "link";
+            b.classList.add("dragging");
+          });
+          b.addEventListener("dragend", function () { mDragItem = null; b.classList.remove("dragging"); document.querySelectorAll(".mcell").forEach(function (c) { c.classList.remove("over"); }); });
+        }
+        b.dataset.fold = set.key;
+        list.appendChild(b);
+        shown++;
+      }
       });
     });
     mHeads.forEach(function (h) { Fold.apply("match", h[0], list, h[1], !!q); });
@@ -2988,7 +3064,10 @@
         e.preventDefault();
         cell.classList.remove("over");
         var id = mDragItem || (e.dataTransfer && e.dataTransfer.getData("text/plain"));
-        if (!id || !wantedById[id]) return;
+        if (!id) return;
+        // ⭐️ the deck's own back, dropped on the piece that IS the back
+        if (id.indexOf("back:") === 0) { setDeckBack(id.slice(5), p.stem); return; }
+        if (!wantedById[id]) return;
         link(p, id);
       }
       cell.addEventListener("dragover", function (e) { if (mDragItem) { e.preventDefault(); e.dataTransfer.dropEffect = "link"; cell.classList.add("over"); } });
@@ -3040,20 +3119,51 @@
     put(API + "/manifest/" + encodeURIComponent(p.stem), body).then(function (r) {
       if (r.error) { flash(r.error, true); return; }
       p.data = r.piece || {};
-      // move the piece between the wanted items in the copy we hold
-      wantedData.items.forEach(function (it) {
-        it.pieces = (it.pieces || []).filter(function (s) { return s !== p.stem; });
+      /* ⚠️⚠️ THE ROOM SAYS WHETHER A COMPONENT IS DONE, NOT THIS PAGE. These
+         four lines used to read "any piece linked means cut", which is a
+         SECOND, cruder copy of a rule the room already has — and it is the
+         whole of what the designer reported on 26 August 2026: "if I mark one
+         magic card as part of a deck, that then disappears from the left
+         column, even though I might have numerous more cards to mark as part
+         of that deck."
+         Whether a deck is full depends on how many it wants (`each` and the
+         quantity, fault 36) and on how many copies of a design the game needs
+         (`copies`, fault 56). Only `wanted_status()` knows all of that, and
+         the bulk bar had already worked this out — its comment says so in as
+         many words. Fault 24. */
+      loadWanted().then(function () {
+        renderMatch();
+        renderPieceList();
+        refreshCounts();
+        var now = wantedData.items.filter(function (x) { return x.id === (w || {}).id; })[0];
+        flash(w ? ("“" + w.name + "” ← " + p.stem +
+                   (now && (now.need || 1) > 1 ? " · " + (now.got || 0) + " of " + now.need : ""))
+                : (p.stem + " unlinked"));
       });
-      if (w) { w.pieces = (w.pieces || []).concat([p.stem]); }
-      wantedData.items.forEach(function (it) {
-        it.state = (it.pieces || []).length ? "cut" : ((it.guesses || []).length ? "probably" : "missing");
+    });
+  }
+  /* ⭐️⭐️ WHICH PIECE IS THE BACK OF A WHOLE COMPONENT, said once. The room
+     writes it on the component, marks that piece as a card back so the "only
+     pieces marked as a card back" narrowing can find it afterwards (fault 51),
+     and gives it to every card already linked to the deck — filling blanks
+     only, because a card given a back of its own keeps it. */
+  function setDeckBack(wid, stem) {
+    var w = (wantedData.items || []).filter(function (x) { return x.id === wid; })[0];
+    if (!w) return;
+    post(API + "/wanted/back", { id: wid, stem: stem }).then(function (r) {
+      if (r.error) { flash(r.error, true); return; }
+      // ⚠️ both stores moved: the component now has a back, and the pieces of
+      // that deck have been given it. Read them back rather than guessing.
+      loadPieces().then(function () { return loadWanted(); }).then(function () {
+        renderMatch();
+        renderPieceList();
+        refreshCounts();
+        flash(stem
+          ? (stem + " is the back of “" + w.name + "”" +
+             (r.gave ? " · given to " + r.gave + " piece" + (r.gave === 1 ? "" : "s") + " already linked" : "") +
+             ". Nothing was deleted.")
+          : ("“" + w.name + "” no longer says which piece is its back. The cards already pointing at it keep it."));
       });
-      recountWanted(wantedData);
-      loadWantedSummary(wantedData);
-      renderMatch();
-      renderPieceList();
-      refreshCounts();
-      flash(w ? ("“" + w.name + "” ← " + p.stem) : (p.stem + " unlinked"));
     });
   }
   ["mFind", "mSheet", "mUn", "mAll"].forEach(function (id) {

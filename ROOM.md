@@ -440,6 +440,28 @@ Two ways round, and the second is usually quicker:
   Drag a piece back onto the list to undo it. Double-click a piece to open it
   on the Pieces page.
 
+⭐️⭐️ **A deck stays on the list until it has all its cards.** A component
+marked *all different* on the checklist wants as many pieces as its quantity
+says (see *one is enough, unless every one is different*, below), so a deck of
+twenty-four sits in the left column reading **3 of 24** and only leaves when it
+is full. A counter printed twenty-six times still leaves on the first piece,
+because one of it is the whole of it. ⚠️ And where a design is marked as wanted
+several times over, those copies count towards the deck — so thirteen pictures
+really can fill a deck of thirty-two.
+
+⭐️⭐️ **Its back is a row of its own.** A back is not a property of a card, it
+is **another piece** — so each such component carries an **its back** row under
+it, and you drag *that* onto the piece which is the back. Say it once and every
+card in the deck points at it, including the cards you link afterwards. The
+piece is marked as a *card back* at the same time, which is what makes it
+findable in the **its back** dropdown later.
+
+⚠️ It fills a blank only: a card you have given a back of its own keeps it, so
+a set with more than one back is still possible. **Take it off** on the row
+forgets which piece the component's back is — the cards already pointing at it
+keep what they were given, and *choose several at once* on **Pieces** is how to
+change those.
+
 **The name and the component are not the same thing, and you need both.** The
 component says *which entry on the checklist this piece answers*; the name says
 *what the thing is*, and the name is what goes into the game's manifest and is

@@ -2147,6 +2147,114 @@ const SHAPE = `(function () {
       await sleep(300);
     }
 
+    /* ⚠️⚠️ A DECK STAYS ON THE MATCH LIST UNTIL IT HAS ENOUGH CARDS, AND
+       CARRIES A ROW FOR ITS BACK. The designer, 26 August 2026: "if I mark one
+       magic card as part of a deck, that then disappears from the left column,
+       even though I might have numerous more cards to mark as part of that
+       deck. The only way to get it back is to click 'show everything,
+       including matched' which isn't a great experience… ALSO match should
+       include an item for the relevant back of each deck."
+       ⚠️ The rules are checked through the API elsewhere; this is the half
+       that goes wrong unwatched — fault 61, a green light over a list that
+       still empties itself. */
+    {
+      console.log("\na deck on the Match board, and the row for its back");
+      const QUEUE = "the-cutting-queue";
+      const wl = await fetch(`${ROOM}/api/p/${QUEUE}/wanted`).then(r => r.json());
+      const deck = (wl.items || []).filter(i => i.name === "Magic cards")[0] || {};
+      // start from a deck with no back said, so the row to drag is there
+      await fetch(`${ROOM}/api/p/${QUEUE}/wanted/back`,
+        { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: deck.id, stem: "" }) });
+      await page.go(`${ROOM}/p/${QUEUE}/?tab=match`);
+      await sleep(900);
+      const seen = await page.val(`(function () {
+        var rows = document.querySelectorAll("#mList .mitem");
+        var out = { deck: null, back: null, all: !!document.getElementById("mAll").checked };
+        rows.forEach(function (r) {
+          if (r.dataset.id) { var b = r.querySelector("b");
+            if (b && b.textContent === "Magic cards")
+              out.deck = (r.querySelector(".tag") || {}).textContent || ""; }
+          if (r.dataset.back) out.back = r.textContent; });
+        return out; })()`);
+      // ⭐️⭐️ THE COMPLAINT ITSELF: cards already marked, and the deck is
+      // still there — without "show everything, including matched" ticked.
+      check("a part-marked deck is still on the list, saying how far it has got",
+            seen.all === false && /of 24/.test(seen.deck || ""), seen);
+      check("and the deck carries a row for the back all its cards share",
+            /its back/.test(seen.back || ""), seen.back);
+
+      /* ⭐️ dropping that row on a piece says which piece is the back — of the
+         whole deck, in one act, rather than card by card. */
+      const dropped = await page.val(`(function () {
+        var row = document.querySelector("#mList .mitem[data-back]");
+        var cell = document.querySelector(".mcell");
+        if (!row || !cell) return { ok: false };
+        var dt = new DataTransfer();
+        row.dispatchEvent(new DragEvent("dragstart", { dataTransfer: dt, bubbles: true }));
+        cell.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
+        return { ok: true, stem: cell.dataset.stem }; })()`);
+      await sleep(1500);
+      const said = await fetch(`${ROOM}/api/p/${QUEUE}/wanted`).then(r => r.json());
+      const now = (said.items || []).filter(i => i.id === deck.id)[0] || {};
+      check("dropping the back row on a piece records it as the deck's back",
+            dropped.ok && now.back === dropped.stem, { dropped, back: now.back });
+
+      // ⭐️ and marking one more card does NOT take the deck off the list —
+      // which is the whole of what was reported
+      const still = await page.val(`(function () {
+        var rows = document.querySelectorAll("#mList .mitem[data-id]");
+        for (var i = 0; i < rows.length; i++) {
+          var b = rows[i].querySelector("b");
+          if (b && b.textContent === "Magic cards")
+            return (rows[i].querySelector(".tag") || {}).textContent || "";
+        }
+        return ""; })()`);
+      check("and the deck is still on the list after its back was said",
+            /of 24/.test(still), still);
+
+      /* ⭐️⭐️ AND THE LIVE DRAG, WITHOUT RELOADING THE PAGE — which is where
+         the fault actually lived. link() kept the two stores it holds in step
+         itself, using a SECOND, cruder rule ("any piece linked means done"),
+         so the deck vanished the instant a card was dropped on it even though
+         the room knew perfectly well it wanted twenty-four. It reads the
+         checklist back from the room now, as the bulk bar already did. */
+      // free one card again, so there is an unlinked piece on the board to
+      // drop it onto — the API check before this one linked nearly all of them
+      const held = await fetch(`${ROOM}/api/p/${QUEUE}/wanted`).then(r => r.json());
+      const mine = ((held.items || []).filter(i => i.id === deck.id)[0] || {}).pieces || [];
+      await fetch(`${ROOM}/api/p/${QUEUE}/pieces/link`,
+        { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stems: [mine[0]], wanted: "" }) });
+      await page.go(`${ROOM}/p/${QUEUE}/?tab=match`);
+      await sleep(900);
+      const live = await page.val(`(function () {
+        var row = null;
+        document.querySelectorAll("#mList .mitem[data-id]").forEach(function (r) {
+          var b = r.querySelector("b");
+          if (b && b.textContent === "Magic cards") row = r; });
+        var cell = null;
+        document.querySelectorAll(".mcell").forEach(function (c) {
+          if (!cell && c.dataset.stem && !/oldbox_p01_00/.test(c.dataset.stem)) cell = c; });
+        if (!row || !cell) return { ok: false };
+        var was = (row.querySelector(".tag") || {}).textContent || "";
+        var dt = new DataTransfer();
+        row.dispatchEvent(new DragEvent("dragstart", { dataTransfer: dt, bubbles: true }));
+        cell.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
+        return { ok: true, was: was, stem: cell.dataset.stem }; })()`);
+      await sleep(1800);
+      const after = await page.val(`(function () {
+        var got = "";
+        document.querySelectorAll("#mList .mitem[data-id]").forEach(function (r) {
+          var b = r.querySelector("b");
+          if (b && b.textContent === "Magic cards")
+            got = (r.querySelector(".tag") || {}).textContent || ""; });
+        return got; })()`);
+      check("dropping a card on the deck leaves it on the list, one further on",
+            live.ok && /of 24/.test(after) && after !== live.was,
+            { was: live.was, now: after });
+    }
+
     {
       console.log("\nputting a set by for later, from the page");
       await page.go(`${ROOM}/p/the-spare-room/?tab=sheets`);

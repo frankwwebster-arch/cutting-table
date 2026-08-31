@@ -259,6 +259,12 @@ table.wanted tr.ghead.later .fold, table.wanted tr.ghead.later .setfig { opacity
 .mitem .tag { align-self: flex-start; margin-top: 3px; }
 .mitem.probably { border-left-color: var(--hold); }
 .mitem.cut b { color: var(--dim); font-weight: 400; }
+.mitem.part { border-left-color: var(--hold); }
+/* ⭐️ the row that says which piece is the back of a whole component: plainly
+   an offer attached to the component above it, not another component */
+.mitem.mback { padding-left: 24px; opacity: .88; }
+.mitem.mback b { font-weight: 400; font-style: italic; color: var(--dim); }
+.mitem.mback button { margin-top: 4px; align-self: flex-start; font-size: 11px; padding: 1px 7px; }
 /* ⚠️ grid-auto-rows: max-content, and it is not decoration. The grid has a
    max-height and scrolls, so with rows left at `auto` the browser SIZED THE
    ROWS TO FIT THAT HEIGHT — 70px rows for 193px cells — and every piece was

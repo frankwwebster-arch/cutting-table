@@ -1048,6 +1048,118 @@ check("and nothing at all is left waiting afterwards", code == 400, [code, why])
 sys.exit(1 if bad else 0)
 PYCUTALL
 
+# ⚠️⚠️ A COMPONENT MADE OF MANY PIECES, AND THE BACK THEY ALL SHARE.
+# The designer, 26 August 2026: "in Checklist it's generally very apparent that
+# certain elements comprise more than one piece (eg a deck of cards). But this
+# isn't carried through to the Match drag and drop function. ie if I mark one
+# magic card as part of a deck, that then disappears from the left column, even
+# though I might have numerous more cards to mark as part of that deck… ALSO
+# match should include an item for the relevant back of each deck."
+say "a deck stays on the Match list until it has enough pieces, and knows its back"
+$PY - "$TMP" "$PORT" <<'PYDECK' || code=1
+import json, sys, urllib.error, urllib.request
+tmp, port = sys.argv[1], sys.argv[2]
+API = "http://127.0.0.1:%s/api/p/the-cutting-queue" % port
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+def call(path, body, method="POST"):
+    req = urllib.request.Request(API + path, data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json"},
+                                 method=method)
+    try:
+        return 200, json.load(urllib.request.urlopen(req))
+    except urllib.error.HTTPError as e:
+        return e.code, json.load(e)
+
+
+def item(name, d=None):
+    d = d or json.load(urllib.request.urlopen(API + "/wanted"))
+    return [i for i in d["items"] if i["name"] == name][0]
+
+
+stems = sorted(p["stem"] for p in
+               json.load(urllib.request.urlopen(API + "/pieces"))["pieces"])
+check("this game has pieces cut to work with", len(stems) >= 5, len(stems))
+
+# ⭐️ "all different", which is what makes a deck a deck (fault 36)
+call("/wanted/import", {"text": "24 Magic cards", "group": "core", "each": True})
+call("/wanted/import", {"text": "26 Damage counters", "group": "core", "each": False})
+deck, counter = item("Magic cards"), item("Damage counters")
+check("a deck of 24 wants 24 pieces, a counter printed 26 times wants one",
+      (deck["need"], counter["need"]) == (24, 1), [deck["need"], counter["need"]])
+
+# ⭐️⭐️ THE ONE THAT MATTERS. One card linked is not a finished deck.
+code, d = call("/manifest/" + stems[0], {"wanted": deck["id"]}, "PUT")
+deck = item("Magic cards")
+check("one card marked does NOT settle a deck of twenty-four",
+      deck["state"] == "part" and deck["got"] == 1, [deck["state"], deck["got"]])
+call("/manifest/" + stems[1], {"wanted": deck["id"]}, "PUT")
+deck = item("Magic cards")
+check("and a second takes it to two of twenty-four, still not settled",
+      deck["state"] == "part" and deck["got"] == 2, [deck["state"], deck["got"]])
+# ⚠️ while a component that really does want one piece settles on the first,
+# which is the rule the whole room is built on and must not have changed
+call("/manifest/" + stems[2], {"wanted": counter["id"]}, "PUT")
+check("while one piece DOES settle a counter printed twenty-six times",
+      item("Damage counters")["state"] == "cut", item("Damage counters")["state"])
+
+# ⭐️⭐️ THE BACK OF THE DECK, SAID ONCE.
+back_stem = stems[4]
+code, d = call("/wanted/back", {"id": deck["id"], "stem": back_stem})
+check("a component can be told which piece is the back of all of them",
+      code == 200 and item("Magic cards", d).get("back") == back_stem,
+      item("Magic cards", d).get("back") if code == 200 else d)
+man = json.load(urllib.request.urlopen(API + "/manifest"))["pieces"]
+# ⚠️ the drag IS the decision, so the piece really is marked a card back — it
+# is what lets the "only pieces marked as a card back" narrowing find it
+check("and that piece is marked a card back, so it can be found as one later",
+      (man.get(back_stem) or {}).get("kind") == "card back", man.get(back_stem))
+check("every card already linked to the deck is given that back",
+      [(man.get(s) or {}).get("back") for s in stems[:2]] == [back_stem, back_stem],
+      [(man.get(s) or {}).get("back") for s in stems[:2]])
+check("and the room says how many it reached", d.get("gave") == 2, d.get("gave"))
+# ⚠️ and it must not have wandered onto a component it was not about
+check("a component it was not about is left alone",
+      not (man.get(stems[2]) or {}).get("back"), man.get(stems[2]))
+
+# ⭐️⭐️ THE HALF THAT WOULD OTHERWISE SILENTLY NOT HAPPEN: a card linked
+# AFTER the back was said takes it too, or the back is only ever right for
+# the cards that happened to be done first.
+call("/manifest/" + stems[3], {"wanted": deck["id"]}, "PUT")
+man = json.load(urllib.request.urlopen(API + "/manifest"))["pieces"]
+check("a card linked to the deck afterwards takes the deck's back as well",
+      (man.get(stems[3]) or {}).get("back") == back_stem, man.get(stems[3]))
+
+# ⚠️ FILLS A BLANK ONLY: a card given a back of its own keeps it, because a
+# set can have more than one back (fault 46).
+call("/manifest/" + stems[5], {"back": "a-back-of-my-own"}, "PUT")
+call("/manifest/" + stems[5], {"wanted": deck["id"]}, "PUT")
+man = json.load(urllib.request.urlopen(API + "/manifest"))["pieces"]
+check("but a card given a back of its own keeps it",
+      (man.get(stems[5]) or {}).get("back") == "a-back-of-my-own", man.get(stems[5]))
+
+# ⚠️ A MARK NOTHING CAN CLEAR IS FAULT 50.
+code, d = call("/wanted/back", {"id": deck["id"], "stem": ""})
+check("the back can be taken off the component again",
+      code == 200 and not item("Magic cards", d).get("back"), code)
+# ⚠️ and a back pointing at a piece that is not there is refused, rather
+# than written down as a link to nothing
+code, d = call("/wanted/back", {"id": deck["id"], "stem": "no-such-piece"})
+check("a back naming a piece this game has not got is refused, with a reason",
+      code == 400 and (d.get("error") or ""), [code, d.get("error")])
+code, d = call("/wanted/back", {"id": "no-such-component", "stem": back_stem})
+check("and so is a component it has not got", code == 400, code)
+
+sys.exit(1 if bad else 0)
+PYDECK
+
 # ⭐️ SHAPES KEPT, AND KEPT BESIDE THE PROJECTS RATHER THAN INSIDE ONE.
 # The designer, 23 August 2026: "I will need to cut a number of pieces that are
 # different, but also EXACTLY the same shape — I only want to create that

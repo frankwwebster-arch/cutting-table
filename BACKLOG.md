@@ -223,6 +223,35 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️⭐️ Match counts a deck, and knows its back — **fixed**, 26 August 2026
+
+The designer: *"if I mark one magic card as part of a deck, that then
+disappears from the left column, even though I might have numerous more cards
+to mark as part of that deck… ALSO match should include an item for the
+relevant back of each deck."*
+
+The checklist had known the right answer all along — a deck is counted against
+its quantity, and a design wanted several times fills that many cards. Match
+was the one list in the room asking a cruder question of its own, in **two**
+places: the filter that empties the list, and `link()`, which kept the page's
+two stores in step after a drag with a second copy of the rule.
+
+- ⭐️ **One rule, and it lives in the room.** `link()` reads the checklist back
+  rather than re-deriving it — which the bulk bar had already worked out, with
+  a comment saying exactly why. Fault 24, twelfth time.
+- ⭐️ **The list says how far it has got** — *3 of 24*.
+- ⭐️⭐️ **Its back is a row of its own**, dragged the other way: drop it on the
+  piece that is the back and the whole deck points at it. It lives on the
+  **component**, so cards linked afterwards inherit it — ⚠️ filling blanks
+  only, through one `inherit_back()` shared by both doors that link a piece.
+- ⚠️ The piece really is marked a *card back*, so the narrowing that finds
+  backs can find it; and the back can be **taken off** again.
+- ⚠️ **20 new checks** — 587 to 607. Teeth tried on both copies of the rule
+  separately: one makes the deck vanish from the list, the other makes it
+  vanish **on the drop**, which is what was reported.
+
+See fault 82.
+
 ### `[x]` ⚠️⚠️ Cutting a run of sheets does only the work that is left — **fixed**, 26 August 2026
 
 The designer, having outlined 22 new sheets: *"I think pressed 'cut every
@@ -865,6 +894,26 @@ anything that speeds up cutting.
 ---
 
 ## Done
+
+### 26 August 2026 — Match counts a deck, and knows its back
+
+- `[x]` ⭐️⭐️ **A component leaves the Match list when it has ENOUGH pieces**,
+  not when it has one. The checklist already counted a deck against its
+  quantity; Match asked a cruder question of its own.
+- `[x]` ⚠️⚠️ **In two places** — the filter, and `link()`, which re-derived
+  `state` itself after every drag. `link()` reads it back from the room now,
+  as the bulk bar already did. Fault 24, twelfth time.
+- `[x]` ⭐️ **The row says *3 of 24***, and the Match badge counts what the
+  column actually holds rather than something narrower.
+- `[x]` ⭐️⭐️ **An *its back* row on every component that can have one.** A
+  back is another PIECE, so the row is dragged onto the piece rather than the
+  other way about. It is stored on the component, so cards linked afterwards
+  inherit it — one `inherit_back()`, shared by both link doors, filling blanks
+  only.
+- `[x]` ⚠️ The piece is marked `card back` by the drag; the back can be taken
+  off again; a back naming a piece the game has not got is refused.
+- `[x]` ⚠️ **20 new checks** — 587 to 607, teeth tried on each copy of the rule.
+- `[x]` `ROOM.md` and `GUIDE.md` describe both halves.
 
 ### 26 August 2026 — cutting only the sheets that are waiting
 
