@@ -206,6 +206,10 @@ Things that make it quicker:
 - ⭐️ **Match** is the fastest way if you have typed the box's contents list:
   a board of every piece beside the list of components, and you drag a name
   onto the piece it is.
+- ⭐️ **Put `deck` in a line's Kind box** and the checklist counts it against
+  its full quantity by itself — *0 of 32*, not *not yet* — because a deck of
+  thirty-two cards is thirty-two different cards. The row says *counted as a
+  deck*, and **one is enough** still overrules it.
 - ⭐️ **A deck stays on that list until it has all its cards** — reading
   *3 of 24* as you go — while a counter printed twenty-six times leaves on the
   first piece, because one of it is the whole of it. Each such component also

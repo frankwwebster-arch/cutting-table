@@ -223,6 +223,36 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️⭐️ Calling a line a deck counts it as a deck — **fixed**, 26 August 2026
+
+The designer: *"when something is a deck it should also report that each
+component dropped is unique in the checklist ie '[n] needed' rather than '1
+needed'."*
+
+The room had been asserting exactly this in its end-of-job report — *a deck
+counted as one card reads as done on the first card cut* — and then counting
+one. `counts_each()` reads the kind now where nobody has said otherwise.
+
+- ⚠️ **Only `deck`, not `card`.** That is not reasoning, it is a reading of the
+  designer's own list: with `card` let in, nine correct findings became twenty
+  and eleven of them were wrong. A check goes red if it is ever widened.
+- ⚠️⚠️ **The fault that nearly made it do nothing.** Written first as *"`each`
+  absent means read it from the kind"*, it was correct, checked and green —
+  and could never have fired on a real list, because `new_wanted()` stamps
+  `each` onto every component it makes. The check passed only because it had
+  cleared the field first, which no path in the room does. **Fault 54.** The
+  person's press is recorded separately as `each_said` now, and the check
+  asserts the stamp is there rather than removing it.
+- ⭐️ The row says **counted as a deck** under the button, because a figure
+  that settled itself has to be accountable; and `each_on` is sent by the
+  room so the word on the button and the number beside it cannot disagree.
+- ⚠️ Fault 52's finding is now a list of **decisions** rather than accidents,
+  and its wording says so — a report that tells somebody off for a choice they
+  made on purpose stops being read.
+- ⚠️ **12 new checks** — 607 to 619, teeth tried in both directions.
+
+See fault 83.
+
 ### `[x]` ⭐️⭐️ Match counts a deck, and knows its back — **fixed**, 26 August 2026
 
 The designer: *"if I mark one magic card as part of a deck, that then
@@ -894,6 +924,23 @@ anything that speeds up cutting.
 ---
 
 ## Done
+
+### 26 August 2026 — calling a line a deck counts it as a deck
+
+- `[x]` ⭐️⭐️ **A component whose kind is `deck` wants all of its cards**, with
+  nobody pressing anything. The room already reported this state as a fault and
+  then counted the other way.
+- `[x]` ⚠️⚠️ **Only `deck`, never `card`** — a reading of the real game, not a
+  rule from first principles. Widen it and a check goes red.
+- `[x]` ⚠️⚠️ **`each: false` is a stamp, not an answer.** Every component is
+  made carrying it, so the first version of this rule could never have fired
+  on a real list although its check was green. `each_said` records the press.
+  Fault 54.
+- `[x]` ⭐️ The row says **counted as a deck**; `each_on` comes from the room so
+  the button and the figure cannot disagree.
+- `[x]` ⚠️ Fault 52's report finding re-aimed at what it can now catch, and
+  worded so it does not nag a deliberate choice.
+- `[x]` ⚠️ **12 new checks** — 607 to 619.
 
 ### 26 August 2026 — Match counts a deck, and knows its back
 

@@ -2253,6 +2253,54 @@ const SHAPE = `(function () {
       check("dropping a card on the deck leaves it on the list, one further on",
             live.ok && /of 24/.test(after) && after !== live.was,
             { was: live.was, now: after });
+
+      /* ⭐️⭐️ AND CALLING SOMETHING A DECK IS SAYING ITS CARDS ARE ALL
+         DIFFERENT. The designer, 26 August 2026: "when something is a deck it
+         should also report that each component dropped is unique in the
+         checklist ie '[n] needed' rather than '1 needed'."
+         ⚠️ Put back the state a pasted contents list really leaves — `each`
+         stamped false, which nobody chose — because a check that cleared it
+         first would be testing a list no game is ever in (fault 54). */
+      const list = await fetch(`${ROOM}/api/p/${QUEUE}/wanted`).then(r => r.json());
+      list.items.forEach(i => {
+        if (i.name === "Spell deck") { i.each = false; delete i.each_said; }
+      });
+      await fetch(`${ROOM}/api/p/${QUEUE}/wanted`,
+        { method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: list.items, groups: list.groups || [] }) });
+      await page.go(`${ROOM}/p/${QUEUE}/?tab=wanted`);
+      await sleep(900);
+      const row = `(function () {
+        var got = null;
+        document.querySelectorAll("#wBody tr").forEach(function (r) {
+          var nm = r.querySelector('input[data-k="name"]');
+          if (nm && nm.value === "Spell deck") got = r; });
+        if (!got) return { found: false };
+        return { found: true,
+                 each: (got.querySelector("[data-each]") || {}).textContent || "",
+                 why: (got.querySelector("td .tiny.muted") || {}).textContent || "",
+                 stands: (got.querySelector("td.st .tag") || {}).textContent || "" }; })()`;
+      const deckRow = await page.val(row);
+      check("a deck nobody has pressed reads as all different, needing all of them",
+            deckRow.found && /all different/.test(deckRow.each) &&
+            /of 32/.test(deckRow.stands), deckRow);
+      // ⚠️ a figure that settled itself is a figure somebody has to be able
+      // to account for, so it says why in as many words
+      check("and it says why, since nobody pressed anything",
+            /counted as a deck/.test(deckRow.why), deckRow.why);
+      // ⚠️ AND THE PRESS MUST STICK, or the room's own default puts it
+      // straight back and the button looks broken — fault 50's shape.
+      await page.val(`(function () {
+        var b = null;
+        document.querySelectorAll("#wBody tr").forEach(function (r) {
+          var nm = r.querySelector('input[data-k="name"]');
+          if (nm && nm.value === "Spell deck") b = r.querySelector("[data-each]"); });
+        if (b) b.click(); return !!b; })()`);
+      await sleep(1200);
+      const pressed = await page.val(row);
+      check("pressing “one is enough” on a deck sticks, and it wants one again",
+            /one is enough/.test(pressed.each) && !/of 32/.test(pressed.stands),
+            pressed);
     }
 
     {

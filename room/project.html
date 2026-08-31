@@ -3330,11 +3330,23 @@
           // printed contents list tells those apart — 26 damage counters is
           // one design printed 26 times, 24 damage cards is 24 different
           // cards — so the person says which, and the room never guesses.
+          /* ⭐️ THE ROOM'S OWN ANSWER, not the page's. `each_on` is what the
+             checklist actually counted by — which for a component whose kind
+             is `deck` is "all different" whether or not anybody pressed this,
+             because a deck of thirty-two cards IS thirty-two different cards
+             (see counts_each). Reading `it.each` here would have put "one is
+             enough" on a button beside a figure reading 0 of 32. */
           '<button class="quiet each" data-each="1" title="' +
-            (it.each
-              ? "Every one of them is a different card, so all of them must be cut before this is done. Press to go back to counting it as one design."
+            (it.each_on
+              ? ("Every one of them is a different card, so all of them must be cut before this is done." +
+                 (!it.each ? " The room is counting it this way because you have called it a deck; press to count it as one design instead."
+                           : " Press to go back to counting it as one design."))
               : "One design, printed this many times — cutting one is enough, and that is how the room counts it. Press if these are all DIFFERENT, like a deck of cards, and every one has to be cut.") +
-          '">' + (it.each ? "all different" : "one is enough") + "</button></td>" +
+          '">' + (it.each_on ? "all different" : "one is enough") + "</button>" +
+          // ⭐️ and say plainly WHY, where nobody pressed it — a figure that
+          // changed itself is a figure somebody has to be able to account for
+          (it.each_on && !it.each
+            ? '<div class="tiny muted">counted as a deck</div>' : "") + "</td>" +
         '<td><input data-k="where" value="' + esc(it.where || "") + '" style="width:9em" title="' + esc(it.source || "") + '"></td>' +
         '<td class="st"><span class="tag ' + it.state + '"' +
           ((it.pieces || []).length ? bigForStem(it.pieces[0]) : "") + ">" +
@@ -3412,8 +3424,17 @@
       tr.querySelector("[data-each]").addEventListener("click", function () {
         var now = mine();
         if (!now) { flash("That component is not on the list any more.", true); return; }
-        now.each = !now.each;
-        saveWantedAll().then(function () { renderWanted(); });
+        // ⚠️ THE PRESS WRITES AN ANSWER EITHER WAY, never "unset": a deck
+        // pressed back to "one is enough" must STAY there, or the room's own
+        // default would put it straight back and the button would look broken.
+        // ⚠️ `each_said` is what makes the press STICK. Every component is
+        // made carrying `each: false` whether or not anybody chose it, so
+        // that value alone cannot be read as an answer — see counts_each().
+        now.each = !now.each_on;
+        now.each_said = true;
+        // saveWantedAll takes the room's fresh answer back, so `each_on` and
+        // the figure beside it are the room's, not this page's guess at them
+        saveWantedAll().then(function () { renderWanted(); refreshCounts(); });
       });
       tr.querySelector("[data-split]").addEventListener("click", function () {
         splitting = mine() || it;

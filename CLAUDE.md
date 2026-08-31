@@ -93,13 +93,21 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 607 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 619 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
 
-**26 August, last thing**: *"in Checklist it's generally very apparent that
+**26 August, last thing of all**: *"when something is a deck it should also
+report that each component dropped is unique in the checklist ie '[n] needed'
+rather than '1 needed'."* The room had been saying so in its own end-of-job
+report and counting the other way. See fault 83 — ⭐️ and read the part about
+`each: false`, which is a **stamp every component carries**, not an answer
+anybody gave: the first version of this rule was correct, checked, green, and
+could not have fired on a real list.
+
+**26 August, later still**: *"in Checklist it's generally very apparent that
 certain elements comprise more than one piece (eg a deck of cards). But this
 isn't carried through to the Match drag and drop function."* Right, and the
 room had known the right answer the whole time — Match was the one list asking
@@ -1878,6 +1886,56 @@ rather than by reading the code.
     printed two-sided — and it costs one ignorable row, which goes away the
     moment the back is said.
 
+83. ⭐️⭐️⚠️ **CALLING SOMETHING A DECK IS SAYING ITS CARDS ARE ALL
+    DIFFERENT — AND `each: false` WAS NOT AN ANSWER, IT WAS A STAMP.**
+    The designer, 26 August 2026: *"when something is a deck it should also
+    report that each component dropped is unique in the checklist ie '[n]
+    needed' rather than '1 needed'."*
+    ⭐️ **The room had been asserting this and not acting on it.** Fault 52's
+    end-of-job finding reports *a deck counted as one card* as something to fix
+    — so the room already held that a component whose kind is `deck` with a
+    quantity of thirty-two is thirty-two different cards. It said so in a
+    report and then counted one. That is half a report, and the fix is to
+    count it: `counts_each()` reads the kind where nobody has said otherwise.
+    ⚠️ **This is not the room guessing.** `kind` is a word the person typed,
+    and fault 36's rule — that nothing in a printed contents list tells a
+    repeated design from a set of different ones — is untouched: the list still
+    cannot tell, but *"deck"* can.
+    ⚠️⚠️ **AND ONLY `deck`, WHICH IS EVIDENCE RATHER THAN REASONING.** Fault
+    52 tried exactly this rule with `card` included and read it against the
+    designer's real list: the findings went from nine to twenty and **all
+    eleven it added were wrong**. That reading is what this rule rests on, and
+    a check goes red if `card` is ever let in.
+    ⚠️⚠️⚠️ **THE FAULT THAT NEARLY MADE THE WHOLE THING DO NOTHING.** Written
+    first as *"`each` absent means read it from the kind"*, it was correct,
+    checked, green — **and could never have fired on a real list.**
+    `new_wanted()` stamps `each` onto every component it makes, from a pasted
+    contents list, a split line or a group of cut pieces alike, so a real
+    game's `wanted.json` is full of `false` that nobody ever chose. The check
+    passed only because it had **popped the field first**, which no path in the
+    room does. That is **fault 54** — the easy question in place of the real
+    one — and it was caught by asking what a pasted list actually leaves
+    behind. ⭐️ The check does not clear the field now; it asserts the field is
+    *there*, which is the state every real list is in.
+    ⭐️ So the person's press is recorded separately, as `each_said`. `each:
+    true` is obeyed however it arose; `each_said` is the only thing that can
+    mean *"one is enough, and I mean it"*. ⚠️ Which keeps the press
+    reversible — a default that could not be pressed back would be fault 50's
+    shape.
+    ⭐️ **And a figure that settled itself has to be accountable**, so the row
+    says *counted as a deck* under the button, in as many words.
+    ⚠️ **`each_on` is sent BY THE ROOM**, not worked out again in the page: the
+    word on the button and the number beside it come from one answer, or they
+    would eventually disagree — and *"one is enough"* printed next to *0 of 32*
+    is exactly the sort of nonsense fault 24 produces.
+    ⚠️ **Fault 52's finding became a list of decisions rather than accidents.**
+    The state it caught can no longer happen by accident, so the only way to
+    reach it is to have pressed *one is enough* on a deck — which is a fair
+    answer for a line called a deck that really is one piece. Its wording says
+    so, and says there may be nothing to do: **a report that tells somebody off
+    for a choice they made on purpose stops being read**, which is fault 50's
+    lesson arriving on a page rather than a chip.
+
 ---
 
 ## Architecture
@@ -2020,7 +2078,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 607 checks, about a minute
+check/check.sh          # 619 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -2130,6 +2188,16 @@ nothing (fault 61): the tool is in the served table, `M` puts it in hand, a box
 dragged on the sheet **reaches the room's own file**, the table says nothing was
 deleted, clicking the box takes it off again — and the baked offline page does
 not offer the tool at all, measured rather than believed.
+
+It holds **calling something a deck** to what that means: a component whose
+kind is `deck` wants all of its cards with nobody pressing anything, and says
+so — while ⚠️ **a line of CARDS still wants one**, which is the noise test
+fault 52's reading of the real game settled, and so does a counter printed
+twenty-six times. ⭐️ It starts from what a pasted contents list really leaves
+behind — `each` stamped `false` on every line — rather than clearing the field
+first, which is the difference between checking this rule and checking a state
+no game is ever in. And the press that overrules it sticks, is written down,
+and is not confused with the stamp.
 
 It works **a deck on the Match board**: a deck of 24 is not settled by one
 card or by two, while a counter printed 26 times still is on the first; the

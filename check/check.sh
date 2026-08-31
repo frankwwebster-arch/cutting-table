@@ -1157,6 +1157,71 @@ check("a back naming a piece this game has not got is refused, with a reason",
 code, d = call("/wanted/back", {"id": "no-such-component", "stem": back_stem})
 check("and so is a component it has not got", code == 400, code)
 
+# ⭐️⭐️ CALLING IT A DECK IS SAYING ITS CARDS ARE ALL DIFFERENT. The designer,
+# 26 August 2026: "when something is a deck it should also report that each
+# component dropped is unique in the checklist ie '[n] needed' rather than '1
+# needed'." The room already said so in its end-of-job report (fault 52) and
+# then did not count that way, which is half a report.
+call("/wanted/import", {"text": "32 Spell deck\n9 Armament card\n26 Fire counter",
+                        "group": "core"})
+# ⚠️⚠️ NOTHING IS POPPED HERE, AND THAT IS THE POINT. Every component is made
+# carrying `each: false` whether or not anybody chose it, so a check that
+# cleared the field first would be testing a state no real list is ever in —
+# fault 54, the easy question in place of the real one. This is exactly what a
+# pasted contents list leaves behind.
+cur = json.load(urllib.request.urlopen(API + "/wanted"))["items"]
+check("a pasted contents list stamps 'each' on every line, chosen or not",
+      all("each" in i for i in cur), sorted({str(i.get("each")) for i in cur}))
+for i in cur:
+    if i["name"] == "Spell deck":
+        i["kind"] = "deck"
+    if i["name"] == "Armament card":
+        i["kind"] = "card"
+    if i["name"] == "Fire counter":
+        i["kind"] = "counter"
+call("/wanted", {"items": cur}, "PUT")
+check("a component called a deck wants all of its cards, unpressed",
+      item("Spell deck")["need"] == 32, item("Spell deck")["need"])
+check("and the room says so, so the button beside the figure cannot disagree",
+      item("Spell deck")["each_on"] is True, item("Spell deck").get("each_on"))
+# ⚠️⚠️ THE NOISE TEST, AND IT IS THE HALF THAT MATTERS. Fault 52 tried this
+# rule with `card` included and read it against the designer's real list: the
+# findings went from nine to twenty and ALL ELEVEN it added were wrong.
+check("but a line of CARDS still wants one — a card printed nine times is one design",
+      item("Armament card")["need"] == 1, item("Armament card")["need"])
+check("and a counter printed twenty-six times still wants one",
+      item("Fire counter")["need"] == 1, item("Fire counter")["need"])
+
+# ⚠️ IT IS A DEFAULT, NOT A DECISION: pressing "one is enough" on a deck must
+# STICK, or the room would put its own answer straight back and the button
+# would look broken. Fault 50's shape.
+cur = json.load(urllib.request.urlopen(API + "/wanted"))["items"]
+for i in cur:
+    if i["name"] == "Spell deck":
+        i["each"], i["each_said"] = False, True     # the button, pressed
+call("/wanted", {"items": cur}, "PUT")
+check("a deck told 'one is enough' is obeyed, and stays that way",
+      (item("Spell deck")["need"], item("Spell deck")["each_on"]) == (1, False),
+      [item("Spell deck")["need"], item("Spell deck")["each_on"]])
+cur = json.load(urllib.request.urlopen(API + "/wanted"))["items"]
+for i in cur:
+    if i["name"] == "Spell deck":
+        i["each"] = True
+call("/wanted", {"items": cur}, "PUT")
+check("and pressing it back counts all thirty-two again",
+      item("Spell deck")["need"] == 32, item("Spell deck")["need"])
+
+# ⚠️ and the room's own answer is never written to disk as though somebody
+# had given it — it is worked out fresh every time (WORKED_OUT)
+store = json.load(open(tmp + "/home/the-cutting-queue/wanted.json"))
+check("what the room works out is not saved into the list as if it were an answer",
+      not any(k in i for i in store["items"] for k in ("each_on", "need", "got")),
+      sorted({k for i in store["items"] for k in i}))
+# ⚠️ but the PRESS is saved, or it would not survive the next load
+check("while the press that overrules it IS written down",
+      any(i.get("each_said") for i in store["items"]),
+      [i["name"] for i in store["items"] if i.get("each_said")])
+
 sys.exit(1 if bad else 0)
 PYDECK
 
@@ -1619,7 +1684,12 @@ cur = json.load(urllib.request.urlopen(API + "/wanted"))
 items = cur["items"]
 for i in items:
     if i["name"] == "Damage card":
-        i["each"] = False                       # a deck told one is enough
+        # ⚠️ `each_said` as well, because `each: false` on its own is only the
+        # default every component is stamped with — since 26 August a deck
+        # nobody has pressed counts all its cards by itself (counts_each), so
+        # the ONLY way left to reach this finding is a deliberate press, and
+        # that is what this now checks.
+        i["each"], i["each_said"] = False, True   # a deck told one is enough
         i["kind"] = "deck"
     if i["name"] == "Damage counter":
         i["kind"] = "counter"                   # 26 of one design, quite right

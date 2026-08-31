@@ -138,7 +138,8 @@ KINDS = ["counter", "template", "ruler", "card", "card back", "deck", "terrain",
 # a real one. The ROOM takes them off again, in the one place that saves the
 # list, rather than every caller remembering to: a set of names known in two
 # places is fault 24, which has bitten this codebase five times.
-WORKED_OUT = ("pieces", "guesses", "state", "need", "got", "cut_pieces")
+WORKED_OUT = ("pieces", "guesses", "state", "need", "got", "cut_pieces",
+              "each_on")
 
 
 # ------------------------------------------------------------------ helpers
@@ -1152,6 +1153,33 @@ class Project:
         }
 
     @staticmethod
+    def counts_each(item):
+        """Is this component counted as ALL DIFFERENT — one piece per unit of
+        its quantity — or as one design printed that many times?
+
+        ⚠️ ONE COPY OF THE RULE. Two things ask: how many pieces the component
+        needs (`wanted_needs`), and the word on the button that switches it
+        (`each_on`, sent to the page). Written out twice, the label and the
+        number it produces would eventually disagree — fault 24, which has
+        bitten this codebase a dozen times. See `wanted_needs` for why a deck
+        answers yes without anybody pressing anything.
+        """
+        if item.get("each"):
+            return True          # all different, however that came to be said
+        # ⚠️⚠️ AND `each: false` IS NOT AN ANSWER — IT IS THE DEFAULT WRITTEN
+        # DOWN. `new_wanted()` stamps `each` on every component it makes,
+        # from a pasted contents list, a split line or a group of cut pieces,
+        # so a real game's list is full of `false` that nobody ever chose.
+        # Reading that as a decision would have made this whole rule do
+        # NOTHING on the one list it was asked for — which is fault 54, the
+        # easy question in place of the real one, and it was found by the
+        # check going green while the real path could never reach it.
+        # `each_said` is written only when somebody presses the button.
+        if item.get("each_said"):
+            return False
+        return str(item.get("kind") or "").strip().lower() == "deck"
+
+    @staticmethod
     def wanted_needs(item):
         """How many pieces this component wants cut before it is accounted for.
 
@@ -1166,8 +1194,28 @@ class Project:
         The designer, 23 August 2026: "build checklist counting deck against quantity
         — it's then my responsibility to ensure I have the correct number of
         cards to fill each deck."
+
+        ⭐️⭐️ EXCEPT WHERE THEY HAVE ALREADY SAID IT, BY CALLING IT A DECK.
+        The designer, 26 August 2026: "when something is a deck it should also
+        report that each component dropped is unique in the checklist ie '[n]
+        needed' rather than '1 needed'." Quite so, and this is not the room
+        guessing: `kind` is a word the person typed, and **a deck of thirty-two
+        cards is thirty-two different cards by its nature**. The room already
+        said so — the end-of-job check reports a deck counted as one card as a
+        FINDING (fault 52) — so it was asserting this and then not acting on
+        it, which is half a report.
+
+        ⚠️⚠️ AND ONLY `deck`, WHICH IS EVIDENCE, NOT REASONING. Fault 52 tried
+        this rule against the designer's real list with `card` included as
+        well: the findings went from nine to twenty and **all eleven it added
+        were wrong** — two designs of one component, and a card printed twice.
+        A deck is many different cards; a line of cards is not.
+
+        ⚠️ IT IS A DEFAULT, NOT A DECISION. Pressing "one is enough" on a deck
+        is obeyed and stays obeyed, so the button can always be pressed back —
+        a rule that could only be turned ON would be fault 50's shape.
         """
-        if not item.get("each"):
+        if not Project.counts_each(item):
             return 1
         digits = re.sub(r"[^0-9]", "", str(item.get("qty") or ""))
         try:
@@ -1264,8 +1312,12 @@ class Project:
             # is wanted more than once they differ — so both are sent, or a
             # deck reading "32 of 32" off thirteen pictures looks like a
             # miscount to the person who cut them.
+            # ⭐️ `each_on` is the room's ANSWER to "is this counted as all
+            # different?", so the page never re-derives it — the label on the
+            # button and the number it produces cannot disagree. Fault 24.
             out.append(dict(it, pieces=have, guesses=guess, state=state,
-                            need=need, got=got, cut_pieces=len(have)))
+                            need=need, got=got, cut_pieces=len(have),
+                            each_on=Project.counts_each(it)))
         groups = book.get("groups") or []
         # ⭐️⭐️ A FIGURE FOR EACH SET, AND A HEADLINE OVER WHAT IS BEING CUT
         # NOW. The designer, 25 August 2026: "I find the overall checklist %
@@ -2566,17 +2618,24 @@ def review_page(pr, game, rv=None, home=None):
                              esc_html(", ".join(r["guesses"][:6]) or "—")])
 
     if rv.get("loose_decks"):
-        out.append("<h2>Decks the list counts as a single card — %d</h2>"
+        out.append("<h2>Decks you have told the room to count as one — %d</h2>"
                    % len(rv["loose_decks"]))
-        out.append("<p class=\"warn\">⚠️ <b>Read this before you trust the "
-                   "totals above.</b> A deck is many different cards, but each "
-                   "of these lines is counted as accounted for the moment "
-                   "<b>one</b> piece is tied to it — so a deck of thirty-two "
-                   "with one card cut reads as done. If every card in it really "
-                   "is different, open the Checklist and set that line to "
-                   "<b>all different</b>; the count then means what it says. "
-                   "Only you can know which lines are which, so the room does "
-                   "not decide it.</p>")
+        # ⚠️ THIS USED TO BE A LIST OF ACCIDENTS AND IS NOW A LIST OF
+        # DECISIONS. A component called a deck counts all its cards by itself
+        # (counts_each), so the only way to reach this heading is to have
+        # pressed "one is enough" on one — which is a perfectly good answer for
+        # a line called a deck that really is one piece. So it says what it is
+        # about and says there may well be nothing to do: a report that tells
+        # somebody off for a choice they made on purpose is fault 50's stain,
+        # and gets stopped being read.
+        out.append("<p class=\"warn\">⚠️ A deck is usually many different "
+                   "cards, and the room counts one against every card of its "
+                   "quantity unless it is told otherwise. Each of these lines "
+                   "<b>has been told otherwise</b>, so it is accounted for the "
+                   "moment one piece is tied to it — a deck of thirty-two with "
+                   "one card cut reads as done. If that is what you meant, "
+                   "there is nothing to do here. If it is not, set the line "
+                   "back to <b>all different</b> on the Checklist.</p>")
         table(rv["loose_decks"], ["Component", "Set", "The list says", "Counted as"],
               lambda r: ['<span class="box"></span>' + esc_html(r["name"]),
                          esc_html(r["set_name"]),

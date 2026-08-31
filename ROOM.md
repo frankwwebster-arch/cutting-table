@@ -720,6 +720,19 @@ which. Under the **Qty** box each line says which the room is assuming:
 Press the word to change it. Pasting a list has a tick for the whole list —
 *these are decks* — since a contents list is usually all one sort at a time.
 
+⭐️⭐️ **Calling a line a deck says it for you.** Put `deck` in a line's **Kind**
+box and the room counts it as *all different* without your pressing anything —
+because a deck of thirty-two cards is thirty-two different cards, and you have
+just said it is a deck. The row says **counted as a deck** under the button so
+the figure is never a surprise, and pressing **one is enough** still overrules
+it and stays overruled.
+
+⚠️ **Only the kind `deck` does this — not `card`.** A line reading *9 armament
+cards* is very often one card printed nine times, and a game's own list proved
+it: applying this to cards as well turned nine correct findings into twenty, of
+which eleven were wrong. A deck is many different cards by its nature; a line of
+cards is not.
+
 Two things follow. A deck is the one place where **many** name matches are
 right, so *Confirm the likely links* ties up every piece whose name matches a
 deck, where for an ordinary component it insists on exactly one. And the
