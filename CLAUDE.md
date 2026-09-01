@@ -93,11 +93,18 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 639 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 654 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**27 August, last**: *"ensure it is backed into the platform - I have a new use
+for something like it immediately… ensuring that corridor pieces interlock
+neatly."* Built as **Fit together**, `room/fit_pieces.js`. ⭐️ See fault 89, and
+note which of the two uses shaped it: *do these edges meet* writes nothing and
+is asked far more often than *join these two*, so the tool is a light table
+with a join button on the end rather than the other way about.
 
 **27 August, after that**: *"If I'm mending a piece, it seems obvious that
 default should be to just recut that specific piece no?"* Built — and the
@@ -2105,6 +2112,54 @@ rather than by reading the code.
     line the fast path must not run; the mended piece is removed by name
     instead. A piece that was set aside still goes back to the spare folder.
 
+89. ⭐️⭐️ **TWO PIECES LAID AGAINST EACH OTHER — AND THE COMMONER USE OF IT
+    WRITES NOTHING.** The designer, 26 August 2026, of a board scanned across
+    two pages: *"I have a component (the spine) which extends over 2 pages. I
+    need a way to manually stick them together… perhaps a one-off solution just
+    for this?"* It was done once by hand — and then, within the hour: *"ensure
+    it is backed into the platform - I have a new use for something like it
+    immediately in my [second game] build (ensuring that corridor pieces
+    interlock neatly)."*
+    ⭐️⭐️ **THE SECOND ASK IS THE ONE THAT SHAPED THE TOOL.** *Do these two
+    edges meet?* is looking, not making: it changes nothing, it is asked far
+    more often than the other, and it wants a light table rather than a
+    command. So **Fit together** is a light table first — two pieces, a drag,
+    a zoom, a difference blend — and *Join them into one piece* is a button on
+    the end of it. Nothing is written until that button is pressed.
+    ⭐️ **Overlap and gap are one number read two ways**, and which of them is
+    showing tells you which job you are doing: two halves of a spine overlap,
+    two corridor tiles that interlock should meet at nothing at all.
+    ⚠️ **NOTHING IS DELETED.** Joining sets the two halves aside (fault 19),
+    which the Pieces page undoes — a join made in the wrong place must not
+    throw away the only copies of both.
+    ⚠️⚠️ **THE JOINED PIECE ANSWERS TO NO SHEET, ON PURPOSE.** Naming a real
+    sheet in its index entry would put it in that sheet's set, and `cut_sheet`
+    drops every index entry belonging to a sheet before it writes the new ones
+    — so the next re-cut of that sheet would **quietly lose the joined piece's
+    record**. It is left empty and the piece shows under *Not off any sheet
+    this project knows*, which is the plain truth: it came off two.
+    ⚠️ **It asks for a name and refuses without one.** A joined piece has no
+    sheet and so no number to be found by; the name is the only handle. Same
+    rule as the checklist learnt from cut pieces (fault 72) — the room makes
+    the thing, the person says what it is.
+    ⭐️ **The offset is held in TRUE PIECE PIXELS throughout** and multiplied by
+    the zoom only when it draws. Holding it in screen pixels would lose
+    precision every time the zoom changed, and the offset is the one thing the
+    whole tool produces.
+    ⚠️ **The arrow keys stand down inside a field** — the name box is on the
+    same panel, and fault 2 is this codebase's oldest. A check presses an arrow
+    key in that box and watches the picture not move.
+    ⚠️ **The stage is laid out at its real, zoomed size rather than scaled with
+    a CSS `transform`.** A transform leaves the scroller's idea of the size
+    unchanged, so above 100% the piece you were not looking at slides out of a
+    box that has not grown — *"the zoom was a bit flaky, the piece on the left
+    kept vanishing"*, said of the throwaway version, and fixed here before it
+    reached the room.
+    ⭐️ It opens **edge to edge, fitted and centred**, because that is where
+    both jobs start: *"Better if they both start next to each other, centered
+    in the window and I can then drag. Zoom only important once I've done a
+    rough join."*
+
 ---
 
 ## Architecture
@@ -2123,6 +2178,14 @@ cutting_room.py          the app: HTTP server, projects, import, cut, API
                          window at the same port, which is what makes fault 38
                          a press rather than an errand. `/api/relaunch`;
                          `os.execv` in main(), after the socket is closed.
+  room/fit_pieces.js     ⭐️⭐️ FIT TWO PIECES TOGETHER — lay one cut piece
+                         against another to see whether their edges meet (do
+                         these corridor tiles interlock?) and, where they are
+                         two halves of one thing scanned across two pages, join
+                         them into a single piece. ⚠️ The looking writes
+                         NOTHING; joining is a button on the end of it, and
+                         sets the halves aside rather than deleting them.
+                         `POST /pieces/join`. See fault 89.
   room/tips.js           ⭐️ Every control says what it does. `data-tip` (or a
                          plain `title`, which it takes over) on ANY element.
                          Shared by both pages AND by the served table, and it
@@ -2247,7 +2310,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 639 checks, about a minute
+check/check.sh          # 654 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -2378,6 +2441,16 @@ part-marked deck is **still there** with *4 of 24* on it, carries a row for its
 back, records that back when the row is dropped on a piece — and, the one that
 matters, **dropping a card on the deck leaves it on the list, one further on**,
 without the page being reloaded.
+
+It works **fitting two pieces together**: a join with no name is refused, so is
+a piece joined to itself and one the game has not got; two pieces are written
+out as one and measured in inches; ⚠️ the two halves are **set aside, not
+deleted**, and keep their names; and the joined piece answers to **no sheet**,
+which is what stops a later re-cut dropping its record. Then in the browser:
+the tool offers this game's pieces, choosing two lays them **edge to edge** and
+says they meet, the arrow keys open a **gap** and the figure changes its own
+name to say so, ⚠️ an arrow key inside the name box types instead of moving the
+picture, and *edge to edge* puts them back.
 
 It works **mending one piece**: cutting one outline writes that piece and
 leaves its neighbour's picture untouched, both names exactly where they were —

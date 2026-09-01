@@ -4462,6 +4462,86 @@ class Room(BaseHTTPRequestHandler):
                                    "back": back,
                                    "component": (item or {}).get("name", "")})
 
+        # ⭐️⭐️ TWO PIECES LAID TOGETHER AND MADE ONE. The designer, 26 August
+        # 2026, of a spine scanned across two pages: "I have a component (the
+        # spine) which extends over 2 pages. I need a way to stick them
+        # together" — and then, having done it once by hand: "ensure it is
+        # backed into the platform - I have a new use for something like it
+        # immediately... ensuring that corridor pieces interlock neatly."
+        #
+        # ⭐️ Note the two uses, because they shape the tool: one JOINS and the
+        # other only LOOKS. Laying two pieces against each other to see whether
+        # their edges meet is the commoner of the two and writes nothing at
+        # all, so joining is a button on the end of it rather than its purpose.
+        if head == "pieces" and len(rest) == 2 and rest[1] == "join" and method == "POST":
+            d = self.body_json()
+            a, b = str(d.get("a") or ""), str(d.get("b") or "")
+            name = str(d.get("name") or "").strip()
+            try:
+                dx, dy = int(d.get("dx") or 0), int(d.get("dy") or 0)
+            except (TypeError, ValueError):
+                return self.send_json({"error": "the offset must be two whole numbers"}, 400)
+            if a == b or not a or not b:
+                return self.send_json({"error": "two different pieces, please"}, 400)
+            here = set(pr.piece_files()) | pr.spare_stems()
+            for st in (a, b):
+                if st not in here:
+                    return self.send_json({"error": "no such piece: " + st}, 400)
+            # ⚠️ A NAME IS ASKED FOR, because a joined piece belongs to no
+            # sheet and so has no number to be found by. The same rule as the
+            # checklist learnt from cut pieces (fault 72): the room makes the
+            # thing and the person says what it is.
+            if not name:
+                return self.send_json({"error": "give the joined piece a name first"}, 400)
+            ia = Image.open(pr.piece_file(a)).convert("RGBA")
+            ib = Image.open(pr.piece_file(b)).convert("RGBA")
+            x0, y0 = min(0, dx), min(0, dy)
+            w = max(ia.width, dx + ib.width) - x0
+            h = max(ia.height, dy + ib.height) - y0
+            if w > 60000 or h > 60000:
+                return self.send_json({"error": "that offset makes a picture too big to write"}, 400)
+            out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+            out.alpha_composite(ia, (-x0, -y0))
+            out.alpha_composite(ib, (dx - x0, dy - y0))
+            crop = out.getbbox()
+            if crop:
+                out = out.crop(crop)
+            with pr.lock:
+                taken = set(pr.piece_files()) | pr.spare_stems()
+                base = "joined_" + file_slug(name, "piece", 40).replace("-", "_")
+                stem, n = base + "_00", 0
+                while stem in taken:
+                    n += 1
+                    stem = "%s_%02d" % (base, n)
+                out.save(pr.piece_path(stem), "PNG", optimize=True)
+                dpi = 0
+                idx = pr.index()
+                for st in (a, b):
+                    dpi = dpi or (idx["pieces"].get(st) or {}).get("dpi")
+                # ⚠️ `sheet` is left EMPTY on purpose. Naming a real sheet here
+                # would put this piece in that sheet's `old` set, and the next
+                # cut of it drops every index entry belonging to the sheet —
+                # so a re-cut would quietly lose the joined piece's record.
+                idx["pieces"][stem] = {"w": out.width, "h": out.height, "sheet": "",
+                                       "dpi": dpi or pr.dpi, "cut_at": now_ms(),
+                                       "joined_from": [a, b], "offset": [dx, dy]}
+                pr.save_index(idx)
+                man = pr.manifest()
+                cur = man["pieces"].setdefault(stem, {})
+                cur["name"] = name
+                cur["note"] = ("joined from %s and %s" % (a, b))
+                pr.save_manifest(man)
+            # ⚠️ NOTHING IS DELETED. The two halves are SET ASIDE, which is
+            # what the room does everywhere else (fault 19) and is undone from
+            # the Pieces page — or a join made in the wrong place would throw
+            # away the only copies of both.
+            moved = pr.set_aside([a, b], True) if d.get("aside", True) else 0
+            mm = pr.measure_piece(stem, dpi or pr.dpi) or {}
+            return self.send_json({"ok": True, "stem": stem, "name": name,
+                                   "w": out.width, "h": out.height,
+                                   "w_in": mm.get("w_in"), "h_in": mm.get("h_in"),
+                                   "aside": moved})
+
         if head == "pieces" and len(rest) == 2 and rest[1] == "kind" and method == "POST":
             # ⭐️ Accepting the room's guess for a whole run of pieces at once —
             # "call these 42 counters" — in one press and one write.

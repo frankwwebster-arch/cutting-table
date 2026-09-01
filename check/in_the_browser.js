@@ -2398,6 +2398,79 @@ const SHAPE = `(function () {
             twice);
     }
 
+    /* ⭐️⭐️ TWO PIECES LAID AGAINST EACH OTHER. The designer, 26 August 2026:
+       a spine scanned across two pages, and then "a new use for something like
+       it immediately... ensuring that corridor pieces interlock neatly."
+       ⚠️ The tool's own point is that the commoner job — looking — writes
+       nothing, so most of this is about the figures being right and the
+       picture behaving. The API is checked elsewhere; this is fault 61's half,
+       where a green light gets written over a control that does nothing. */
+    {
+      console.log("\nlaying two pieces against each other, to see if they meet");
+      await page.go(`${ROOM}/p/the-cutting-queue/?tab=fit`);
+      await sleep(1200);
+      const there = await page.val(`(function () { return {
+        shown: !document.getElementById("tab-fit").hidden,
+        offered: document.querySelectorAll("#fpPickA option").length - 1,
+        figs: document.getElementById("fpFigs").hidden,
+        joinOff: document.getElementById("fpJoin").disabled }; })()`);
+      check("the tool is there, offering this game's pieces, with nothing chosen yet",
+            there.shown && there.offered > 1 && there.figs && there.joinOff, there);
+
+      const two = await page.val(`(function () {
+        var a = document.getElementById("fpPickA"), b = document.getElementById("fpPickB");
+        var opts = Array.prototype.map.call(a.options, function (o) { return o.value; })
+                        .filter(function (v) { return v; });
+        a.value = opts[0]; a.dispatchEvent(new Event("change"));
+        b.value = opts[1]; b.dispatchEvent(new Event("change"));
+        return { a: opts[0], b: opts[1] }; })()`);
+      await sleep(2500);
+      const laid = await page.val(`(function () { return {
+        imgs: document.querySelectorAll("#fpStage img").length,
+        figs: !document.getElementById("fpFigs").hidden,
+        dx: document.getElementById("fpDx").textContent,
+        what: document.getElementById("fpMeetWhat").textContent,
+        meet: document.getElementById("fpMeet").textContent,
+        joinOff: document.getElementById("fpJoin").disabled }; })()`);
+      // ⭐️ they start EDGE TO EDGE and the figure says so — "better if they
+      // both start next to each other, centered in the window"
+      check("choosing two pieces lays them edge to edge and says they meet",
+            laid.imgs === 2 && laid.figs && !laid.joinOff &&
+            laid.what === "They meet" && laid.meet === "0", laid);
+
+      // the arrow keys move the second piece, by the step that is chosen
+      await page.val(`(function () { for (var i = 0; i < 3; i++)
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+        return true; })()`);
+      await sleep(400);
+      const nudged = await page.val(`(function () { return {
+        dx: +document.getElementById("fpDx").textContent,
+        what: document.getElementById("fpMeetWhat").textContent }; })()`);
+      check("the arrow keys move it, and a gap opens where they no longer meet",
+            nudged.dx === +laid.dx + 30 && nudged.what === "Gap", nudged);
+
+      /* ⚠️⚠️ AND NOT WHILE YOU ARE TYPING. The name box for the joined piece
+         is on this very panel, and fault 2 is this codebase's oldest: a global
+         key handler that does not stand down inside a field steals the typing. */
+      const typed = await page.val(`(function () {
+        var n = document.getElementById("fpName");
+        n.focus(); n.value = "Two halves";
+        n.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+        return +document.getElementById("fpDx").textContent; })()`);
+      await sleep(300);
+      check("but an arrow key inside the name box types, it does not move the piece",
+            typed === nudged.dx, [nudged.dx, typed]);
+
+      // and "edge to edge" puts them back against each other
+      await page.val(`document.getElementById("fpEdge").click()`);
+      await sleep(700);
+      const back = await page.val(`(function () { return {
+        what: document.getElementById("fpMeetWhat").textContent,
+        meetin: document.getElementById("fpMeetin").textContent }; })()`);
+      check("and “edge to edge” puts them back against one another",
+            back.what === "They meet" && /edge to edge/.test(back.meetin), back);
+    }
+
     {
       console.log("\nputting a set by for later, from the page");
       await page.go(`${ROOM}/p/the-spare-room/?tab=sheets`);

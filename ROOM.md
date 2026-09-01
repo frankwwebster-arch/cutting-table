@@ -706,6 +706,38 @@ cards on its own), or by name (which puts everything unnamed together).
 
 ---
 
+## ⭐️ Fit together — do these two pieces meet?
+
+A tab of its own. Choose two cut pieces and they are laid **edge to edge**,
+fitted and centred. Drag the second over the first, or nudge it with the arrow
+keys, and the figures underneath say how far the two **overlap** — or how big a
+**gap** is left between them, or that they **meet** exactly.
+
+It answers two quite different questions and only one of them changes anything.
+
+- **Do these interlock?** Two corridor tiles, two board sections, two halves of
+  a map that ought to butt up against each other. Start *edge to edge*, zoom in
+  on the seam, and look. ⭐️ **Difference** is the control to use for this:
+  where the two pictures agree the overlap goes black, so a misregistration of
+  a few pixels is obvious in a way it never is by eye. **Nothing is written.**
+- **Are these two halves of one thing?** A board scanned across two pages, with
+  the artwork repeated down the overlap. Slide the second half until the
+  overlap registers, give the result a name, and press **Join them into one
+  piece**. The two are written out as one picture at full resolution.
+
+⚠️ **Joining deletes nothing.** The two halves are **set aside** — they keep
+their names, stay in the Pieces list dimmed, and the same button there puts
+them back. If a join comes out wrong, set the joined piece aside and try again.
+
+⚠️ **A joined piece belongs to no sheet**, so it appears under *Not off any
+sheet this project knows* — which is the plain truth, it came off two. That is
+also why the room asks for a name before it will make one: without a sheet
+there is no number to find it by, and the name is the only handle it has.
+
+⭐️ The **seam line** marks where the second piece begins, the **second piece**
+slider makes it see-through so you can line it up against what is underneath,
+and the nudge step (1, 10 or 100 pixels) sets what the arrow keys move by.
+
 ## The checklist — how complete is the cutting?
 
 ⭐️ **Every component belongs to a set** — the core game, or a supplement — and

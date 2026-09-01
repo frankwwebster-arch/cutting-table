@@ -223,6 +223,32 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️⭐️ Fit together — do these two pieces meet? — **built**, 27 August 2026
+
+*"I have a component (the spine) which extends over 2 pages. I need a way to
+manually stick them together"* — done once by hand — and then, within the hour:
+*"ensure it is backed into the platform - I have a new use for something like it
+immediately… ensuring that corridor pieces interlock neatly."*
+
+⭐️⭐️ **The second ask is the one that shaped it.** *Do these two edges meet?*
+changes nothing and is asked far more often than *join these two*, so **Fit
+together** (`room/fit_pieces.js`, named for what it does) is a light table
+first — drag, zoom, difference blend, seam line — with *Join them into one
+piece* as a button on the end.
+
+- ⭐️ **Overlap and gap are one number read two ways**; which is showing tells
+  you which job you are doing.
+- ⚠️ **Joining deletes nothing** — the halves are set aside, undone from Pieces.
+- ⚠️ **The joined piece answers to no sheet on purpose**: naming a real one
+  would let the next re-cut of that sheet drop its record.
+- ⚠️ It asks for a **name** and refuses without one — no sheet means no number
+  to find it by.
+- ⚠️ The arrow keys **stand down inside the name box** (fault 2), and the stage
+  is laid out at its real zoomed size rather than scaled with a transform,
+  which is what made the throwaway version's zoom "flaky".
+
+See fault 89.
+
 ### `[x]` ⭐️⭐️ Mending one piece cuts that piece — **built**, 27 August 2026
 
 *"If I'm mending a piece, it seems obvious that default should be to just recut
@@ -1024,7 +1050,10 @@ anything that speeds up cutting.
   Match also gained the look-alike tiles' one `data-big` preview.
 - `[x]` ⭐️⭐️ **Mending one piece cuts that piece**, with a fallback to the
   whole sheet whenever the numbering would shift.
-- `[x]` ⚠️ **20 new checks** — 619 to 639.
+- `[x]` ⭐️⭐️ **Fit together** — lay two cut pieces against each other to see
+  whether their edges meet, and join them where they are two halves of one
+  thing. `room/fit_pieces.js`.
+- `[x]` ⚠️ **35 new checks** — 619 to 654.
 
 ### 26 August 2026 — calling a line a deck counts it as a deck
 

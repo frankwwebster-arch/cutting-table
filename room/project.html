@@ -8,6 +8,7 @@
 <script src="/room/drop.js"></script>
 <script src="/room/close.js"></script>
 <script src="/room/tips.js"></script>
+<script src="/room/fit_pieces.js"></script>
 </head>
 <body>
 <header class="bar">
@@ -34,6 +35,7 @@
     <button data-tab="pieces" data-tip="Every piece cut out so far, one at a time, to be named and described. This is where the naming is done.">Pieces <b id="nPieces"></b></button>
     <button data-tab="match" data-tip="A board of every cut piece beside the checklist. Drag a component's name onto the piece it is — faster than typing when you have a contents list.">Match <b id="nMatch"></b></button>
     <button data-tab="wanted" data-tip="What the box should contain, and how much of it you have. Optional — a game with no contents list can be cut perfectly well without one.">Checklist <b id="nWanted"></b></button>
+    <button data-tab="fit" data-tip="Lay one cut piece against another to see whether their edges meet — do these two corridor tiles interlock? — and, if they are two halves of one thing scanned across two pages, join them into a single piece.">Fit together</button>
     <button data-tab="export" data-tip="Write the finished pieces out as a plain folder: named pictures at true size, an inventory, a contact sheet, cutting files.">Take it away</button>
     <button data-tab="about" data-tip="This project's name, where its files are kept, and any hand-over commands set up for it.">Settings</button>
   </div>
@@ -124,6 +126,60 @@
       <div id="plist"></div>
       <div id="pstage"><p class="note">Choose a piece on the left.</p></div>
       <div id="pform"><p class="note">—</p></div>
+    </div>
+  </section>
+
+  <!-- ======================================================= FIT TOGETHER -->
+  <!-- ⭐️⭐️ TWO PIECES LAID AGAINST EACH OTHER. The designer, 26 August 2026:
+       a spine scanned across two pages that needed sticking together, and then
+       "a new use for something like it immediately... ensuring that corridor
+       pieces interlock neatly." The looking is the commoner job and writes
+       nothing; joining is the button on the end of it.
+       The tool itself is room/fit_pieces.js — named for what it does. -->
+  <section id="tab-fit" hidden>
+    <p class="note">Lay one cut piece against another. <b>Do these two edges meet?</b>
+      Drag the second piece over the first, or nudge it with the arrow keys, and the
+      figures below say how far the two overlap — or how big a gap is left between them.
+      ⭐️ <b>Difference</b> is the one to use for a close look: where the two agree, the
+      overlap goes black. Nothing is changed unless you press <b>Join them into one
+      piece</b>.</p>
+    <div class="row" style="margin-bottom:10px">
+      <label class="tiny muted">Held still
+        <select id="fpPickA" title="The piece that stays where it is. Everything is measured from its top left corner."></select></label>
+      <label class="tiny muted">You move this one
+        <select id="fpPickB" title="The piece you drag about. Its offset from the first piece is what the figures below report."></select></label>
+      <button class="quiet" id="fpSwap" title="Swap the two round, so the one you were moving is now the one held still.">Swap them</button>
+      <button class="quiet" id="fpEdge" title="Put the second piece hard against the right-hand edge of the first, with no overlap and no gap. The place to start from when you are asking whether two tiles interlock.">Edge to edge</button>
+      <button class="quiet" id="fpFit" title="Zoom so that the whole of both pieces is in view, and centre them.">Fit both in view</button>
+    </div>
+    <div class="row fitbar">
+      <label class="tiny muted">Zoom <input type="range" id="fpZoom" min="10" max="4000" value="1000" title="How close in you are looking. It zooms about the middle of the window, so whatever you are studying stays put."><i id="fpZval">100%</i></label>
+      <label class="tiny muted">Second piece <input type="range" id="fpOp" min="20" max="100" value="100" title="Make the piece you are moving see-through, so you can line it up against what is underneath it."></label>
+      <label class="tiny muted">Nudge by
+        <span class="steps" id="fpSteps">
+          <button data-step="1" title="The arrow keys move the second piece one pixel at a time.">1px</button>
+          <button data-step="10" class="on" title="The arrow keys move the second piece ten pixels at a time.">10px</button>
+          <button data-step="100" title="The arrow keys move the second piece a hundred pixels at a time.">100px</button>
+        </span>
+      </label>
+      <button class="quiet" id="fpDiff" title="Show the difference between the two pictures instead of one over the other. Where they agree it goes black, which is the quickest way to see whether an overlap really registers.">Difference</button>
+      <button class="quiet on" id="fpSeamBtn" title="Show a line where the second piece begins, so you can see exactly where the join falls.">Seam line</button>
+    </div>
+    <div id="fpTable"><div id="fpStage"></div></div>
+    <p class="note" id="fpEmpty">Choose two cut pieces above.</p>
+    <div id="fpFigs" hidden>
+      <div class="fitfigs">
+        <div><span>Across</span><b id="fpDx">0</b><i id="fpDxin"></i></div>
+        <div><span>Down</span><b id="fpDy">0</b><i id="fpDyin"></i></div>
+        <div><span id="fpMeetWhat">Overlap</span><b id="fpMeet">0</b><i id="fpMeetin"></i></div>
+        <div><span>Together they measure</span><b id="fpTot">0</b><i id="fpTotin"></i></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <input id="fpName" placeholder="what the joined piece is called" style="min-width:22em"
+               title="The name the joined piece will carry. A joined piece belongs to no sheet, so its name is the only way to find it again — the room asks for one rather than making a nameless piece.">
+        <label class="tiny muted"><input type="checkbox" id="fpAside" checked title="Move the two halves into the spare folder so the same artwork is not handed over twice. Nothing is deleted — they keep their names, stay in the Pieces list dimmed, and the same button there puts them back."> set the two halves aside afterwards</label>
+        <button class="primary" id="fpJoin" disabled data-tip="Write the two pieces out as ONE new picture at full resolution, exactly as you have lined them up. The halves are set aside, not deleted, and can be brought back from the Pieces page.">Join them into one piece…</button>
+      </div>
     </div>
   </section>
 
@@ -365,7 +421,7 @@
   function debounce(fn, ms) { var t; return function () { var a = arguments, s = this; clearTimeout(t); t = setTimeout(function () { fn.apply(s, a); }, ms || 500); }; }
 
   /* ------------------------------------------------------------- tabs */
-  var TABS = ["sheets", "pieces", "match", "wanted", "export", "about"];
+  var TABS = ["sheets", "pieces", "match", "wanted", "fit", "export", "about"];
   function showTab(name) {
     document.querySelectorAll(".tabs button").forEach(function (b) {
       b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
@@ -378,6 +434,25 @@
     if (name === "about") loadHistory();
     if (name === "match") loadMatch();
     if (name === "export") renderExport();
+    if (name === "fit") openFit();
+  }
+  /* ⭐️ The tool is room/fit_pieces.js — see the section above for why it
+     exists. It is handed the pieces every time the tab is opened, so one cut
+     a moment ago is in the list; and it is given the box each piece came off
+     so the two lists group the way every other list in the room does. */
+  function openFit() {
+    function go() {
+      window.FitPieces.open({
+        api: API, base: BASE,
+        pieces: (piecesData ? piecesData.pieces : []).map(function (p) {
+          return { stem: p.stem, name: (p.data || {}).name || "",
+                   book: p.sheet ? bookLabel(bookOf(p.sheet)) : "",
+                   dpi: p.dpi || project.dpi };
+        }),
+        onDone: function () { piecesData = null; load(); }
+      });
+    }
+    if (!piecesData) loadPieces().then(go); else go();
   }
   document.querySelectorAll(".tabs button").forEach(function (b) {
     b.addEventListener("click", function () { location.hash = b.dataset.tab; showTab(b.dataset.tab); });

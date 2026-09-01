@@ -615,3 +615,47 @@ table.wanted tr.justadded td { background: #2a2410; transition: background 1.2s;
 }
 .histrow:last-child { border-bottom: 0; }
 .histrow:hover { background: var(--panel-2); }
+
+/* ---- Fit together: two pieces laid against each other (room/fit_pieces.js).
+   ⭐️ The chequer is the room's own way of showing a transparent picture, so
+   a piece's own edge is the edge — which is the whole question this tool is
+   asked. ⚠️ And the stage is laid out at its real, zoomed size rather than
+   scaled with a transform: a transform leaves the scroller's idea of the size
+   unchanged, and the piece you are not looking at slides out of view. */
+.fitbar { margin-bottom: 10px; }
+.fitbar i { font-style: normal; font-size: 12px; color: var(--dim);
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.fitbar input[type=range] { width: 130px; accent-color: var(--brass); }
+.steps { display: inline-flex; }
+.steps button { border-radius: 0; margin-left: -1px; font-size: 12px;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.steps button:first-child { border-radius: 4px 0 0 4px; margin-left: 0; }
+.steps button:last-child { border-radius: 0 4px 4px 0; }
+.steps button.on, #fpDiff.on, #fpSeamBtn.on {
+  background: var(--brass-d); border-color: var(--brass);
+}
+#fpTable {
+  height: 54vh; min-height: 320px; overflow: auto; position: relative;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+}
+#fpStage { position: relative; }
+#fpStage img {
+  position: absolute; top: 0; left: 0;
+  background: repeating-conic-gradient(#151C25 0 25%, #0D1218 0 50%) 50% / 16px 16px;
+}
+#fpStage img.fpB { cursor: grab; }
+#fpStage img.fpB.dragging { cursor: grabbing; }
+#fpSeam { position: absolute; top: 0; width: 1px; background: #4FC3D9;
+          opacity: .85; pointer-events: none; }
+.fitfigs {
+  display: grid; gap: 14px 30px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+.fitfigs div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fitfigs span { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+                color: var(--dim); }
+.fitfigs b { font: 600 20px/1.15 ui-monospace, SFMono-Regular, Menlo, monospace;
+             font-variant-numeric: tabular-nums; }
+.fitfigs b.good { color: var(--good); }
+.fitfigs i { font-style: normal; font-size: 12px; color: var(--dim);
+             font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

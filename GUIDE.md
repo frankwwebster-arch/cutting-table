@@ -155,6 +155,14 @@ brings them back, and `⌘Z` puts back anything the other two did.
 lay it down again on any other sheet — in this game or any other. A door drawn
 once for one dungeon game is the same door in the next.
 
+⭐️ **Fit together** is a tab of its own, for two questions the pictures alone
+can answer: *do these two corridor tiles interlock?* — lay them edge to edge,
+zoom in on the seam, and the **Difference** control turns everything the two
+agree about black — and *are these two halves of one board scanned across two
+pages?* — slide them until the overlap registers and press **Join them into one
+piece**. Looking changes nothing; joining sets the two halves aside rather than
+deleting them.
+
 ---
 
 ### 3 · Cut

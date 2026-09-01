@@ -1057,7 +1057,7 @@ PYCUTALL
 # match should include an item for the relevant back of each deck."
 say "a deck stays on the Match list until it has enough pieces, and knows its back"
 $PY - "$TMP" "$PORT" <<'PYDECK' || code=1
-import json, sys, urllib.error, urllib.request
+import json, os, sys, urllib.error, urllib.request
 tmp, port = sys.argv[1], sys.argv[2]
 API = "http://127.0.0.1:%s/api/p/the-cutting-queue" % port
 bad = []
@@ -1306,6 +1306,53 @@ check("what the room works out is not saved into the list as if it were an answe
 check("while the press that overrules it IS written down",
       any(i.get("each_said") for i in store["items"]),
       [i["name"] for i in store["items"] if i.get("each_said")])
+
+# ⭐️⭐️ TWO PIECES LAID TOGETHER AND MADE ONE. The designer, 26 August 2026, of
+# a spine scanned across two pages, and then immediately: "ensure it is backed
+# into the platform - I have a new use for something like it... ensuring that
+# corridor pieces interlock neatly." ⚠️ The commoner of those two uses writes
+# NOTHING — laying two pieces against each other to see whether their edges
+# meet — so what is checked here is only the half that makes a new piece.
+join_a, join_b = stems[0], stems[1]
+code, d = call("/pieces/join", {"a": join_a, "b": join_b, "dx": 100, "dy": 0})
+check("a joined piece must be given a name, or it is refused with a reason",
+      code == 400 and "name" in (d.get("error") or ""), [code, d.get("error")])
+code, d = call("/pieces/join", {"a": join_a, "b": join_a, "dx": 1, "dy": 0, "name": "x"})
+check("and joining a piece to itself is refused", code == 400, [code, d.get("error")])
+code, d = call("/pieces/join", {"a": join_a, "b": "no-such-piece", "dx": 1, "dy": 0,
+                                "name": "x"})
+check("and so is a piece the game has not got", code == 400, [code, d.get("error")])
+code, d = call("/pieces/join", {"a": join_a, "b": join_b, "dx": 120, "dy": 15,
+                                "name": "A joined thing"})
+check("two pieces are written out as one, measured in inches",
+      code == 200 and d.get("stem") and d.get("w_in"),
+      [d.get("stem"), d.get("w"), d.get("h"), d.get("w_in")])
+joined = d.get("stem") or ""
+check("and the name a person typed is the name it carries",
+      joined.startswith("joined_") and d.get("name") == "A joined thing", joined)
+files = os.listdir(os.path.join(tmp, "home", "the-cutting-queue", "pieces"))
+check("the joined picture is really on the disk", joined + ".png" in files, joined)
+# ⚠️⚠️ NOTHING IS DELETED. The halves are SET ASIDE, which the Pieces page
+# undoes — a join made in the wrong place must not throw away both originals.
+spare = os.listdir(os.path.join(tmp, "home", "the-cutting-queue", "pieces", "spare"))
+check("and the two halves are set aside, not deleted",
+      join_a + ".png" in spare and join_b + ".png" in spare, sorted(spare))
+man = json.load(urllib.request.urlopen(API + "/manifest"))["pieces"]
+check("the halves keep their own names while they are put away",
+      all(k in man for k in (join_a, join_b)), [join_a in man, join_b in man])
+# ⚠️ ITS SHEET IS LEFT EMPTY ON PURPOSE: naming a real sheet would put this
+# piece in that sheet's set, and the next cut of it drops every index entry
+# belonging to the sheet — a re-cut would quietly lose the joined piece.
+store = json.load(open(os.path.join(tmp, "home", "the-cutting-queue",
+                                    "pieces", "index.json")))["pieces"]
+check("the joined piece answers to no sheet, so a re-cut cannot lose it",
+      (store.get(joined) or {}).get("sheet") == "", (store.get(joined) or {}).get("sheet"))
+check("and it remembers which two pieces it was made of, and how they were laid",
+      (store.get(joined) or {}).get("joined_from") == [join_a, join_b] and
+      (store.get(joined) or {}).get("offset") == [120, 15], store.get(joined))
+# put the two halves back, so nothing after this is looking at a game these
+# checks have quietly emptied
+call("/pieces/aside", {"stems": [join_a, join_b], "aside": False})
 
 sys.exit(1 if bad else 0)
 PYDECK
