@@ -387,6 +387,18 @@ finished piece, and each is measured in inches.
 Cut a sheet again after correcting an outline and the names already given to
 its pieces follow them, even where adding a piece renumbers the rest.
 
+⭐️⭐️ **Mending one piece cuts that piece.** Follow *mend it at the table* from
+a piece on the **Pieces** page and the table opens with that outline in hand
+and every other one hidden — and the Cut button then reads **Cut this piece**.
+It writes that one picture and leaves the rest of the sheet exactly as it is,
+keeping the name it already has. Turn *work on this piece alone* off and the
+button cuts the whole sheet again.
+
+⚠️ If your mend changes how many pieces the sheet has, or moves this one past a
+neighbour, the room cuts the **whole sheet** instead and tells you why: pieces
+are numbered in reading order, so the numbers below would shift and the names
+have to travel with their pictures.
+
 ⭐️ **Cut the sheets waiting here** — above the sheet list — does a run of them
 in one press. Two things about it are worth knowing, because they are what
 make it safe to press:

@@ -1333,6 +1333,11 @@
     elSolo.checked = solo;
     list();
     draw();
+    /* ⭐️ The room's Cut button says whether it will cut this piece or the
+       whole sheet, and working on one piece alone is what decides it. Guarded
+       because the baked offline page has no room behind it and no such
+       button — this file is shared by both and must stay that way. */
+    if (window.roomCutLabel) window.roomCutLabel();
     /* ⚠️⚠️ SAY THAT NOTHING WAS DELETED. On a sheet of forty counters this
        key takes thirty-nine outlines off the picture at a stroke, and a
        person who pressed it by accident — O is next to nothing else here, but

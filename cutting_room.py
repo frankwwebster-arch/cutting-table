@@ -268,6 +268,17 @@ def flatten(pts, curve):
     return out
 
 
+def outline_box(pc):
+    """One outline's own bounding box, in sheet pixels — the same flattening
+    the mask is painted from, so the two cannot disagree about where it is."""
+    poly = flatten(pc.get("pts") or [], pc.get("curve", False))
+    if len(poly) < 3:
+        return None
+    xs = [q[0] for q in poly]
+    ys = [q[1] for q in poly]
+    return [int(min(xs)), int(min(ys)), int(max(xs)) + 1, int(max(ys)) + 1]
+
+
 def paint_mask(pieces, size):
     """One sheet's mask layer: every piece filled flat in its own ink, on
     transparency. Each piece on its own layer then laid down, so a piece
@@ -2066,10 +2077,30 @@ def import_into(project, filename, data, prefix=None, progress=None):
 
 # --------------------------------------------------------------------- cut
 
-def cut_sheet(project, sid):
+def cut_sheet(project, sid, only=None):
     """Paint the outlines into a mask, cut every piece off the sheet, measure
     it, file it — and keep the names that were already given to pieces on
-    this sheet, even where a re-cut renumbers them."""
+    this sheet, even where a re-cut renumbers them.
+
+    ⭐️⭐️ `only` IS ONE OUTLINE, MENDED. The designer, 26 August 2026: "If I'm
+    mending a piece, it seems obvious that default should be to just recut that
+    specific piece no?" Quite so — a sheet holds forty and thirty-nine of them
+    were right.
+
+    ⚠️⚠️ THE WHOLE SHEET IS STILL PAINTED AND LABELLED, because a piece's
+    NUMBER is its position in reading order over every piece on the sheet: cut
+    one outline on its own and it would be `_00` whatever it really is, which
+    is precisely the renaming this function exists to prevent. What `only`
+    saves is the cutting, measuring and writing of the other thirty-nine — on
+    a big scan that is nearly all of the work.
+
+    ⚠️ AND IT FALLS BACK TO THE WHOLE SHEET THE MOMENT ANYTHING ELSE MOVED.
+    If the mend changed how many pieces the sheet has, or moved this one past
+    a neighbour in reading order, every number below it shifts and the names
+    must follow — so the full path runs and the answer says so. A fast path
+    that quietly left the store inconsistent would be far worse than a slow
+    one.
+    """
     with project.lock:
         s = project.sheet(sid)
         if s is None:
@@ -2108,6 +2139,29 @@ def cut_sheet(project, sid):
         idx = project.index()
         old = {k: v for k, v in idx.get("pieces", {}).items() if v.get("sheet") == sid}
         os.makedirs(project.p("pieces"), exist_ok=True)
+
+        # ⭐️⭐️ ONE MENDED OUTLINE — see the note at the top of this function.
+        # Which of the found pieces IS the mended outline is answered the way
+        # names are carried across a re-cut: by how much the boxes overlap.
+        # ⚠️ It gives up rather than guessing, and a full cut is always the
+        # safe answer, so every road out of here that is not certain takes it.
+        single = None
+        if only is not None and 0 <= only < len(pcs):
+            want = outline_box(pcs[only])
+            if want and len(found) == len(old):
+                best, score = None, 0.0
+                for i, f in enumerate(found):
+                    q = overlap(list(f["box"]), want)
+                    if q > score:
+                        best, score = i, q
+                if best is not None and score >= 0.6:
+                    was = old.get("%s_%02d" % (stem, best))
+                    # ⚠️ and only if THAT slot already held a piece in the same
+                    # place: if the mend moved it past a neighbour, the numbers
+                    # below it all shift and the names have to follow
+                    if was and overlap(list(found[best]["box"]), was.get("box") or []) >= 0.6:
+                        single = best
+
         # ⚠️ Anything in the spare folder is written down as set aside BEFORE
         # the sweep takes it away: the mark is what carries "put this one back
         # in the spare folder" across the re-cut, and the folder is about to
@@ -2115,11 +2169,56 @@ def cut_sheet(project, sid):
         project.adopt_spares()
         # sweep the last cut of this sheet — from the spare folder too, or a
         # piece put away on the previous cut would linger with stale artwork
-        for folder in (project.p("pieces"), project.spare_dir()):
-            for f in (os.listdir(folder) if os.path.isdir(folder) else []):
-                if f.startswith(stem + "_") and f.endswith(".png"):
-                    os.remove(os.path.join(folder, f))
+        # ⚠️⚠️ NOT WHEN ONE PIECE IS BEING MENDED. This is the line that makes
+        # a re-cut safe by starting from nothing, and it is exactly the line
+        # the fast path must not run: the other thirty-nine pieces are staying
+        # where they are. The one being mended is removed by name below.
+        if single is None:
+            for folder in (project.p("pieces"), project.spare_dir()):
+                for f in (os.listdir(folder) if os.path.isdir(folder) else []):
+                    if f.startswith(stem + "_") and f.endswith(".png"):
+                        os.remove(os.path.join(folder, f))
         dpi = float(o.get("dpi") or 0) or float(project.dpi)
+
+        # ⭐️ THE FAST PATH: cut this one piece, leave its neighbours' files,
+        # names and index entries exactly as they are. The stem is unchanged,
+        # so the name follows without anything having to be rewritten.
+        if single is not None:
+            p = found[single]
+            name = "%s_%02d" % (stem, single)
+            was_spare = (project.manifest().get("pieces", {}).get(name) or {}).get("spare")
+            for folder in (project.p("pieces"), project.spare_dir()):
+                f = os.path.join(folder, name + ".png")
+                if os.path.exists(f):
+                    os.remove(f)
+            piece = cutter.cut(rgb, p["mask"], p["box"], dict(cutter.DEFAULTS))
+            piece.save(project.piece_path(name))
+            entry = {"name": name, "w": piece.width, "h": piece.height, "sheet": sid,
+                     "box": [int(v) for v in p["box"]], "dpi": dpi, "cut_at": now_ms()}
+            bx0, by0, bx1, by1 = p["box"]
+            sub = colour[by0:by1, bx0:bx1][p["mask"][by0:by1, bx0:bx1]]
+            if len(sub):
+                packed = (sub[:, 0].astype(np.uint32) * 65536 +
+                          sub[:, 1].astype(np.uint32) * 256 + sub[:, 2])
+                vals, counts = np.unique(packed, return_counts=True)
+                best = int(vals[counts.argmax()])
+                entry["ink_rgb"] = [best >> 16, (best >> 8) & 255, best & 255]
+            idx["pieces"][name] = {k: v for k, v in entry.items() if k != "name"}
+            project.save_index(idx)
+            # ⚠️ a piece that was set aside goes back to the spare folder, the
+            # same as on a full cut — or mending it would hand the game back a
+            # duplicate that had been put away
+            if was_spare:
+                project.set_aside([name], True)
+            thumb = os.path.join(project.p("cache"), "piece-" + name + ".png")
+            if os.path.exists(thumb):
+                os.remove(thumb)
+            mm = project.measure_piece(name, dpi) or {}
+            named = (project.manifest().get("pieces", {}).get(name) or {}).get("name", "")
+            return {"made": [dict(entry, w_in=mm.get("w_in"), h_in=mm.get("h_in"),
+                                  named=named)],
+                    "renames": {}, "drawn": drawn, "retired": {}, "one": name}
+
         made = []
         for i, p in enumerate(found):
             name = "%s_%02d" % (stem, i)
@@ -3449,15 +3548,37 @@ TABLE_PATCHES = [
     </div>
     <a class="btn quiet" id="roomBack" href="/*__BACK__*/" title="Back to the project">⟵ Room</a>
     <button class="btn primary" id="roomCut" type="button" title="Cut the outlined pieces off this sheet">Cut this sheet</button>
+    <span id="roomCutNote" class="tiny" style="color:#8494A5;font-size:12px"></span>
     <span id="roomState" class="roomok"></span>
 """),
     ("""  /* ---------------------------------------------------------------- scale */
 """, """  /* ------------------------------------------------------------ the room */
 
+  /* ⭐️⭐️ MENDING ONE PIECE CUTS THAT PIECE. The designer, 26 August 2026: "If
+     I'm mending a piece, it seems obvious that default should be to just recut
+     that specific piece no?" Quite so — and the room already had the control
+     that says which piece you mean: working on one alone. The mend link from
+     the Pieces page turns it on, so that flow gets this without asking. Turn
+     it off and the button cuts the sheet, as it always did.
+     ⚠️ The room still decides: it falls back to the whole sheet whenever
+     cutting one would leave the numbering wrong. See cut_sheet(). */
+  window.roomCutLabel = function () {
+    var b = document.getElementById("roomCut");
+    var note = document.getElementById("roomCutNote");
+    if (!b) return;
+    var one = solo && current >= 0;
+    b.textContent = one ? "Cut this piece" : "Cut this sheet";
+    b.title = one
+      ? "Cut piece " + String(current + 1) + " off this sheet again, on its own — much quicker than the whole sheet, and the name it already has is kept. Nothing else on the sheet is touched."
+      : "Cut the outlined pieces off this sheet";
+    note.textContent = one ? "the other outlines are left alone" : "";
+  };
+
   document.getElementById("roomCut").addEventListener("click", function () {
     if (!sheet) return;
     if (!pieces.length) { window.alert("Nothing is outlined on this sheet yet."); return; }
     var b = this;
+    var one = (solo && current >= 0) ? current : null;
     b.disabled = true; b.textContent = "Cutting…";
     clearTimeout(roomTimers[sheet.id]);
     var sid = sheet.id, lab = sheet.label;
@@ -3466,11 +3587,21 @@ TABLE_PATCHES = [
     SAVED[sid] = payload;
     fetch(ROOM.api + "/outlines/" + encodeURIComponent(sid), { method: "PUT",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-      .then(function () { return roomPost("/cut/" + encodeURIComponent(sid)); })
+      .then(function () { return roomPost("/cut/" + encodeURIComponent(sid), { only: one }); })
       .then(function (j) {
-        b.disabled = false; b.textContent = "Cut this sheet";
+        b.disabled = false;
+        window.roomCutLabel();
         if (j.error) { window.alert("The cut failed: " + j.error); return; }
         var n = (j.made || []).length;
+        // ⚠️ SAY WHICH IT DID. Asked for one piece and given the whole sheet
+        // — which the room does whenever the numbering would otherwise go
+        // wrong — a silent answer would look as though the button had been
+        // ignored. Fault 58 again.
+        if (one !== null && !j.one) {
+          window.alert("The whole sheet was cut rather than the one piece, because "
+            + "mending it changed where the pieces fall in reading order. Every name "
+            + "has followed its piece.");
+        }
         // ⚠️ Never let a name go without saying so. A piece whose outline
         // has been removed has nothing left to be the name of, so the name
         // is set aside, kept in the manifest under `retired`. The person who
@@ -3491,11 +3622,16 @@ TABLE_PATCHES = [
             ". They are kept in the project's manifest.json under retired, " +
             "if you need them back.");
         }
+        if (j.one) {
+          window.alert("Piece " + (one + 1) + " cut again from " + lab +
+                       ". Its name and everything else on the sheet are untouched.");
+          return;
+        }
         if (window.confirm(n + " piece" + (n === 1 ? "" : "s") + " cut from " + lab + ". Go and name them?")) {
           location.href = ROOM.home + "#pieces/" + encodeURIComponent(sid);
         }
       })
-      .catch(function (e) { b.disabled = false; b.textContent = "Cut this sheet"; window.alert("The cut failed: " + e.message); });
+      .catch(function (e) { b.disabled = false; window.roomCutLabel(); window.alert("The cut failed: " + e.message); });
   });
 
   /* ---------------------------------------------------------------- scale */
@@ -4167,8 +4303,17 @@ class Room(BaseHTTPRequestHandler):
             return self.send_json(got)
 
         if head == "cut" and len(rest) == 2 and method == "POST":
+            # ⭐️ `only` names ONE outline, by its position in the sheet's list —
+            # mending a piece should cut that piece. See cut_sheet(), which
+            # falls back to the whole sheet whenever that would not be safe.
+            d = self.body_json()
+            only = d.get("only")
             try:
-                return self.send_json(dict(ok=True, **cut_sheet(pr, rest[1])))
+                only = int(only) if only is not None else None
+            except (TypeError, ValueError):
+                only = None
+            try:
+                return self.send_json(dict(ok=True, **cut_sheet(pr, rest[1], only)))
             except RuntimeError as exc:
                 return self.send_json({"error": str(exc)}, 400)
 

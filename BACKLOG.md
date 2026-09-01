@@ -223,6 +223,19 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️⭐️ Mending one piece cuts that piece — **built**, 27 August 2026
+
+*"If I'm mending a piece, it seems obvious that default should be to just recut
+that specific piece no?"* It is, and the control that says which piece you mean
+already existed — *work on this one alone*, which the mend link turns on. The
+Cut button reads **Cut this piece** while it is on.
+
+⚠️ The whole sheet is still painted and labelled, because a piece's number is
+its position in reading order; what is saved is cutting, measuring and writing
+the other thirty-nine. ⚠️ And it falls back to the whole sheet the moment the
+numbering would shift — teeth tried, and without that guard the names land on
+the wrong pieces. See fault 88.
+
 ### `[x]` ⚠️⚠️ The cut, twelve times faster — **fixed**, 27 August 2026
 
 *"Pressed cut, and it is INCREDIBLY slow… it took 1081 seconds to cut the 17
@@ -1009,7 +1022,9 @@ anything that speeds up cutting.
 - `[x]` ⚠️⚠️ **Every tall piece on the Match board was clipped** — fault 4's
   percentage max-height, in the last place it survived. Measured, not believed.
   Match also gained the look-alike tiles' one `data-big` preview.
-- `[x]` ⚠️ **13 new checks** — 619 to 632.
+- `[x]` ⭐️⭐️ **Mending one piece cuts that piece**, with a fallback to the
+  whole sheet whenever the numbering would shift.
+- `[x]` ⚠️ **20 new checks** — 619 to 639.
 
 ### 26 August 2026 — calling a line a deck counts it as a deck
 

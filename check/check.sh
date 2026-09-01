@@ -1157,6 +1157,76 @@ check("a back naming a piece this game has not got is refused, with a reason",
 code, d = call("/wanted/back", {"id": "no-such-component", "stem": back_stem})
 check("and so is a component it has not got", code == 400, code)
 
+# ⭐️⭐️ MENDING ONE PIECE CUTS THAT PIECE. The designer, 26 August 2026: "If
+# I'm mending a piece, it seems obvious that default should be to just recut
+# that specific piece no?" A sheet holds forty and thirty-nine of them were
+# right. ⚠️ The half that matters is the FALLBACK: the moment the numbering
+# would shift, the whole sheet has to be cut or the names land on the wrong
+# pieces — which is the fault the re-cut machinery exists to prevent.
+call("/outlines/oldbox-01", {"pieces": [
+    {"pts": [[200, 200], [700, 200], [700, 700], [200, 700]]},
+    {"pts": [[900, 900], [1400, 900], [1400, 1400], [900, 1400]]}]}, "PUT")
+call("/cut/oldbox-01", {})
+call("/manifest/oldbox_p01_00", {"name": "the first one"}, "PUT")
+call("/manifest/oldbox_p01_01", {"name": "the second one"}, "PUT")
+
+
+def stamp_of(st):
+    import os as _os
+    f = _os.path.join(tmp, "home", "the-cutting-queue", "pieces", st + ".png")
+    return round(_os.path.getmtime(f), 3) if _os.path.exists(f) else None
+
+
+was = {st: stamp_of(st) for st in ("oldbox_p01_00", "oldbox_p01_01")}
+import time as _t
+_t.sleep(1.1)
+# mend the second outline — nudge it — and ask for that piece alone
+code, d = call("/outlines/oldbox-01", {"pieces": [
+    {"pts": [[200, 200], [700, 200], [700, 700], [200, 700]]},
+    {"pts": [[910, 900], [1400, 900], [1400, 1400], [910, 1400]]}]}, "PUT")
+code, d = call("/cut/oldbox-01", {"only": 1})
+check("mending one outline cuts that piece alone, and the room says which",
+      d.get("one") == "oldbox_p01_01" and len(d.get("made") or []) == 1,
+      [d.get("one"), len(d.get("made") or [])])
+now = {st: stamp_of(st) for st in ("oldbox_p01_00", "oldbox_p01_01")}
+check("its neighbour's picture is not touched at all",
+      now["oldbox_p01_00"] == was["oldbox_p01_00"], [was, now])
+check("while the mended one really was written again",
+      now["oldbox_p01_01"] != was["oldbox_p01_01"], [was, now])
+man = json.load(urllib.request.urlopen(API + "/manifest"))["pieces"]
+check("and both names are exactly where they were",
+      [(man.get(k) or {}).get("name") for k in ("oldbox_p01_00", "oldbox_p01_01")]
+      == ["the first one", "the second one"],
+      [(man.get(k) or {}).get("name") for k in ("oldbox_p01_00", "oldbox_p01_01")])
+
+# ⚠️⚠️ AND THE FALLBACK. An outline added ABOVE the others in reading order
+# shifts every number below it, so cutting one piece would leave the names on
+# the wrong pieces. The room must do the whole sheet and say so.
+code, d = call("/outlines/oldbox-01", {"pieces": [
+    {"pts": [[200, 200], [700, 200], [700, 700], [200, 700]]},
+    {"pts": [[910, 900], [1400, 900], [1400, 1400], [910, 1400]]},
+    {"pts": [[1000, 20], [1300, 20], [1300, 90], [1000, 90]]}]}, "PUT")
+code, d = call("/cut/oldbox-01", {"only": 1})
+check("but when the mend shifts the numbering, the whole sheet is cut instead",
+      not d.get("one") and len(d.get("made") or []) == 3,
+      [d.get("one"), len(d.get("made") or [])])
+man = json.load(urllib.request.urlopen(API + "/manifest"))["pieces"]
+# ⭐️ The new outline is at the TOP of the sheet, so it takes _00 and both
+# named pieces shift down one. That is the whole reason a partial cut had to
+# refuse: the names have to move with their pictures.
+check("and every name followed its own piece across the renumbering",
+      [(man.get(k) or {}).get("name") for k in
+       ("oldbox_p01_00", "oldbox_p01_01", "oldbox_p01_02")]
+      == [None, "the first one", "the second one"],
+      {k: (man.get(k) or {}).get("name") for k in
+       ("oldbox_p01_00", "oldbox_p01_01", "oldbox_p01_02")})
+# ⚠️ and asking for an outline the sheet has not got is not a reason to
+# destroy anything — it simply cuts the sheet
+code, d = call("/cut/oldbox-01", {"only": 99})
+check("asking for an outline that is not there cuts the sheet, and does not fail",
+      code == 200 and not d.get("one") and len(d.get("made") or []) == 3,
+      [code, d.get("one"), len(d.get("made") or [])])
+
 # ⚠️⚠️ A PIECE THAT FILLS THE SHEET IS STILL A PIECE, IF SOMEBODY DREW IT.
 # The designer, 26 August 2026: "I have outlined the single large component on
 # the sheet. But it won't cut. Is that a size constraint?" It was: 90% of the

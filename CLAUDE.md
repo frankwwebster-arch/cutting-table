@@ -93,11 +93,17 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 632 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 639 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**27 August, after that**: *"If I'm mending a piece, it seems obvious that
+default should be to just recut that specific piece no?"* Built — and the
+control that says which piece you mean already existed. See fault 88, whose
+whole weight is the **fallback**: cut one piece when the numbering has shifted
+and the names land on the wrong pictures.
 
 **27 August**: *"Pressed cut, and it is INCREDIBLY slow… it took 1081 seconds
 to cut the 17 sheets."* ⭐️⭐️ Read their `project.json` and the reason was
@@ -2072,6 +2078,33 @@ rather than by reading the code.
     `data-big` the look-alike tiles have had since fault 40, so there is one
     mechanism rather than two.
 
+88. ⭐️⭐️ **MENDING ONE PIECE CUTS THAT PIECE.** The designer, 26 August 2026:
+    *"If I'm mending a piece, it seems obvious that default should be to just
+    recut that specific piece no?"* Quite so — a sheet holds forty and
+    thirty-nine of them were right.
+    ⭐️ **The control that says which piece you mean already existed**: *work on
+    this one alone* (fault 75). The mend link from the Pieces page turns it on,
+    so that flow gets this without anybody choosing anything, and turning it
+    off cuts the sheet as before. The button says which it will do.
+    ⚠️⚠️ **THE WHOLE SHEET IS STILL PAINTED AND LABELLED, and that is not
+    waste.** A piece's NUMBER is its position in reading order over every piece
+    on the sheet — cut one outline on its own and it would be `_00` whatever it
+    really is, which is precisely the renaming `cut_sheet` exists to prevent.
+    What is saved is the cutting, measuring and writing of the other
+    thirty-nine, which on a big scan is nearly all of the work.
+    ⚠️⚠️ **AND IT FALLS BACK TO THE WHOLE SHEET THE MOMENT ANYTHING ELSE
+    MOVED** — a different number of pieces, or this one past a neighbour in
+    reading order. Then every number below it shifts and the names must follow.
+    ⭐️ Teeth tried, and this is the entry's point: with the guard removed the
+    checks show the names landing on the **wrong pieces** — the exact damage
+    the re-cut machinery was built to stop. A fast path that quietly left the
+    store inconsistent would be far worse than a slow one.
+    ⚠️ **And it says which it did.** Asked for one piece and given the whole
+    sheet, a silent answer would read as the button being ignored (fault 58).
+    ⚠️ The sweep that makes a re-cut safe by starting from nothing is the one
+    line the fast path must not run; the mended piece is removed by name
+    instead. A piece that was set aside still goes back to the spare folder.
+
 ---
 
 ## Architecture
@@ -2214,7 +2247,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 632 checks, about a minute
+check/check.sh          # 639 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -2345,6 +2378,13 @@ part-marked deck is **still there** with *4 of 24* on it, carries a row for its
 back, records that back when the row is dropped on a piece — and, the one that
 matters, **dropping a card on the deck leaves it on the list, one further on**,
 without the page being reloaded.
+
+It works **mending one piece**: cutting one outline writes that piece and
+leaves its neighbour's picture untouched, both names exactly where they were —
+and ⚠️ when the mend shifts the numbering the room cuts the **whole sheet**
+instead and says so, with every name following its own piece. Teeth tried:
+take the guard away and the checks catch the names landing on the wrong
+pieces.
 
 It works **cutting a run of sheets**: asked for the lot, the room takes only
 the sheets not cut yet; with nothing left it refuses in a sentence rather than
