@@ -274,13 +274,20 @@ at once:
 
 See fault 86.
 
-### `[x]` ⭐️ The Match preview, big enough to read — **built**, 27 August 2026
+### `[x]` ⚠️⚠️ Every tall piece on the Match board was clipped — **fixed**, 27 August 2026
 
-*"some of the previews of the pieces in Match are too large for me to be able
-to fully see."* The whole piece was in the cell, and that was the trouble: a
-board a foot across is nothing at 148 pixels. Match now carries the same hover
-preview the look-alike tiles have had since fault 40 — one mechanism, not two —
-and it takes what the window will give it. See fault 87.
+*"all i need to see is the outer boundary of any piece which is slightly
+cropped within the preview square."* Fault 4, in the one place it had not been
+looked for: a percentage `max-height` that does not resolve, so the picture was
+sized by its width alone. Measured on a bench built with three shapes on
+purpose — a tall piece came out **239 pixels high in a 118-pixel box**. Only
+wide pieces ever fitted, which is why it read as *slightly* cropped.
+
+⭐️ Making the hover enormous had hidden it by working round it; the hover is a
+small zoom again, and Match now shares the look-alike tiles' one `data-big`
+mechanism. ⚠️ The check measures five cells and insists one is taller than it
+is wide — one square piece would have stayed green through the whole fault.
+See fault 87.
 
 ### `[x]` ⭐️⭐️ Calling a line a deck counts it as a deck — **fixed**, 26 August 2026
 
@@ -999,9 +1006,10 @@ anything that speeds up cutting.
 - `[x]` ⚠️⚠️ **The checklist toggle works again**: a save merges the room's
   answer rather than replacing the list, and the page no longer depends
   silently on a field an older running room does not send.
-- `[x]` ⭐️ **The Match preview is big enough to read**, using the one
-  `data-big` mechanism the look-alike tiles already had.
-- `[x]` ⚠️ **11 new checks** — 619 to 630.
+- `[x]` ⚠️⚠️ **Every tall piece on the Match board was clipped** — fault 4's
+  percentage max-height, in the last place it survived. Measured, not believed.
+  Match also gained the look-alike tiles' one `data-big` preview.
+- `[x]` ⚠️ **13 new checks** — 619 to 632.
 
 ### 26 August 2026 — calling a line a deck counts it as a deck
 

@@ -2213,6 +2213,44 @@ const SHAPE = `(function () {
       check("and the deck is still on the list after its back was said",
             /of 24/.test(still), still);
 
+      /* ⚠️⚠️ AND NOT ONE PICTURE ON THE BOARD IS CLIPPED. The designer, 26
+         August 2026: "all i need to see is the outer boundary of any piece
+         which is slightly cropped within the preview square." It was fault 4
+         again — a percentage max-height that does not resolve, so the picture
+         was sized by its WIDTH alone and every tall piece had its foot cut
+         off by the overflow. Measured, not believed: the flag said it was
+         contained and the browser said 239 pixels in a 118-pixel box. */
+      const fit = await page.val(`(function () {
+        // every piece, not only the unmatched ones — the shapes that clip are
+        // the tall ones, and a check that measures one square piece would have
+        // stayed green through the whole fault (fault 54)
+        var un = document.getElementById("mUn");
+        if (un && un.checked) { un.checked = false; un.dispatchEvent(new Event("change")); }
+        return true; })()`);
+      await sleep(900);
+      const fitted = await page.val(`(function () {
+        var bad = [], n = 0, shapes = [];
+        document.querySelectorAll(".mcell").forEach(function (c) {
+          var pic = c.querySelector(".pic"), im = pic && pic.querySelector("img");
+          if (!im || !im.naturalWidth) return;
+          n++;
+          shapes.push(+(im.naturalHeight / im.naturalWidth).toFixed(2));
+          var pr = pic.getBoundingClientRect(), ir = im.getBoundingClientRect();
+          if (ir.width > pr.width + 0.5 || ir.height > pr.height + 0.5) {
+            bad.push({ stem: c.dataset.stem,
+                       img: [Math.round(ir.width), Math.round(ir.height)],
+                       box: [Math.round(pr.width), Math.round(pr.height)] });
+          }
+        });
+        return { n: n, bad: bad, shapes: shapes }; })()`);
+      check("every piece on the Match board is shown whole, none clipped by its cell",
+            fitted.n > 1 && fitted.bad.length === 0,
+            { n: fitted.n, bad: fitted.bad, shapes: fitted.shapes });
+      // ⚠️ and one of them really is TALLER than it is wide, or this measures
+      // only the shape that never clipped in the first place
+      check("and at least one of them is a tall piece, which is the shape that clipped",
+            (fitted.shapes || []).some(function (r) { return r > 1.3; }), fitted.shapes);
+
       /* ⭐️⭐️ AND THE LIVE DRAG, WITHOUT RELOADING THE PAGE — which is where
          the fault actually lived. link() kept the two stores it holds in step
          itself, using a SECOND, cruder rule ("any piece linked means done"),

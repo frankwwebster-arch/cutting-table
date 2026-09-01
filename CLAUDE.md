@@ -93,7 +93,7 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 630 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 632 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
@@ -2038,16 +2038,39 @@ rather than by reading the code.
     that is the general lesson: a page may not depend silently on a field a
     running room might not send yet.
 
-87. ⭐️ **A ROOM TILE AT A HUNDRED AND FORTY-EIGHT PIXELS IS NOT A PICTURE OF
-    ANYTHING.** The designer, 26 August 2026: *"some of the previews of the
-    pieces in Match are too large for me to be able to fully see. the full
-    piece should be shown in that preview, perhaps it can zoom on hover."*
-    The whole piece **was** in the Match cell — that is exactly the trouble: a
-    board a foot across, shrunk into a thumbnail, tells you nothing, and Match
-    is where the naming actually happens. Fault 40 answered this for the
-    look-alike tiles in August and Match never got it. ⚠️ **One mechanism** —
-    the same `data-big` — so the two cannot drift, and the preview now takes
-    what the window will give it rather than a fixed 360px.
+87. ⚠️⚠️ **EVERY TALL PIECE ON THE MATCH BOARD HAD ITS FOOT CUT OFF, AND HAD
+    ALL ALONG — FAULT 4, IN THE ONE PLACE IT HAD NOT BEEN LOOKED FOR.**
+    The designer, 26 August 2026, first: *"some of the previews of the pieces
+    in Match are too large for me to be able to fully see"*, and then, when
+    the hover was made bigger: *"the hover pop up is too aggressive and large
+    — all i need to see is the outer boundary of any piece which is slightly
+    cropped within the preview square. I think a better solution is to show
+    the full boundary of any cut piece in that preview, and then hover could
+    be a small zoom."*
+    ⭐️⭐️ **The second message was the right diagnosis and the first fix was
+    the wrong one.** `.mcell .pic img` was `max-width: 92%; max-height: 92%` —
+    and the percentage max-height **did not resolve**, so the picture was
+    sized by its WIDTH alone. Measured in a real browser on a bench built with
+    three shapes on purpose: a tall piece came out **239 pixels high in a
+    118-pixel box** and a square one 131 — both with their feet cut off by the
+    `overflow: hidden`. Only wide pieces ever fitted, which is why it read as
+    "slightly cropped" rather than as obviously broken.
+    ⚠️ That is **fault 4 verbatim** — *"a percentage `max-height` against an
+    `aspect-ratio` height may not resolve, so a thumbnail was sized by width
+    alone and every portrait sheet lost its foot"* — written down in August
+    about the sheet cards, and this was the only percentage max-height left in
+    the stylesheet. Pixels resolve where percentages do not; `object-fit:
+    contain` makes it true for any shape.
+    ⭐️ Making the hover enormous had **hidden** the real fault by working
+    round it. The cell shows the whole piece now and the hover went back to
+    being a small zoom, which is what was asked for.
+    ⚠️ Its check measures FIVE cells and asserts one of them is taller than it
+    is wide — a check that measured one square piece would have stayed green
+    through the entire fault (fault 54). Teeth tried: put the percentage back
+    and all five are reported clipped.
+    ⭐️ Match had no hover preview at all before this; it now uses the same
+    `data-big` the look-alike tiles have had since fault 40, so there is one
+    mechanism rather than two.
 
 ---
 
@@ -2191,7 +2214,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 630 checks, about a minute
+check/check.sh          # 632 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

@@ -278,7 +278,16 @@ table.wanted tr.ghead.later .fold, table.wanted tr.ghead.later .setfig { opacity
    what found it, twice. Block flow cannot shrink either of them. */
 .mcell { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; cursor: grab; display: block; }
 .mcell .pic { background: #0A0F14; height: 118px; display: grid; place-items: center; overflow: hidden; }
-.mcell .pic img { max-width: 92%; max-height: 92%; }
+/* ⚠️⚠️ FAULT 4 AGAIN, AND IT HAD BEEN CLIPPING EVERY TALL PIECE ALL ALONG.
+   A percentage max-height did not resolve here, so the picture was sized by
+   its WIDTH alone: measured in the browser, a tall piece came out 239px high
+   in a 118px box and a square one 131px, both with their feet cut off by the
+   overflow. The designer, 26 August 2026: "all i need to see is the outer
+   boundary of any piece which is slightly cropped within the preview square."
+   ⭐️ Pixels resolve where percentages do not, and `object-fit: contain`
+   guarantees the whole piece is inside whatever shape it is. Measured after:
+   nothing clipped, in any of the three shapes a cell has to hold. */
+.mcell .pic img { max-width: 92%; max-height: 108px; object-fit: contain; }
 /* ⚠️ A quarter turn swaps a picture's width and height. This box is 148
    wide and 118 tall, so a wide piece at 92% (136px) became 136px TALL when
    turned and had its ends clipped off by the box. Held to the shorter side,
@@ -566,9 +575,12 @@ header.bar nav a.closelink:hover { color: var(--bad); opacity: 1; }
    "the full piece should be shown in that preview, perhaps it can zoom on
    hover or something if it has text that is too small." So it takes what the
    window will give it, and the whole piece is always inside it. */
+/* ⚠️ A SMALL ZOOM, not a takeover. Made big enough to read a room tile, it
+   became "too aggressive and large" — and once the cell below shows the whole
+   piece, the hover is only there for detail. */
 .bigpeek img {
-  max-width: min(760px, 62vw);
-  max-height: 78vh;
+  max-width: min(420px, 40vw);
+  max-height: 52vh;
   display: block;
   background:
     repeating-conic-gradient(#151C25 0% 25%, #0D1218 0% 50%) 50% / 18px 18px;
@@ -576,7 +588,7 @@ header.bar nav a.closelink:hover { color: var(--bad); opacity: 1; }
 }
 /* a quarter turn swaps width and height, so it must be held to the shorter
    side or the preview is clipped — the same trap as the piece list */
-.bigpeek img.turned { max-width: 78vh; max-height: min(760px, 62vw); }
+.bigpeek img.turned { max-width: 52vh; max-height: min(420px, 40vw); }
 .bigpeek span {
   font-size: 12px;
   color: var(--dim);
