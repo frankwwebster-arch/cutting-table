@@ -442,7 +442,11 @@
      so the two lists group the way every other list in the room does. */
   function openFit() {
     function go() {
+      // ⚠️ acts once, like ?piece= — a link that kept re-choosing the same two
+      // every time you came back to the tab would be a link that will not let go
+      var pair = askedFit; askedFit = null;
       window.FitPieces.open({
+        pair: pair,
         api: API, base: BASE,
         pieces: (piecesData ? piecesData.pieces : []).map(function (p) {
           return { stem: p.stem, name: (p.data || {}).name || "",
@@ -755,9 +759,21 @@
           (rest ? "?" + rest : "") + location.hash);
       }
     }
+    /* ⭐️ ?fit=<stemA>,<stemB> OPENS THE LIGHT TABLE ON TWO NAMED PIECES —
+       the same idea as ?piece= above, and read in the same one place (fault
+       24). It is how "do these two edges meet?" becomes a link rather than a
+       description, and it is what lets the guide photograph the tool with
+       something on it. */
+    var qf = (location.search.match(/[?&]fit=([^&]+)/) || [])[1];
     showTab(want);
     if (askedPiece) goToPiece(askedPiece);
+    if (qf) {
+      var pair = decodeURIComponent(qf).split(",");
+      askedFit = [pair[0] || "", pair[1] || ""];
+      if (want === "fit") openFit();
+    }
   }
+  var askedFit = null;
   var wantSheet = null, wantPiece = null;
   window.addEventListener("hashchange", fromHash);
 

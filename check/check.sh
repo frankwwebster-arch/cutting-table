@@ -638,6 +638,11 @@ FORBIDDEN = [
     "man o war", "man o' war", "manowar", "blood bowl", "necromunda",
     "gorkamorka", "battlefleet", "slaanesh", "khorne", "nurgle", "tzeentch",
     "skaven", "bretonnian", "waaagh", "plague fleet", "sea of blood",
+    # ⚠️ AND THE ABBREVIATIONS, which slipped past a list of full names twice:
+    # once in a comment in cutting_room.py and once in this file's own account
+    # of a fault, both written by somebody who had the game's initials in front
+    # of them all day. A short form is a name.
+    "ahq",
     "sea of claws", "wizard marker", "chaos magic", "chaos experience",
     "frank", "webster",
 ]

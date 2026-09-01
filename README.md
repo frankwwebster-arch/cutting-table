@@ -50,6 +50,12 @@ leaves the machine.
    printed size and shape — 2.5 × 3.5in is a playing card whatever the game —
    and one press takes a whole run of them: *call these 42 counters*. It says
    nothing at all about the shapes a measurement cannot settle.
+   ⭐️ **Fit together** answers the two questions the pictures themselves can
+   settle: *do these two corridor tiles interlock?* — lay them edge to edge and
+   the *Difference* control turns everything they agree about black — and *are
+   these two halves of one board scanned across two pages?* — slide them until
+   the overlap registers and join them into a single piece. Looking changes
+   nothing; joining sets the two halves aside rather than deleting them.
 5. **Check** — the checklist is the game's own contents list, with *cut* /
    *probably cut* / *not yet* against every component, and a percentage. When
    the cutting is done there is **a report to read once**: what is missing,

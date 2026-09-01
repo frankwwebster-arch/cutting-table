@@ -308,8 +308,20 @@ window.FitPieces = (function () {
       onDone = opts.onDone || null;
       if (!$("fpTable").dataset.wired) { wire(); $("fpTable").dataset.wired = "1"; }
       var wasA = $("fpPickA").value, wasB = $("fpPickB").value;
+      /* ⭐️ arrived from a link naming two pieces — see ?fit= on the project
+         page. It overrules whatever was chosen before, because it is the one
+         thing being asked for. */
+      var pair = opts.pair && opts.pair[0] && opts.pair[1] ? opts.pair : null;
+      if (pair) { wasA = pair[0]; wasB = pair[1]; }
       fill($("fpPickA"), wasA);
       fill($("fpPickB"), wasB);
+      if (pair) {
+        ready = false; dx = 0; dy = 0;
+        load("a", wasA, function () {
+          load("b", wasB, function () { dx = A ? A.w : 0; dy = 0; fit(); });
+        });
+        return;
+      }
       if (A && B) { draw(); centre(); }
     }
   };

@@ -165,7 +165,10 @@ shot "3-the-table"       "http://127.0.0.1:$PORT/p/demo/table#core-01"    1500,1
 shot "4-the-pieces"      "http://127.0.0.1:$PORT/p/demo/?tab=pieces"      1500,1250
 shot "5-match"           "http://127.0.0.1:$PORT/p/demo/?tab=match"       1500,1150
 shot "6-the-checklist"   "http://127.0.0.1:$PORT/p/demo/?tab=wanted"      1500,1100
-shot "7-take-it-away"    "http://127.0.0.1:$PORT/p/demo/?tab=export"      1500,1200
-shot "8-the-check"       "http://127.0.0.1:$PORT/api/p/demo/review/print" 1200,1400
+# ⭐️ two pieces named in the address, or the picture is an empty light table
+# and shows nothing about what the tool is for. See ?fit= on the project page.
+shot "7-fit-together"    "http://127.0.0.1:$PORT/p/demo/?tab=fit&fit=core_p01_04,core_p01_05" 1500,1150
+shot "8-take-it-away"    "http://127.0.0.1:$PORT/p/demo/?tab=export"      1500,1200
+shot "9-the-check"       "http://127.0.0.1:$PORT/api/p/demo/review/print" 1200,1400
 
 echo "done — $SHOTS"

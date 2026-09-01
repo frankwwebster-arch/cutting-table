@@ -66,6 +66,11 @@ be right for both, so the ground has to be a control rather than a decision.
 - `[ ]` One variable for that ground, read in all five places (they are five
   hard-coded copies today, which is fault 24 waiting), and a control that says
   what it does: **dark**, **light**, or a **chequer**.
+- ⭐️ **The chequer already exists in two places** — the big hover preview and
+  the *Fit together* light table both use the same
+  `repeating-conic-gradient`, because a transparent piece's own edge is exactly
+  what both are asked about. So this is now partly a matter of hoisting a
+  colour that is already written down twice, rather than inventing one.
 - `[ ]` Remembered beside the projects, the way the shelf of shapes is, so it
   is not per-game.
 - ⚠️ **The cutting table's own ground is not part of this.** That is where a
@@ -947,7 +952,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 495 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 654 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 
@@ -992,6 +997,30 @@ Untested and almost certainly poor. The editor is a mouse tool — outlining on 
 tablet is a genuine design question, not a port.
 
 ---
+
+### `[ ]` ⚠️ Things 27 August left standing
+
+Not tasks anybody has asked for — written down so the next session knows they
+are known rather than missed.
+
+- `[ ]` **The cut is still ~8s a sheet at 170 megapixels**, and about 3s of
+  that is `label_shapes` making one full-sheet pass per ink colour. It was
+  102s before 27 August, so this is no longer anybody's problem; but if it ever
+  is again, that is where the time has gone. ⚠️ Anything done to it must be
+  checked the way the last round was — the old code out of git, run beside the
+  new one, compared pixel for pixel. Reasoning is not good enough here.
+- `[ ]` **Fit together joins exactly two pieces.** A board scanned in four
+  quarters is done by joining twice, which works — a joined piece is a piece
+  like any other and appears in both lists — but nobody has been told so
+  anywhere. Either say it in `ROOM.md` or let the tool take more than two.
+- `[ ]` **A joined piece shows under *Not off any sheet this project knows*.**
+  That is true and it is deliberate (fault 89: naming a real sheet would let
+  the next re-cut of that sheet drop its record), but the heading reads like a
+  complaint about a piece the room made itself. A heading of its own —
+  *Joined by hand* — would be honest and is a small change.
+- `[ ]` **Nothing tells you a piece is one half of a join.** The index carries
+  `joined_from`, so the Pieces page could say *"joined from A and B"* on the
+  piece, and could say on each half that it is now part of something else.
 
 ## Ideas worth thinking about, not yet decisions
 
@@ -1054,6 +1083,10 @@ anything that speeds up cutting.
   whether their edges meet, and join them where they are two halves of one
   thing. `room/fit_pieces.js`.
 - `[x]` ⚠️ **35 new checks** — 619 to 654.
+- `[x]` ⚠️⚠️ **The second game's initials were in the repository**, in a code
+  comment and in CLAUDE.md's own account of fault 84. The forbidden-word list
+  held full names only; it holds the abbreviation now. Fault 90.
+- `[x]` **The guide re-photographed** — nine pictures, including the new tool.
 
 ### 26 August 2026 — calling a line a deck counts it as a deck
 

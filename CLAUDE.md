@@ -91,13 +91,35 @@ fix is to write it down here, not to put it in the next prompt.
 
 ---
 
-## Status (25 August 2026)
+## Status (27 August 2026)
 
 ⭐️ **Where it stands.** The room is built, checked by 654 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
-worth rather than a complaint waiting to be answered. That has not been true
-before, and it is why *NOW* is now numbered — see the rule above.
+worth rather than a complaint waiting to be answered.
+
+⭐️⭐️ **27 August was the day the second game got large, and that is the theme
+of everything below it.** The designer outlined seventeen sheets of it and the
+cut took **eighteen minutes**; their scans turned out to be **170 megapixels
+each**, twenty times anything the room had ever been tried on. Four different
+costs in the cut scaled with *pieces × sheet area* and had been invisible until
+then; one line was 85% of the whole thing. ⚠️ **The lesson is not about
+numpy.** It is that a benchmark built on the demonstration sheet answers a
+question nobody is asking, and that the real game's own `project.json` — sitting
+on the disk, free to read — said in ten seconds what an afternoon of reasoning
+would not have. That is habit 2, on a subject it had not been used for before.
+
+⚠️ **And a tidying-up pass found the second game's INITIALS in two places** —
+one of them this file's own account of fault 84. The forbidden-word list held
+full names only. See fault 90: **an abbreviation is a name.**
+
+⭐️ **The same day turned up three faults that only a big game could show**: a
+piece covering 90% of its sheet was binned as the scanner's frame and the cut
+said nothing (fault 85); every tall piece on the Match board had been quietly
+clipped since the board was built (fault 87, which is fault 4 again); and the
+checklist toggle appeared dead for two reasons at once, one of them a field the
+page had started depending on the day before (fault 86 — ⭐️ **read that one
+before adding any field to a payload**).
 
 **27 August, last**: *"ensure it is backed into the platform - I have a new use
 for something like it immediately… ensuring that corridor pieces interlock
@@ -1962,8 +1984,8 @@ rather than by reading the code.
 
 84. ⚠️⚠️⚠️ **THE CUT DID FULL-SHEET WORK PER PIECE, AND ON A REAL GAME'S
     SCANS THAT WAS EIGHTEEN MINUTES.** The designer, 26 August 2026: *"I have
-    highlighted 17 pages of AHQ components. Pressed cut, and it is INCREDIBLY
-    slow"* — and then, *"finished, it took 1081 seconds to cut the 17 sheets."*
+    highlighted 17 pages of [the second game]'s components. Pressed cut, and it
+    is INCREDIBLY slow"* — and then, *"finished, it took 1081 seconds to cut the 17 sheets."*
     ⭐️⭐️ **Habit 2 found it in ten minutes and no amount of reading the code
     would have.** Their project's own `project.json` says the sheets are
     **10909 × 15355** — a hundred and seventy megapixels each, twenty times the
@@ -2159,6 +2181,30 @@ rather than by reading the code.
     both jobs start: *"Better if they both start next to each other, centered
     in the window and I can then drag. Zoom only important once I've done a
     rough join."*
+
+90. ⚠️⚠️ **AN ABBREVIATION IS A NAME, AND THE LIST OF FORBIDDEN WORDS HELD
+    ONLY FULL ONES.** Fault 55 took one game's names out of this repository in
+    three passes and left a check that reads every file with the line breaks
+    taken out. It has been green ever since — and on 27 August a tidying-up
+    pass found the **second** game's three-letter abbreviation sitting in two
+    places: a comment in `cutting_room.py` using it in an example file name,
+    and, worse, **this file's own account of fault 84**, which quoted the
+    designer verbatim.
+    ⚠️ Note that this entry cannot spell the letters either — writing them here
+    to explain them would put them back. That is **fault 55's rule about a
+    check whose subject includes itself**, arriving in the prose rather than in
+    the code: the only safe way to describe a forbidden word is not to use it.
+    ⭐️ **Both were written by somebody who had those initials in front of them
+    all day**, which is exactly how the first game's names got in. The list had
+    the game's full name and would have caught it spelled out; three letters
+    went straight past.
+    ⚠️ So the list has the abbreviation now, and the rule to take from it is
+    the one already at the top of this file, arriving by a new door: **add to
+    that list rather than arguing with it.** A word there costs nothing; a name
+    in a public repository cannot be taken back once it is cloned.
+    ⭐️ It was found by grepping for the game's name while writing this session
+    up — not by the check, which could not see it. *When a check has been green
+    for a week, the thing to ask is what it cannot see.*
 
 ---
 

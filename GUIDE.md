@@ -155,14 +155,6 @@ brings them back, and `⌘Z` puts back anything the other two did.
 lay it down again on any other sheet — in this game or any other. A door drawn
 once for one dungeon game is the same door in the next.
 
-⭐️ **Fit together** is a tab of its own, for two questions the pictures alone
-can answer: *do these two corridor tiles interlock?* — lay them edge to edge,
-zoom in on the seam, and the **Difference** control turns everything the two
-agree about black — and *are these two halves of one board scanned across two
-pages?* — slide them until the overlap registers and press **Join them into one
-piece**. Looking changes nothing; joining sets the two halves aside rather than
-deleting them.
-
 ---
 
 ### 3 · Cut
@@ -185,6 +177,28 @@ That is the whole of this step. It takes a second or two a sheet.
 ⭐️ **You can cut a sheet again as often as you like.** If you fix an outline
 and cut again, the names you have already given the pieces **follow them** —
 even when adding one outline near the top renumbers everything below it.
+
+⭐️ **Mending one piece cuts that piece.** Follow *mend it at the table* from a
+piece on the **Pieces** page: the table opens with that outline in hand and the
+button reads **Cut this piece**, so the rest of the sheet is left alone. On a
+big scan that is the difference between a second and a minute.
+
+---
+
+### 3½ · Do these two pieces fit together?
+
+⭐️ Two questions the pictures alone can answer, and **Fit together** is the tab
+for both. Choose two cut pieces and they are laid edge to edge.
+
+- *Do these two corridor tiles interlock?* Zoom in on the seam and look. The
+  **Difference** control turns everything the two agree about black, so a few
+  pixels out is obvious in a way it never is by eye. **Nothing is changed.**
+- *Are these two halves of one board, scanned across two pages?* Slide the
+  second until the overlap registers, name it, and press **Join them into one
+  piece**. ⚠️ The two halves are **set aside, not deleted** — the Pieces page
+  puts them back.
+
+![Fit together](docs/guide/7-fit-together.png)
 
 ---
 
@@ -299,14 +313,14 @@ On **Take it away**, above the button, is the last thing to read before the
 pieces leave: **the cut checked against the contents list**. It changes
 nothing; it just tells you what it sees.
 
-![Take it away](docs/guide/7-take-it-away.png)
+![Take it away](docs/guide/8-take-it-away.png)
 
 **Read the whole check** opens it as a page you can print and work through with
 the box open in front of you. ⭐️ **Every piece it names is a link** — press one
 and the room opens the Pieces page on that piece, so a finding is something to
 go and deal with rather than a name to hunt for.
 
-![The check](docs/guide/8-the-check.png)
+![The check](docs/guide/9-the-check.png)
 
 It says, set by set:
 

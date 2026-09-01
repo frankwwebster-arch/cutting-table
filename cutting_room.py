@@ -869,7 +869,7 @@ class Project:
 
         ⭐️ The designer, 25 August 2026: "I need to rename them from their current
         file names (which are lots of nonsense)." A sheet's label is made from
-        the file it arrived in — `AHQ core scan.pdf p.7` — so naming the box
+        the file it arrived in — `a-scan-of-the-box.pdf p.7` — so naming the box
         has to reach the sheets as well, or the nonsense is still on every
         card and every tab of the rail.
 
@@ -1158,7 +1158,7 @@ class Project:
                          if man[st].get("name") or man[st].get("spare")),
             "wanted": wanted["summary"],
             # ⭐️ what each BOX of sheets is called. A sheet id comes from the
-            # file it was imported from, so a game arrives as "ahq-core-scan-07"
+            # file it was imported from, so a game arrives as "a-box-scan-07"
             # and the room has been calling the box that ever since — see the
             # `book` route for why the id itself is never touched.
             "books": self.meta.get("books") or {},
