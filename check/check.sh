@@ -846,6 +846,19 @@ say "baking the same editor into an offline page"
 $PY cutting_table.py --images demo/demo-sheet.png demo/demo-sheet.png \
     --subject "The Proving Ground" --out "$TMP/baked.html" | tail -1
 
+# ⚠️ AND THE OFFLINE PAGE STILL WORKS AT 300. The room splices the project's
+# own scale into the editor it serves; a baked page has no room behind it and
+# no project, so it must keep the plain 300 that is right for a PDF rendered
+# at true size. If the placeholder ever went missing here, an offline page
+# would carry whatever number the last edit happened to leave in it.
+if grep -q "var DPI = /\*__DPI__\*/300;" "$TMP/baked.html"; then
+  echo "  ok   and the offline page is still working at 300 dpi"
+else
+  echo "  WRONG the baked offline page has lost its scale:"
+  grep -n "var DPI" "$TMP/baked.html" || echo "    no var DPI at all"
+  code=1
+fi
+
 say "opening the room on port $PORT, with its own registry"
 $PY cutting_room.py --port "$PORT" --home "$TMP/home" > "$TMP/room.log" 2>&1 &
 ROOM_PID=$!
@@ -955,6 +968,83 @@ code, d = call("/sheet/" + SID, {"skip": []})
 
 sys.exit(1 if bad else 0)
 PYSKIP
+
+# ⭐️⭐️ WHAT SCALE THE SCANS ARE, AND THE EDITOR BEING TOLD. The designer,
+# 1 September 2026, having set a project up for 600dpi scans: "would be helpful
+# if that was shown somewhere visually!" It was not shown anywhere, could not
+# be set anywhere, AND THE EDITOR NEVER LEARNT IT — `var DPI = 300` was a
+# literal in the template, so every inch figure on the table was wrong for any
+# project not at 300 and a shape laid from the shelf at a typed size came out
+# at the wrong number of pixels.
+# ⚠️ THE CHECK THAT MATTERS IS THE ONE ON THE SERVED PAGE. "Does the API store
+# the number?" is the easy question; "does the editor the room hands over
+# actually carry it?" is the one that was failing — fault 54, and fault 61's
+# rule that a check through the API is a green light over a page that lies.
+say "what scale the scans are, and the editor being told"
+$PY - "$TMP" "$PORT" <<'PYDPI' || code=1
+import json, re, sys, urllib.error, urllib.request
+tmp, port = sys.argv[1], sys.argv[2]
+ROOT = "http://127.0.0.1:%s" % port
+API = ROOT + "/api/p/proving-ground"
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+def call(path, body=None, method="POST"):
+    req = urllib.request.Request(API + path, data=json.dumps(body or {}).encode(),
+                                 headers={"Content-Type": "application/json"},
+                                 method=method)
+    try:
+        return 200, json.load(urllib.request.urlopen(req))
+    except urllib.error.HTTPError as e:
+        return e.code, json.load(e)
+
+
+def table_dpi():
+    """The number the editor the room SERVES is actually working at."""
+    html = urllib.request.urlopen(ROOT + "/p/proving-ground/table").read().decode("utf-8", "replace")
+    m = re.search(r"var DPI = (\d+);", html)
+    return int(m.group(1)) if m else None
+
+
+try:
+    was = json.load(urllib.request.urlopen(API)).get("dpi")
+    check("the room says what scale the project is at", was == 300, was)
+    check("and the editor it serves is working at that scale",
+          table_dpi() == 300, table_dpi())
+
+    code_, d = call("/dpi", {"dpi": 600})
+    check("the scale can be set", code_ == 200 and d.get("dpi") == 600, d)
+    check("and it is what the room reports afterwards",
+          json.load(urllib.request.urlopen(API)).get("dpi") == 600)
+    # ⭐️⭐️ THE FAULT ITSELF. Before this, the served editor said 300 here
+    # whatever the project was set to.
+    check("⭐️ and the EDITOR the room serves is now working at 600 too",
+          table_dpi() == 600, table_dpi())
+
+    # ⚠️ Nothing a page sends is believed, and the refusal is a sentence
+    # somebody can act on rather than a number.
+    for silly in (0, 5, 9000, "banana"):
+        code_, d = call("/dpi", {"dpi": silly})
+        check("a scale of %r is refused, in words" % (silly,),
+              code_ == 400 and "dots per inch" in (d.get("error") or ""), d.get("error"))
+    check("and the refusals left the scale alone",
+          json.load(urllib.request.urlopen(API)).get("dpi") == 600)
+finally:
+    # ⚠️ PUT IT BACK. Everything after this in the run measures pieces in
+    # inches against the project's scale, so a block that failed half way
+    # through would take a dozen unrelated checks down with it.
+    call("/dpi", {"dpi": 300})
+
+check("setting it back puts the editor back with it", table_dpi() == 300, table_dpi())
+
+sys.exit(1 if bad else 0)
+PYDPI
 
 # ⚠️⚠️ CUTTING THE SHEETS WAITING, AND ONLY THOSE. The designer, 26 August
 # 2026, having outlined 22 new sheets: "I think pressed 'cut every outlined

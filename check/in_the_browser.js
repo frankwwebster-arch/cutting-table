@@ -3127,6 +3127,63 @@ const SHAPE = `(function () {
       await page.shot("baked.png");
     }
 
+    /* ⭐️⭐️ WHAT SCALE THE SCANS ARE — THE BUTTON, NOT THE ROUTE. The
+       designer, 1 September 2026: "would be helpful if that was shown
+       somewhere visually!" Nothing showed it and nothing could set it.
+       ⚠️ There is a check on `/dpi` through the API already, and fault 61 is
+       the reason that is not enough: "Add them" worked perfectly through the
+       API for days while the button did nothing at all, because it read a
+       control that was not in the page. So this presses it. */
+    await page.go(`${ROOM}/p/${PROJECT}/?tab=about`);
+    const scale = await page.val(`(function () {
+      var b = document.getElementById("dpiBox");
+      var s = document.getElementById("dpiSays");
+      return { there: !!b, seen: !!b && b.offsetWidth > 0,
+               value: b && b.value, says: s && s.textContent }; })()`);
+    check("Settings shows what scale the project's scans are at",
+          scale && scale.there && scale.seen && scale.value === "300", scale && scale.value);
+    /* ⭐️ IN INCHES AS WELL AS IN DOTS. "600 dpi" means nothing to somebody
+       holding a ruler; "your widest sheet is N inches across" can be checked
+       against the card itself, which is the only test of whether it is right. */
+    check("and says what that makes a real sheet measure, in inches",
+          /inches across/.test((scale && scale.says) || ""), (scale && scale.says || "").slice(0, 80));
+
+    /* ⚠️ CHANGING THE SCALE RE-MEASURES EVERY PIECE ALREADY CUT, so it asks
+       first — and says so concretely, in the sizes that move, rather than in
+       the abstract. Refusing must change nothing at all. */
+    const scaleAsked = await page.val(`(function () {
+      window.confirm = function (t) { window.__said = t; return false; };
+      document.getElementById("dpiBox").value = "600";
+      document.getElementById("dpiSave").click();
+      return window.__said || ""; })()`);
+    check("changing the scale on a game with pieces cut asks first",
+          /re-measured/.test(scaleAsked || ""), (scaleAsked || "").slice(0, 70));
+    check("and says what moves, in the sizes themselves",
+          /2 inches becomes/.test(scaleAsked || ""), (scaleAsked || "").slice(0, 110));
+    await new Promise((r) => setTimeout(r, 400));
+    const refused = await (await fetch(`${ROOM}/api/p/${PROJECT}`)).json();
+    check("and saying no changes nothing at all", refused.dpi === 300, refused.dpi);
+
+    await page.val(`(function () {
+      window.confirm = function () { return true; };
+      document.getElementById("dpiBox").value = "600";
+      document.getElementById("dpiSave").click(); return 1; })()`);
+    await new Promise((r) => setTimeout(r, 700));
+    const afterPress = await (await fetch(`${ROOM}/api/p/${PROJECT}`)).json();
+    check("⭐️ and pressing Save the scale really writes it",
+          afterPress.dpi === 600, afterPress.dpi);
+    /* ⭐️⭐️ THE ONE THAT MATTERS: the editor the room hands over must be
+       working at the new number. This is the fault — `var DPI = 300` was a
+       literal in the template and no project setting ever reached it. */
+    const tableHtml = await (await fetch(`${ROOM}/p/${PROJECT}/table`)).text();
+    check("⭐️ and the cutting table it serves is working at that scale",
+          /var DPI = 600;/.test(tableHtml),
+          (tableHtml.match(/var DPI = \d+;/) || ["none"])[0]);
+
+    await fetch(`${ROOM}/api/p/${PROJECT}/dpi`,
+      { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dpi: 300 }) });
+
     check("nothing was thrown along the way", thrown.length === 0, thrown.slice(0, 3));
   } finally {
     try { await page.send("Browser.close"); } catch (e) { /* going anyway */ }

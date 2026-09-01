@@ -228,6 +228,35 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️⭐️ What scale the scans are — **built**, 1 September 2026
+
+The designer, given a project set up by hand for 600dpi scans: *"can you
+confirm that I can now upload the files… and it's set to 600dpi - would be
+helpful if that was shown somewhere visually!"*
+
+⚠️⚠️ **It was not merely invisible — the editor never learnt it.**
+`cutting_table.tpl.html` carried a bare `var DPI = 300` and nothing ever told
+it otherwise, so on a 600dpi project every inch figure on the table was
+doubled and a shape laid from the shelf at a typed size came out at half the
+pixels it needed. The cut was always right; only the screen lied.
+
+⚠️ **And the scale could not be set at all.** A new project is hard-coded to
+300, so a box of 600dpi scans could only be handled by measuring a line on
+every single sheet with the ruler.
+
+- `[x]` The room splices the project's scale into the editor it serves, through
+  the door `table_page()` already uses — not a second hard-coded copy.
+- `[x]` A baked offline page still reads 300, which is right for a page made
+  from a PDF rendered at true size.
+- `[x]` A field in Settings, and `POST /dpi`, with the room's own fence on it.
+- `[x]` ⭐️ Said in **inches** as well as dots, because that is the only form
+  anybody can check against a real piece of card.
+- `[x]` ⚠️ Changing it asks first and says what moves, concretely.
+- `[x]` Sixteen checks, four of them by pressing the button in a real browser.
+
+See CLAUDE.md 93 — including the way writing the comment about it broke the
+whole editor, which is fault 6 arriving in a note about itself.
+
 ### `[x]` ⭐️⭐️ A finished box, filed away — **built**, 1 September 2026
 
 The designer, having cut and named every component in a game's core box and

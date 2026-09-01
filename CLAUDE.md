@@ -102,12 +102,20 @@ that the room already had a mark for a box that is *not being cut*, and this
 is the opposite one: a filed set **counts as done**, which is the whole reason
 it could not be the same list.
 
+**1 September, later**: the designer, given a project set up by hand for
+600dpi scans: *"would be helpful if that was shown somewhere visually!"* ⚠️⚠️
+It was not merely invisible — **the editor never learnt the project's scale at
+all**, so every inch figure on the table was wrong for any project not at 300,
+and a shape laid from the shelf came out the wrong size. See fault 93, and note
+that the cut was right the whole time: **only the screen lied**, which is the
+hardest kind of fault to see.
+
 ⚠️⚠️ **The same day, a check put a modal dialog on the designer's screen** in
 the middle of their afternoon. See fault 92, which is worth more than the
 feature: the guard was written on the copy of the launcher that was *expected
 to fail*, and not on the copy expected to succeed.
 
-⭐️ **Where it stands.** The room is built, checked by 674 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 693 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered.
@@ -2302,6 +2310,53 @@ rather than by reading the code.
     ⭐️ The lesson worth keeping is the first one: **a check that assumes it
     will pass is a check that has not been written for the day it does not.**
 
+93. ⭐️⭐️⚠️ **THE EDITOR NEVER LEARNT WHAT SCALE THE PROJECT WAS AT, AND
+    THERE WAS NOWHERE TO SET IT ANYWAY.** The designer, 1 September 2026,
+    having been given a project set up for 600dpi scans: *"can you confirm
+    that I can now upload the files… and it's set to 600dpi - would be helpful
+    if that was shown somewhere visually!"*
+    ⚠️⚠️ **It was worse than not being shown.** `cutting_table.tpl.html`
+    carried a bare `var DPI = 300` and **nothing ever told it otherwise** — so
+    on a project at any other scale every inch figure on the table was wrong:
+    the piece readout, the measuring tool, the millimetres in the laser SVG,
+    and — the one that would have cost an evening — the **"Lay it at"** box, so
+    a shape laid from the shelf at a typed size came out at the wrong number of
+    pixels. ⭐️ The cut itself was always right, because that is done in the
+    room at `project.dpi`. **Only the screen lied**, which is the hardest kind
+    to catch: nothing errors, and the numbers are plausible.
+    ⭐️ The fix is that `table_page()` already splices per-project values into
+    the editor, so the scale goes through **that** door rather than becoming a
+    second hard-coded copy. A baked offline page keeps the marker and still
+    reads 300, which is right for a page made from a PDF rendered at true size.
+    ⚠️⚠️ **AND THE PROJECT'S SCALE COULD NOT BE SET AT ALL.** A new project is
+    hard-coded to 300 and there was no control anywhere, so a box of 600dpi
+    scans could only be handled by measuring a line on **every sheet** with the
+    ruler — twenty-two times, for the game that turned this up. There is a
+    field in Settings now, and `POST /dpi`. ⚠️ A sheet's own measured scale
+    still wins: that was measured on the sheet and is better evidence than a
+    project-wide default.
+    ⭐️⭐️ **IT IS SAID IN INCHES, NOT ONLY IN DOTS.** *"600 dpi"* cannot be
+    checked by somebody holding a piece of card; *"at 600 dpi your widest sheet
+    is 10.9 inches across"* can be checked against the thing itself in a
+    second, and that is the only test of whether the number is right. The same
+    reasoning as fault 73's orphan sizes.
+    ⚠️ **Changing it re-measures every piece already cut**, so the question
+    says so and says it concretely — *a piece recorded as 2 inches becomes
+    1.00* — rather than in the abstract. Nothing is re-cut and no picture
+    changes, and it says that too (fault 63's rule: say what goes, what stays,
+    and only what is true).
+    ⚠️⚠️ **WRITING THE COMMENT BROKE THE EDITOR, EXACTLY AS FAULT 6 SAYS IT
+    WOULD.** The note explaining the new marker **contained the marker**, and
+    its closing characters ended the block comment early — the rest of the
+    comment became code and the whole editor stopped parsing. Caught by
+    `check.sh`, which parses what the room **serves** (fault 13). *The only
+    safe way to describe that marker is not to write it* — which is fault 55's
+    rule about a check whose subject includes itself, arriving in a comment.
+    ⭐️ Twelve checks through the room's door and four by pressing the button in
+    a real browser (fault 61), and the one that holds the fault is neither the
+    API nor the field: it is **reading `var DPI` out of the page the room
+    actually serves.**
+
 ---
 
 ## Architecture
@@ -2452,7 +2507,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 674 checks, about a minute
+check/check.sh          # 693 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

@@ -134,6 +134,38 @@ come from?* panel has the box, or:
 /usr/bin/python3 cutting_room.py --register /path/to/that/folder
 ```
 
+#### ⭐️⭐️ What scale are the scans?
+
+Everything the room measures comes from one number, and it is worth thirty
+seconds before you import anything. A piece **600** pixels wide is one inch
+wide at 300 dots per inch, and half an inch at 600 — so a project set to the
+wrong scale records every piece at the wrong size, for ever, in the inventory
+that leaves the room.
+
+**Settings → What scale the scans are.** A new project starts at **300**,
+which is right for pages rendered from a PDF at true size. Most scanners work
+at **600**, and a scan you were given is usually one or the other — the file
+itself will normally say.
+
+⭐️ **The room says what that makes a real sheet measure**, in inches, and that
+is the only test worth doing: *"at 600 dpi your widest sheet is 10.9 inches
+across"* can be checked against the card in your hand in a second, where the
+number 600 on its own cannot be checked at all.
+
+⚠️ **Set it before you import** and every piece is measured right from the
+first cut. Changing it later is allowed and nothing is re-cut and no picture
+changes — but every printed size already written down changes with it, so the
+room says so and asks first.
+
+⚠️ **A sheet you have measured with the ruler keeps its own scale.** That was
+measured on the sheet itself and is better evidence than a setting that covers
+the whole project, so it still wins. The ruler is the answer for a scan whose
+scale nobody knows; this is the answer for a box of scans that are all the
+same.
+
+⚠️ **A cutting table already open is still working at the old scale** — it is
+told the number when the page is built. Close it and open it again.
+
 ### 2 · Import — drop the scans on it
 
 ⭐️ **Drop them anywhere on the page.** The whole window is the target, and a

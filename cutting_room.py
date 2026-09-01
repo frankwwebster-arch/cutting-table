@@ -3786,7 +3786,15 @@ def table_page(project, sheet_ids=None):
     room = {"project": project.id, "api": "/api/p/%s" % project.id,
             "home": "/p/%s/" % project.id, "name": project.meta.get("name", project.id)}
     subject = (project.meta.get("name") or project.id)
-    html = (html.replace("/*__SHEETS__*/", js(sheets))
+    # ⚠️⚠️ THE EDITOR MUST BE TOLD THE PROJECT'S SCALE. It carried a bare
+    # `var DPI = 300` and nothing ever told it otherwise, so every inch figure
+    # on the table — the piece readout, the measuring tool, the scale panel,
+    # the millimetres in the SVG — was wrong for any project not set to 300,
+    # and a shape laid from the shelf at a typed size came out at the wrong
+    # number of pixels. The cut itself was always right, because that is done
+    # here at project.dpi; it was only the screen that lied. See fault 93.
+    html = (html.replace("/*__DPI__*/300", str(int(project.dpi)))
+                .replace("/*__SHEETS__*/", js(sheets))
                 .replace("/*__SUBJECT__*/", subject.replace('"', "'"))
                 .replace("/*__ROOM__*/", js(room))
                 .replace("/*__SAVED__*/", js(saved))
@@ -4170,6 +4178,36 @@ class Room(BaseHTTPRequestHandler):
         # writes down what the box is CALLED and nothing else: a name is a
         # label, and renaming things that other things are keyed by is how
         # work gets lost.
+        # ⭐️⭐️ WHAT SCALE THIS PROJECT'S SCANS ARE AT. Until now this was
+        # settable only by editing project.json by hand, and a new project was
+        # hard-coded to 300 — so somebody importing 600dpi scans had no way to
+        # say so except measuring a line on every single sheet, one at a time.
+        # ⚠️ IT CHANGES WHAT EVERY PIECE MEASURES, so the page says so before
+        # asking, and says it in inches rather than in the abstract: this is
+        # the one setting in the room that silently rewrites numbers somebody
+        # may already have written down elsewhere. See fault 93.
+        # ⚠️ A SHEET TOLD ITS OWN SCALE STILL WINS. `scales[sheet.id]` is
+        # measured on that sheet and is better evidence than a project-wide
+        # default, so this only moves the sheets that never said.
+        if head == "dpi" and method == "POST":
+            try:
+                want = int(float((self.body_json() or {}).get("dpi") or 0))
+            except (TypeError, ValueError):
+                want = 0
+            # the same fence the table's own ruler uses: below or above this
+            # is a typo, not a scan
+            if not (20 <= want <= 2400):
+                return self.send_json(
+                    {"error": "A scale of %s is not a scan. Give a number "
+                              "between 20 and 2400 dots per inch — 300 for a "
+                              "PDF rendered at true size, 600 for most "
+                              "scanners." % (want or "that")}, 400)
+            with pr.lock:
+                was = int(pr.dpi)
+                pr.meta["dpi"] = want
+                pr.save_meta()
+            return self.send_json({"ok": True, "dpi": want, "was": was})
+
         if head == "book" and len(rest) == 2 and method == "POST":
             name = str((self.body_json() or {}).get("name") or "").strip()[:80]
             with pr.lock:

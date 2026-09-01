@@ -412,6 +412,25 @@
     ⚠️ Close the cutting table first if you are putting outlines back — a table
     left open will save what is on its screen over the top.</p>
 
+    <!-- ⭐️⭐️ THE SCALE THIS PROJECT'S SCANS ARE AT. There was nowhere at
+         all to see or set this: a new project was hard-coded to 300dpi, and
+         the only way to work at any other scale was to measure a line on
+         every single sheet by hand. Somebody importing a box of 600dpi scans
+         had to do that twenty-two times. See fault 93. -->
+    <h2 style="margin-top:28px">What scale the scans are</h2>
+    <p class="note">Every measurement the room makes comes from this: a piece
+    <b>600</b> pixels wide is one inch wide at 300&nbsp;dpi, and half an inch
+    at 600. Use <b>300</b> for pages rendered from a PDF at true size, and
+    <b>600</b> for most scanners — the file itself will usually say which.</p>
+    <div class="row">
+      <label class="f" for="dpiBox" data-tip="The scale of this project's sheets, in dots per inch. Everything the room measures is worked out from it.">Dots per inch</label>
+      <input id="dpiBox" type="number" min="20" max="2400" step="10" style="width:100px"
+             title="The scale of this project's sheets. Change it and every piece is re-measured — nothing is re-cut and no picture changes.">
+      <button class="btn" id="dpiSave" type="button"
+              title="Save the scale for this project. Every piece's printed size is worked out again from it; nothing is re-cut, no picture changes, and any sheet you have measured with the ruler keeps its own scale.">Save the scale</button>
+    </div>
+    <p class="note" id="dpiSays"></p>
+
     <h2 style="margin-top:28px">Where things are</h2>
     <p class="note">The room keeps this project's sheets, outlines, masks, cut pieces, names and wanted list in the folder above (or wherever its <code>project.json</code> points). Everything can be rebuilt from the outlines and the sheets.</p>
   </section>
@@ -805,6 +824,7 @@
       document.getElementById("nWanted").textContent = p.wanted && p.wanted.total ? (p.wanted.pct + "%") : "";
       document.getElementById("tableLink").href = BASE + "/table";
       document.getElementById("aName").value = p.name || "";
+      sayScale();
       document.getElementById("aGame").value = p.game || "";
       document.getElementById("aNotes").value = p.notes || "";
       document.getElementById("aPath").textContent = p.path;
@@ -4418,6 +4438,76 @@
       flash("The room did not answer. Nothing was added.", true);
     });
   });
+
+  /* ⭐️⭐️ WHAT SCALE THIS PROJECT'S SCANS ARE AT.
+
+     Everything the room measures comes from this one number, and until now
+     there was nowhere to see it and nowhere to set it: a new project was
+     hard-coded to 300dpi, and the only way to work at any other scale was to
+     measure a line on every sheet with the ruler, one sheet at a time.
+
+     ⚠️ It is said in INCHES as well as in dots, because "600 dpi" means
+     nothing to somebody holding a piece of card and a ruler, while "your
+     biggest sheet is 14.1 inches across" can be checked against the thing
+     itself in a second. That is the whole test of whether the number is
+     right. See fault 93. */
+  function sayScale() {
+    var box = document.getElementById("dpiBox");
+    var says = document.getElementById("dpiSays");
+    if (!box || !project) return;
+    if (document.activeElement !== box) box.value = project.dpi || 300;
+    var d = parseFloat(box.value) || project.dpi || 300;
+    var sheets = project.sheets || [];
+    if (!sheets.length) {
+      says.textContent = "Nothing imported yet. Set this before you import " +
+        "and every piece is measured right from the first cut.";
+      return;
+    }
+    /* the widest sheet is the easiest thing to check against a real ruler */
+    var big = sheets.reduce(function (a, b) { return (b.w || 0) > (a.w || 0) ? b : a; }, sheets[0]);
+    says.textContent = "At " + Math.round(d) + " dpi your widest sheet (" +
+      (big.label || big.id) + ", " + (big.w || 0) + " pixels) is " +
+      ((big.w || 0) / d).toFixed(1) + " inches across. If that is not what it " +
+      "measures on the table, this number is wrong.";
+  }
+
+  (function () {
+    var box = document.getElementById("dpiBox");
+    var go = document.getElementById("dpiSave");
+    if (!box || !go) return;
+    box.addEventListener("input", sayScale);
+    go.addEventListener("click", function () {
+      var want = parseInt(box.value, 10);
+      if (!(want >= 20 && want <= 2400)) {
+        flash("A scale of " + box.value + " is not a scan. Give a number " +
+              "between 20 and 2400.", true);
+        return;
+      }
+      var was = project && project.dpi;
+      if (was && want !== was && (project.pieces || 0) > 0) {
+        /* ⚠️ SAY WHAT MOVES. Nothing is re-cut and no picture changes, but
+           every printed size already written down changes — including any
+           this person has copied into a game or a spreadsheet. Fault 63's
+           rule: say what goes, what stays, and say only what is true. */
+        if (!window.confirm(
+            "Change the scale from " + was + " to " + want + " dots per inch?" +
+            "\n\nThe " + project.pieces +
+            (project.pieces === 1 ? " piece" : " pieces") +
+            " already cut " + (project.pieces === 1 ? "is" : "are") +
+            " re-measured: a " +
+            "piece recorded as 2 inches becomes " + (2 * was / want).toFixed(2) +
+            ". Nothing is cut again, no picture changes, and any sheet you " +
+            "measured with the ruler keeps its own scale.")) return;
+      }
+      post(API + "/dpi", { dpi: want })
+        .then(function (r) {
+          if (r.error) { flash(r.error, true); return; }
+          flash("The scale is now " + r.dpi + " dpi. A cutting table already " +
+                "open still has the old one — close it and open it again.");
+          load();
+        });
+    });
+  }());
 
   /* ⭐️⭐️ THE SAFETY NET, AND A WAY TO REACH IT. The designer, 24 August 2026, on
      being told to commit their checklist to git more often: "I'm afraid this

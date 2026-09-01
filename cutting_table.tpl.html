@@ -967,7 +967,19 @@
      not. So a sheet can be told its own scale instead — measure something
      on it whose real length is known, and the number is worked back from
      that. Kept with that sheet's outlines. */
-  var DPI = 300;
+  /* ⚠️⚠️ THE PROJECT'S OWN SCALE, SPLICED IN BY THE ROOM. This was a
+     bare 300 for a long time, and the room's setting never reached the
+     editor at all — so a project whose scans are 600dpi had every inch
+     figure on this screen doubled, and a shape laid from the shelf at a
+     typed size came out at half the pixels it needed. The room replaces
+     the marker and the 300 on the line below in one go, with the project's
+     own number; a
+     baked offline page keeps the marker, so it still reads 300, which is
+     right for a page made from a PDF rendered at true size. See fault 93.
+     NOTE: the marker cannot be written out in this comment — its own closing
+     characters would end the comment early and kill the whole editor, which
+     is fault 6 arriving in a note about the thing it describes. */
+  var DPI = /*__DPI__*/300;
   var scales = {};        // sheet id -> dots per inch, where one was measured
 
   function dpi() {
@@ -3479,8 +3491,13 @@
       ? "<b>" + Math.round(own) + " dpi</b> — measured on this sheet. " +
         "It is " + (sheet.w / own).toFixed(2) + " &times; " +
         (sheet.h / own).toFixed(2) + " in."
-      : "<b>300 dpi</b> — right for a PDF rendered at true size. Measure " +
-        "something on a scan or a photograph, whose scale nobody knows.";
+      /* ⚠️ THE PROJECT'S NUMBER, NOT A LITERAL. This said "300 dpi" in
+         plain text whatever the project was set to, so a 600dpi project was
+         told the wrong thing by the one panel whose whole job is saying what
+         the scale is. Fault 93, and fault 24's shape underneath it. */
+      : "<b>" + Math.round(DPI) + " dpi</b> — the scale this project was set " +
+        "up at. Measure something on a scan or a photograph, whose scale " +
+        "nobody knows.";
     elScaleOff.disabled = !own;
   }
 
