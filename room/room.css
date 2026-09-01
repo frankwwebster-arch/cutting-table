@@ -151,7 +151,10 @@ section[hidden] { display: none; }
 .boxrow .rename, .boxrow .setby { font-size: 11px; letter-spacing: .04em; padding: 2px 8px; flex: none; }
 /* a set put by for later: still here, still listed, simply not being counted */
 .boxrow .putby { font-size: 11px; letter-spacing: .04em; color: var(--hold); flex: none; }
-.group-head.later .fold { opacity: .6; }
+.group-head.later .fold, .group-head.filed .fold { opacity: .6; }
+/* ⭐️ A BOX THAT HAS BEEN FILED AWAY — finished with, kept, and out of the
+   way. Said quietly: it is not a warning, it is an achievement. */
+.boxrow .setby.earned { color: var(--good); border-color: currentColor; }
 .group-head { grid-column: 1 / -1; margin: 8px 0 -4px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
 
 /* ---- pieces */
@@ -208,7 +211,8 @@ table.wanted tr.ghead .fold { text-transform: inherit; letter-spacing: inherit; 
 table.wanted tr.ghead .setfig { margin-left: 10px; color: var(--ink); font-weight: 600; }
 table.wanted tr.ghead .setby { margin-left: 10px; font-size: 11px; padding: 2px 8px; text-transform: none; letter-spacing: .02em; }
 table.wanted tr.ghead .putby { margin-left: 8px; color: var(--hold); text-transform: none; letter-spacing: .02em; }
-table.wanted tr.ghead.later .fold, table.wanted tr.ghead.later .setfig { opacity: .6; }
+table.wanted tr.ghead.later .fold, table.wanted tr.ghead.later .setfig,
+table.wanted tr.ghead.filed .fold, table.wanted tr.ghead.filed .setfig { opacity: .6; }
 .wfilters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 10px; font-size: 13px; }
 .wfilters label { color: var(--dim); }
 .pieces-links a { font-size: 12px; margin-right: 8px; }

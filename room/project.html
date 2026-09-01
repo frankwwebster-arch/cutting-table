@@ -69,6 +69,14 @@
              nothing has been deleted; they are simply left out of the work
              still to do, and out of every figure that says how far you have got. -->
         <button data-f="later" title="Sets of sheets you have put by for later — imported, but not being cut yet. They are left out of “To outline” and out of the checklist percentage until you bring them back. Nothing is deleted and nothing is hidden.">Put by for later</button>
+        <!-- ⭐️⭐️ THE DESIGNER, 1 September 2026, having finished a game's core
+             box: "There should now be a way to move those (not out of sight)
+             but just to ensure they don't pop up anymore." A finished box is
+             filed away — it keeps everything it has and goes to the end of
+             every list, and THIS is the chip that opens it again. Without a
+             door back, the mark would be one nothing could clear, which is
+             fault 50. -->
+        <button data-f="filed" title="Sets of sheets you have finished with and filed away. They are kept out of the other views so they stop getting in the way, and every list that narrows by box still offers them, last. Nothing has been deleted. Open this to look at one, or to bring it back out.">Filed away</button>
       </div>
       <input id="sFind" placeholder="find a sheet…" style="min-width:170px" data-tip="Find a sheet by its name or its page number.">
       <!-- ⭐️⭐️ ONE DRAG, ONE SET — and a way to put right the ones that came
@@ -80,6 +88,11 @@
       <button id="cutAll" data-tip="Cut the sheets shown below that are waiting: outlined, and either never cut or outlined again since. Sheets already cut are skipped, so this only ever does the work that is left. Narrow the list first — by box, by search, or with the filters — and it does just those. Safe to press again later: cutting a sheet a second time keeps the names you have already given its pieces.">Cut the sheets waiting here</button>
       <span class="tiny muted" id="cutAllNote"></span>
     </div>
+    <!-- ⚠️ A NARROWING MAY NEVER BE SILENT (fault 81). A filed box keeps its
+         sheets out of these views on purpose; a person who has forgotten
+         filing it would otherwise be looking at a game with seventeen sheets
+         missing and nothing at all to say where they went. -->
+    <p class="tiny muted" id="sFiledNote" hidden></p>
     <div class="sheets" id="sheets"></div>
     <p class="note" id="noSheets" hidden>No sheets yet. Drop a scan above.</p>
   </section>
@@ -1025,6 +1038,23 @@
          beside this one shows them, and nothing has been deleted. */
       if (sheetFilter === "later") return bookLater(bookOf(s.id));
       if (bookLater(bookOf(s.id)) && sheetFilter === "todo") return false;
+      /* ⭐️⭐️ AND A BOX YOU HAVE FINISHED WITH AND FILED AWAY IS NOT IN FRONT
+         of you at all. The designer, 1 September 2026, having cut and named
+         every component in a game's core box: they should not "pop up
+         anymore". Seventeen finished sheets sitting above the seventeen being
+         worked on is the same nuisance as the sheets put by, arriving from the
+         far end of the job.
+         ⚠️ TWO WAYS BACK TO IT, because a mark nothing can clear is fault 50:
+         the chip above shows them, and a SEARCH always overrules the filing —
+         somebody typing a sheet's name is asking for that sheet, wherever it
+         has got to (the same rule as a fold, fault 37). */
+      if (bookFiled(bookOf(s.id))) return sheetFilter === "filed" || !!q;
+      /* ⚠️ AND THE CHIP MUST SAY "ONLY THESE", NOT "THESE AS WELL". Without
+         this line every sheet in the game fell through the tests below and
+         came back true, so the chip that exists to show what has been filed
+         away showed the entire game — which is the one thing it must not do.
+         The same shape as the “Put by for later” chip on the line above. */
+      if (sheetFilter === "filed") return false;
       if (sheetFilter === "todo") return !s.outlines && !s.done;
       if (sheetFilter === "uncut") return needsCut(s);
       if (sheetFilter === "cut") return s.cut > 0;
@@ -1032,12 +1062,40 @@
       return true;
     });
   }
+  /* ⚠️ WHAT THE FILING IS KEEPING OUT OF SIGHT, SAID OUT LOUD. Fault 81's
+     rule: a control that quietly does less than you think is exactly what
+     went wrong when “cut every outlined sheet” cut the whole game. */
+  function sayFiled(shown) {
+    var el = document.getElementById("sFiledNote");
+    if (!el) return;
+    var books = filedBooks().filter(function (b) {
+      return (project && project.sheets || []).some(function (s) { return bookOf(s.id) === b; });
+    });
+    var here = {};
+    shown.forEach(function (s) { here[bookOf(s.id)] = 1; });
+    var away = books.filter(function (b) { return !here[b]; });
+    if (!away.length) { el.hidden = true; el.textContent = ""; return; }
+    var n = (project && project.sheets || []).filter(function (s) {
+      return away.indexOf(bookOf(s.id)) >= 0; }).length;
+    el.hidden = false;
+    el.textContent = n + " sheet" + (n === 1 ? " in " : "s in ") + away.length +
+      " filed " + (away.length === 1 ? "set" : "sets") + " — " +
+      away.map(bookLabel).join(", ") + " — " + (n === 1 ? "is" : "are") +
+      " not shown here. ";
+    var a = document.createElement("a");
+    a.href = "#";
+    a.textContent = "Show what is filed away";
+    a.addEventListener("click", function (e) { e.preventDefault(); pickFilter("filed"); });
+    el.appendChild(a);
+  }
+
   function renderSheets() {
     var box = document.getElementById("sheets");
     box.innerHTML = "";
     var q = document.getElementById("sFind").value.trim().toLowerCase();
     var list = shownSheets();
     sayCutAll(list);
+    sayFiled(list);
     document.getElementById("noSheets").hidden = list.length > 0 || !project.sheets.length;
     if (!list.length && project.sheets.length) {
       /* ⭐️ The commonest way to see this is now a GOOD one — the room opens
@@ -1049,6 +1107,7 @@
         : sheetFilter === "cut" ? "Nothing has been cut yet."
         : sheetFilter === "done" ? "No sheet has been ticked as finished with yet."
         : sheetFilter === "later" ? "No set of sheets has been put by for later. Use “Put this set by” on a set's heading for sheets you have imported but are not cutting yet."
+        : sheetFilter === "filed" ? "No set of sheets has been filed away yet. When every sheet in a box is ticked as finished with and every piece cut from it is named, its heading offers to file it — after which it keeps out of the way until you want it."
         : "No sheet matches that.";
       box.innerHTML = '<p class="note" style="grid-column:1/-1">' + why +
         ' <a href="#" id="clearF">Show them all</a>.</p>';
@@ -1069,7 +1128,16 @@
       var g = bookOf(s.id);
       (groups[g] = groups[g] || []).push(s);
     });
-    var many = Object.keys(groups).length > 1;
+    /* ⚠️⚠️ THE HEADINGS ARE DECIDED BY THE GAME, NOT BY WHAT IS SHOWN.
+       They used to appear only when the list in front of you held more than
+       one box — which was fine until a box could be filed away: filing the
+       first of two boxes left one box shown, so the headings vanished, and
+       with them the only way to file the other box or to bring the first one
+       back. That is fault 50's shape, made by the very feature it would have
+       broken. A game with more than one box always gets its headings now. */
+    var allBooks = {};
+    (project && project.sheets || []).forEach(function (x) { allBooks[bookOf(x.id)] = 1; });
+    var many = Object.keys(allBooks).length > 1;
     Object.keys(groups).forEach(function (g) {
       var gs = groups[g];
       var gh = null;
@@ -1119,6 +1187,57 @@
           says.className = "putby";
           says.textContent = "put by for later";
           row.appendChild(says);
+        }
+        /* ⭐️⭐️ FILE THIS SET AWAY, OR BRING IT BACK OUT. The far end of the
+           job: the designer, 1 September 2026, having cut and named every
+           component in a game's core box and ticked every one of its sheets.
+           ⭐️ THE ROOM OFFERS IT AT THE MOMENT IT IS EARNED. It already knows
+           whether every sheet is ticked and every piece named, so the button
+           stops being quiet and says so — which is the only way anybody finds
+           a feature on the day they need it. It is still only an offer. */
+        var isFiled = bookFiled(g);
+        var bst = boxState(g);
+        var fb = document.createElement("button");
+        fb.type = "button";
+        fb.className = "quiet setby" + (!isFiled && bst.ready ? " earned" : "");
+        fb.textContent = isFiled ? "Bring it back out"
+          : bst.ready ? "Finished — file this set away" : "File this set away";
+        fb.title = isFiled
+          ? "Put this set back in front of you: its sheets return to the views above and it goes back among the other boxes in every list that narrows by box."
+          : "For a box you have finished with — every sheet cut, every piece named. " +
+            "NOTHING IS DELETED and nothing moves: the sheets, the pieces and the " +
+            "components all stay exactly where they are, and everything already cut " +
+            "still counts as done. The set simply stops getting in the way — it drops " +
+            "out of the views above (the “Filed away” chip brings it back, and so does " +
+            "a search) and goes last, on one line, in the lists that narrow by box. " +
+            "Press again to bring it back out." +
+            (bst.ready ? "" : " Some of this set is not finished; it will say what before it asks.");
+        fb.addEventListener("click", function () {
+          if (!isFiled) {
+            /* ⚠️ IT WARNS AND STILL DOES AS IT IS TOLD (fault 80). A box may
+               be as done as it is ever going to be, and a tool that refuses
+               because it suspects trouble is worse than one that says what it
+               sees. What it must not do is file a half-finished box in
+               silence. */
+            var left = boxOutstanding(bst);
+            if (left && !window.confirm(
+                  "This set does not look finished yet.\n\n" + left + ".\n\n" +
+                  "Filing it away changes none of that — nothing is deleted and " +
+                  "nothing is hidden. It only stops the set getting in the way of " +
+                  "the boxes you are still cutting, and the end-of-job check will " +
+                  "go on asking for whatever is missing.\n\nFile it away anyway?")) return;
+          }
+          setFiled("book:" + g, !isFiled, function () {
+            renderSheets(); loadWanted(); refreshCounts();
+          });
+        });
+        row.appendChild(fb);
+        if (isFiled) {
+          row.classList.add("filed");
+          var fs = document.createElement("span");
+          fs.className = "putby";
+          fs.textContent = "filed away — finished with";
+          row.appendChild(fs);
         }
         /* ⭐️⭐️ A WHOLE BOX OUT AGAIN, IN ONE PRESS. The designer, 25 August 2026:
            "I'd like to be able to remove a full set of imported sheets in one
@@ -1442,17 +1561,47 @@
         books[b].n += 1;
         books[b].sheets[p.sheet] = 1;
       });
+      /* ⭐️⭐️ A FILED BOX GOES LAST, ON ONE LINE. The designer, 1 September
+         2026, having finished a game's core box: "no need for them to
+         populate dropdowns". Seventeen sheets of finished work is seventeen
+         lines of this list to scroll past every time.
+         ⚠️ IT IS NOT REMOVED. Fault 51's rule — this ORDERS, it does not
+         hide — and a piece cut from a finished box is exactly the sort of
+         thing somebody comes back for. So it keeps one line of its own, in a
+         band that says what it is, and the sheets underneath come back the
+         moment the box is brought out again.
+         ⚠️ AND IT OPENS ITSELF FOR THE SHEET BEING ASKED FOR. Arriving from a
+         sheet card or from the report picks a sheet by name; if that sheet
+         sits inside a filed box, collapsing the box would take the one thing
+         asked for out of the list and the narrowing would silently do nothing
+         (faults 44 and 73). */
+      var order = Object.keys(books).sort();
+      var wantSid = wantSheet || pieceSheet || "";
+      function pBand(b, collapsed) {
+        var mine = Object.keys(books[b].sheets).sort();
+        return '<optgroup label="' + esc(bookLabel(b)) + '">' +
+          '<option value="book:' + esc(b) + '">everything from ' + esc(bookLabel(b)) +
+          " (" + books[b].n + ")</option>" +
+          (collapsed ? "" : mine.map(function (sid) {
+            return '<option value="' + esc(sid) + '">' + esc(sheetLabel(sid)) +
+                   " (" + sheets[sid] + ")</option>";
+          }).join("")) + "</optgroup>";
+      }
+      var pLive = order.filter(function (b) {
+        return !bookFiled(b) || books[b].sheets[wantSid];
+      });
+      var pAway = order.filter(function (b) {
+        return bookFiled(b) && !books[b].sheets[wantSid];
+      });
       sel.innerHTML = '<option value="">everything in this game (' + d.pieces.length + ")</option>" +
-        Object.keys(books).sort().map(function (b) {
-          var mine = Object.keys(books[b].sheets).sort();
-          return '<optgroup label="' + esc(bookLabel(b)) + '">' +
-            '<option value="book:' + esc(b) + '">everything from ' + esc(bookLabel(b)) +
-            " (" + books[b].n + ")</option>" +
-            mine.map(function (sid) {
-              return '<option value="' + esc(sid) + '">' + esc(sheetLabel(sid)) +
-                     " (" + sheets[sid] + ")</option>";
-            }).join("") + "</optgroup>";
-        }).join("");
+        pLive.map(function (b) { return pBand(b, false); }).join("") +
+        (pAway.length
+          ? '<optgroup label="— finished and filed away —">' +
+            pAway.map(function (b) {
+              return '<option value="book:' + esc(b) + '">' + esc(bookLabel(b)) +
+                     " (" + books[b].n + ")</option>";
+            }).join("") + "</optgroup>"
+          : "");
       // ⭐️ Arriving from a sheet card shows THAT SHEET and nothing else. The designer,
       // 21 Aug 2026: pressing Pieces on a sheet and being handed the whole
       // list to hunt through is the wrong answer to the question they asked.
@@ -1820,6 +1969,22 @@
         is: function (w) { return w.kind === kind; } },
       { id: "all", want: true, lab: "everything else", is: function () { return true; } }
     ].filter(function (b) { return b.want; });
+    /* ⭐️⭐️ AND THE COMPONENTS OF A FINISHED BOX GO LAST OF ALL. The designer,
+       1 September 2026: "no need for them to populate dropdowns". A game's
+       core box is fifty-odd components, all of them already matched, sitting
+       in the way of the box actually being worked on.
+       ⚠️ LAST, NOT GONE — fault 51's rule, which was written about this very
+       control: a piece cut from one box may perfectly well be another box's
+       component reprinted, and a dropdown that had quietly dropped it would
+       leave no way to say so at all.
+       ⚠️ Unless it is the piece's OWN set, which stays first however it is
+       marked: filing a box does not stop somebody naming a piece that came
+       out of it. */
+    var away = [];
+    all = all.filter(function (w) {
+      if (w.group && w.group !== set && groupFiled(w.group)) { away.push(w); return false; }
+      return true;
+    });
     var held = bands.map(function () { return []; });
     all.forEach(function (w) {
       for (var i = 0; i < bands.length; i++) {
@@ -1837,14 +2002,18 @@
       if (b.id !== "set") return;
       if (i === 0 || !held[i - 1].length) b.lab = groupName(set);
     });
+    var filedBand = away.length
+      ? '<optgroup label="' + esc("finished and filed away  (" + away.length + ")") + '">' +
+        away.map(opt).join("") + "</optgroup>"
+      : "";
     if (bands.filter(function (b, i) { return held[i].length; }).length < 2) {
-      return head + all.map(opt).join("");            // nothing to sort into
+      return head + all.map(opt).join("") + filedBand;   // nothing to sort into
     }
     return head + bands.map(function (b, i) {
       if (!held[i].length) return "";
       return '<optgroup label="' + esc(b.lab + "  (" + held[i].length + ")") + '">' +
              held[i].map(opt).join("") + "</optgroup>";
-    }).join("");
+    }).join("") + filedBand;
   }
 
   /* The same, where a piece is known only by its name — the checklist is a
@@ -2360,33 +2529,125 @@
      the button on Sheets and the one on the Checklist press the same thing.
      Only a set with no box of its own carries the mark itself. Fault 24, and
      the room has been bitten by it seven times. */
-  function laterKeys() {
+  /* ⭐️⭐️ AND THE OTHER END OF THE SAME SHELF: A BOX THAT IS FINISHED AND
+     FILED AWAY. The designer, 1 September 2026, having cut and named every
+     component in a game's core box and ticked every one of its sheets: "There
+     should now be a way to move those (not out of sight) but just to ensure
+     they don't pop up anymore, no need for them to populate dropdowns, or the
+     sheets page anymore etc."
+
+     ⚠️⚠️ IT IS NOT THE SAME MARK AS “put by for later”, and the two must
+     never be folded into one. Put by means NOT CUT YET and is left out of
+     every figure; filed means DONE and goes on counting as done. A finished
+     box marked “later” would read in the end-of-job check as a box nobody
+     ever cut.
+
+     ⭐️ AND IT PUTS THINGS LAST RATHER THAN HIDING THEM. A filed box keeps
+     its sheets, its pieces and its place in every list; it simply stops being
+     in the way. Every list that narrows by box still offers it, in a band of
+     its own at the end — which is fault 51's rule (“it ORDERS; it does not
+     hide”) doing the work here too, because a piece cut from a finished box
+     is still perfectly capable of turning up somewhere unexpected. */
+  function markKeys(which) {
     var out = {};
-    ((project && project.later) || []).forEach(function (k) { out[k] = 1; });
+    ((project && project[which]) || []).forEach(function (k) { out[k] = 1; });
     return out;
   }
   function bookLater(book) {
-    return !!laterKeys()["book:" + book];
+    return !!markKeys("later")["book:" + book];
   }
-  function groupLater(gid) {
-    var g = ((wantedData && wantedData.groups) || []).filter(function (x) { return x.id === gid; })[0];
-    if (g && g.book) return bookLater(g.book);
-    return !!laterKeys()["set:" + gid];
+  function bookFiled(book) {
+    return !!markKeys("filed")["book:" + book];
   }
-  function groupLaterKey(gid) {
-    var g = ((wantedData && wantedData.groups) || []).filter(function (x) { return x.id === gid; })[0];
+  /* ⚠️ ONE RULE FOR WHICH KEY A SET ANSWERS TO, asked by both marks. Two
+     copies would drift, and the one that drifted would be the one that
+     quietly marked the wrong box. The room has the same single rule in
+     `group_key()`. */
+  /* ⚠️ IT LOOKS WHEREVER THE SETS ARE, which is not always the checklist.
+     The Pieces page carries its own copy of the sets and may be used with the
+     checklist never loaded at all — and asked there, a lookup that only knew
+     about `wantedData` would answer "set:core" for a set that really answers
+     to a box, and quietly decide a filed box was not filed. Same source chain
+     as groupName(). */
+  function groupMarkKey(gid) {
+    var g = ((piecesData && piecesData.groups) || (wantedData && wantedData.groups) || [])
+      .filter(function (x) { return x.id === gid; })[0];
     return (g && g.book) ? "book:" + g.book : "set:" + gid;
   }
-  /* Put a set by, or bring it back. `after` is run once the room has said yes,
-     so nothing on screen moves on a request that failed. */
-  function setLater(key, on, after) {
-    return post(API + "/later", { key: key, later: !!on }).then(function (r) {
+  function groupLater(gid) {
+    return !!markKeys("later")[groupMarkKey(gid)];
+  }
+  function groupFiled(gid) {
+    return !!markKeys("filed")[groupMarkKey(gid)];
+  }
+  /* ⭐️ THE BOXES THIS GAME HAS FILED AWAY. Used to decide what goes last in
+     the lists that narrow by box, so it is asked in one place rather than in
+     each of them. */
+  function filedBooks() {
+    return Object.keys(markKeys("filed"))
+      .filter(function (k) { return k.indexOf("book:") === 0; })
+      .map(function (k) { return k.slice(5); });
+  }
+  /* Put a set by, file it away, or undo either. `which` is the mark — "later"
+     or "filed" — and it is the same door in the room for both. `after` is run
+     once the room has said yes, so nothing on screen moves on a request that
+     failed. */
+  var MARK_SAID = {
+    later: ["Put by for later. Nothing is deleted, and it is left out of the figures until you bring it back.",
+            "Back in the cutting, and counted again."],
+    filed: ["Filed away. Nothing is deleted: its sheets, its pieces and its components are all still here — they have simply gone to the end of every list so they stop getting in the way.",
+            "Back out of the files, and in front of you again."]
+  };
+  function setMark(which, key, on, after) {
+    var body = { key: key };
+    body[which] = !!on;
+    return post(API + "/" + which, body).then(function (r) {
       if (r.error) { flash(r.error, true); return; }
-      if (project) project.later = r.later || [];
-      flash(on ? "Put by for later. Nothing is deleted, and it is left out of the figures until you bring it back."
-               : "Back in the cutting, and counted again.");
+      if (project) project[which] = r[which] || [];
+      flash(MARK_SAID[which][on ? 0 : 1]);
       if (after) after();
     });
+  }
+  function setLater(key, on, after) { return setMark("later", key, on, after); }
+  function setFiled(key, on, after) { return setMark("filed", key, on, after); }
+
+  /* ⭐️⭐️ IS THIS BOX REALLY FINISHED? The room knows, so it should say so
+     rather than waiting to be told: every sheet in the box ticked as finished
+     with, and every piece cut from it given a name (a piece set aside counts
+     as dealt with — see the `named` count the room sends).
+
+     ⚠️ It is an OFFER and never a decision, which is this codebase's oldest
+     rule about anything it can work out for itself (faults 25, 18, 34, 72).
+     A box can be filed before it is ready — somebody may have decided a box
+     is as done as it is going to get — and a tool that refuses to do as it is
+     told because it suspects trouble is worse than one that warns (fault 80).
+     So this only decides how loudly the button asks, and what the question
+     says. */
+  function boxState(book) {
+    var mine = (project && project.sheets || []).filter(function (s) {
+      return bookOf(s.id) === book;
+    });
+    var st = { sheets: mine.length, undone: 0, uncut: 0, unnamed: 0, pieces: 0 };
+    mine.forEach(function (s) {
+      if (!s.done) st.undone += 1;
+      if (needsCut(s)) st.uncut += 1;
+      st.pieces += (s.cut || 0);
+      st.unnamed += Math.max(0, (s.cut || 0) - (s.named || 0));
+    });
+    st.ready = !!(st.sheets && !st.undone && !st.uncut && !st.unnamed && st.pieces);
+    return st;
+  }
+  /* What is left undone in a box, in plain words — the sentence the question
+     is built out of. Empty when there is nothing outstanding. */
+  function boxOutstanding(st) {
+    var bits = [];
+    if (st.undone) bits.push(st.undone + " sheet" + (st.undone === 1 ? " is" : "s are") +
+                             " not ticked as finished with");
+    if (st.uncut) bits.push(st.uncut + " sheet" + (st.uncut === 1 ? " is" : "s are") +
+                            " outlined and waiting to be cut");
+    if (st.unnamed) bits.push(st.unnamed + " cut piece" + (st.unnamed === 1 ? " has" : "s have") +
+                              " no name yet");
+    return bits.join(", ");
   }
 
   function renameBook(book, after) {
@@ -3108,27 +3369,50 @@
        page works them out, off the sheet id, so the two pages agree about
        what a box is. */
     var sel = document.getElementById("mSheet");
-    if (sel.options.length <= 1) {
-      var books = {}, order = [];
-      piecesData.pieces.forEach(function (p) {
-        if (!p.sheet) return;
-        var b = bookOf(p.sheet);
-        if (!books[b]) { books[b] = []; order.push(b); }
-        if (books[b].indexOf(p.sheet) < 0) books[b].push(p.sheet);
-      });
-      order.sort();
-      var html = '<option value="">every sheet in the game</option>';
-      order.forEach(function (b) {
-        var sheets = books[b].sort();
-        html += '<optgroup label="' + esc(bookLabel(b)) + '">' +
-          '<option value="book:' + esc(b) + '">everything from ' + esc(bookLabel(b)) +
-          " (" + sheets.length + " sheet" + (sheets.length === 1 ? "" : "s") + ")</option>" +
-          sheets.map(function (sid) {
-            return '<option value="' + esc(sid) + '">' + esc(sheetLabel(sid)) + "</option>";
-          }).join("") + "</optgroup>";
-      });
-      sel.innerHTML = html;
+    /* ⚠️ REBUILT FROM WHAT IT IS MADE OF, NOT ONCE AND FOR EVER. This asked
+       `if (sel.options.length <= 1)`, so it was built the first time Match
+       was drawn and never again — which is fault 57 exactly, and it would
+       have bitten the moment a box was filed away with this board already
+       open: the list would go on offering yesterday's boxes with nothing to
+       say why. `fillSelect` builds the options and only touches the page when
+       they differ, keeping the choice already made. */
+    var books = {}, order = [];
+    piecesData.pieces.forEach(function (p) {
+      if (!p.sheet) return;
+      var b = bookOf(p.sheet);
+      if (!books[b]) { books[b] = []; order.push(b); }
+      if (books[b].indexOf(p.sheet) < 0) books[b].push(p.sheet);
+    });
+    order.sort();
+    /* ⭐️ A FILED BOX GOES LAST, ON ONE LINE — see the same band on the Pieces
+       list for why it is put last rather than dropped. ⚠️ And it opens itself
+       when the board is already held to one of its sheets, or the narrowing
+       in force would vanish out of the control that made it. */
+    var mWant = sel.value || "";
+    function mBand(b) {
+      var sheets = books[b].sort();
+      return '<optgroup label="' + esc(bookLabel(b)) + '">' +
+        '<option value="book:' + esc(b) + '">everything from ' + esc(bookLabel(b)) +
+        " (" + sheets.length + " sheet" + (sheets.length === 1 ? "" : "s") + ")</option>" +
+        sheets.map(function (sid) {
+          return '<option value="' + esc(sid) + '">' + esc(sheetLabel(sid)) + "</option>";
+        }).join("") + "</optgroup>";
     }
+    function mOpen(b) {
+      return !bookFiled(b) || books[b].indexOf(mWant) >= 0;
+    }
+    var html = '<option value="">every sheet in the game</option>' +
+      order.filter(mOpen).map(mBand).join("");
+    var mAway = order.filter(function (b) { return !mOpen(b); });
+    if (mAway.length) {
+      html += '<optgroup label="— finished and filed away —">' +
+        mAway.map(function (b) {
+          return '<option value="book:' + esc(b) + '">' + esc(bookLabel(b)) +
+                 " (" + books[b].length + " sheet" + (books[b].length === 1 ? "" : "s") +
+                 ")</option>";
+        }).join("") + "</optgroup>";
+    }
+    fillSelect(sel, html);
     var onlySheet = sel.value, onlyUn = document.getElementById("mUn").checked;
     var onlyBook = onlySheet.indexOf("book:") === 0 ? onlySheet.slice(5) : "";
     var grid = document.getElementById("mGrid");
@@ -3395,7 +3679,7 @@
           "out of the percentage at the top, and its sheets out of “To outline”, so " +
           "the figure is about what you are actually cutting.";
       lb.addEventListener("click", function () {
-        setLater(groupLaterKey(set.key), !setIsLater, function () { loadWanted(); renderSheets(); refreshCounts(); });
+        setLater(groupMarkKey(set.key), !setIsLater, function () { loadWanted(); renderSheets(); refreshCounts(); });
       });
       cell.appendChild(lb);
       if (setIsLater) {
@@ -3404,6 +3688,38 @@
         sy.className = "putby";
         sy.textContent = "put by for later";
         cell.appendChild(sy);
+      }
+      /* ⭐️⭐️ AND THE SAME SWITCH FOR A SET THAT IS FINISHED. Filing changes
+         no figure here — the set is done and goes on counting as done, which
+         is the whole difference between this and putting a set by. What it
+         does is send the set's components to the end of every dropdown that
+         offers them, and its sheets out of the views on the Sheets page. */
+      var setIsFiled = !!band.filed;
+      var fb2 = document.createElement("button");
+      fb2.type = "button";
+      fb2.className = "quiet setby";
+      fb2.textContent = setIsFiled ? "Bring it back out" : "File it away";
+      fb2.title = setIsFiled
+        ? "Put this set back among the others: its components go back into the dropdowns in their usual place, and its sheets back into the views on the Sheets page."
+        : "For a set you have finished with. NOTHING IS DELETED and no figure " +
+          "changes — the set stays on this list, and everything cut against it " +
+          "still counts as done, which is what makes this different from putting " +
+          "a set by for later. It simply stops getting in the way: its components " +
+          "go last in the lists that offer them, and its sheets keep out of the " +
+          "views on the Sheets page until you ask for them. Press again to bring " +
+          "it back out.";
+      fb2.addEventListener("click", function () {
+        setFiled(groupMarkKey(set.key), !setIsFiled, function () {
+          loadWanted(); renderSheets(); refreshCounts();
+        });
+      });
+      cell.appendChild(fb2);
+      if (setIsFiled) {
+        gh.classList.add("filed");
+        var fy = document.createElement("span");
+        fy.className = "putby";
+        fy.textContent = "filed away — finished with";
+        cell.appendChild(fy);
       }
       gh.appendChild(cell);
       body.appendChild(gh);

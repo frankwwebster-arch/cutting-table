@@ -238,6 +238,34 @@ the end lists it under *Sets put by for later* rather than as anything missing.
 **Bring back into the cutting** on the same heading puts every one of those
 figures back. See *How complete is the cutting?* below.
 
+⭐️⭐️ **File a finished set away.** The other end of the same job. When a box
+is done — every sheet cut, every piece named, every sheet ticked as finished
+with — it goes on filling the sheet list and every dropdown in the room with
+work there is nothing left to do about. **File this set away**, on the same
+heading, puts it out of the way. The room offers it by name the moment the box
+qualifies, and if some of the box is not finished it says what before it asks.
+
+⚠️ **It is not the same thing as putting a set by, and the difference is the
+counting.** A set put by is *not cut yet* and comes out of the figures. A set
+filed away is **done**, and goes on counting as done — the percentage, the
+end-of-job check and the export all treat it exactly as they did before. What
+changes is only where it sits:
+
+- its sheets keep out of the views on **Sheets** — the **Filed away** chip
+  shows them, and so does typing a sheet's name in the find box, which always
+  overrules the filing;
+- the lists that narrow by box — *Show* on **Pieces** and on **Match** — put it
+  **last, on one line**, instead of a line per sheet;
+- its components go to the end of the dropdown that says what a piece is,
+  under *finished and filed away*.
+
+⚠️ **Nothing is hidden and nothing is deleted**, and every one of those lists
+still offers it: a piece cut from a finished box is exactly the sort of thing
+you come back for. **Bring it back out**, on the same heading or on the
+Checklist's, undoes it. The end-of-job report goes on checking a filed set and
+still asks for anything missing out of it — filing is a claim, and that report
+is what checks it.
+
 ⭐️ **The sheet list opens on the work still to do.** With a hundred sheets
 imported, the ones already cut and filed are the ones in the way — so *Sheets*
 opens on **To outline**, and whichever filter you choose is remembered for that
@@ -940,6 +968,10 @@ It says, set by set:
   of it is counted anywhere above: not as missing, and not in the percentage.
   A report that quietly dropped a whole box would be lying by omission, so it
   says which boxes and how many components.
+- ⭐️ **A set you have filed away is still checked**, and says *filed away* on
+  its heading. Filing a set is a claim that it is finished; this page is the
+  only thing that checks the claim, so it goes on asking for anything missing
+  out of it.
 
 **Read the whole check** opens it as a page to read and to print. ⭐️ **Every
 piece it names is a link** — press one and the room opens the Pieces page on

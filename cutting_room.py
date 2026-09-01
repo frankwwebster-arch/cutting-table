@@ -851,18 +851,56 @@ class Project:
     def book_later(self, book):
         return ("book:" + str(book or "")) in self.later_keys()
 
+    # ⭐️⭐️ AND THE OTHER END OF THE SAME SHELF: A BOX THAT IS FINISHED AND
+    # FILED AWAY. The designer, 1 September 2026, having cut and named every
+    # component in a game's core box and ticked every one of its sheets:
+    # "There should now be a way to move those (not out of sight) but just to
+    # ensure they don't pop up anymore, no need for them to populate
+    # dropdowns, or the sheets page anymore etc."
+    #
+    # ⚠️⚠️ IT IS NOT THE SAME MARK AS `later`, AND MUST NOT BE MADE ONE.
+    # Put by for later means NOT CUT YET, and is left out of the figures
+    # because a percentage counting work you have decided not to do can never
+    # reach 100 (fault 68). Filed away means DONE, and it goes on counting as
+    # done. A box filed under `later` would be reported by the end-of-job
+    # check as never cut — a lie about the very work the mark is celebrating,
+    # and precisely the sort of two-readings-of-one-flag that fault 50 warns
+    # about.
+    #
+    # ⭐️ WHAT IT DOES IS PUT THINGS LAST, NOT HIDE THEM. Nothing is deleted,
+    # nothing moves on the disk, and every list can still be pointed at a
+    # filed box — it simply stops being in the way. The word is the designer's
+    # own, 23 August 2026: "I waste time wading through lots of cut and filed
+    # sheets before I find my next sheet to cut."
+    def filed_keys(self):
+        return set(self.meta.get("filed") or [])
+
+    def book_filed(self, book):
+        return ("book:" + str(book or "")) in self.filed_keys()
+
     # ⚠️ ONE RULE, ASKED IN ONE PLACE (fault 24, seven times over). A set of
     # components made from a box of sheets — which is how they are normally
     # made, see fault 64 — answers to that BOX, so putting the box by on the
     # Sheets page and putting the set by on the checklist are the same switch
     # rather than two that will disagree. Only a set with no box of its own
     # carries the mark itself.
-    def group_later(self, g, later=None):
-        later = self.later_keys() if later is None else later
+    # ⚠️ And BOTH marks ask it. Written out once for `later` and again for
+    # `filed`, the two copies would drift, and the one that drifted would be
+    # the one that quietly marked the wrong box.
+    @staticmethod
+    def group_key(g):
         book = str((g or {}).get("book") or "").strip()
         if book:
-            return ("book:" + book) in later
-        return ("set:" + str((g or {}).get("id") or "")) in later
+            return "book:" + book
+        return "set:" + str((g or {}).get("id") or "")
+
+    def group_later(self, g, later=None):
+        later = self.later_keys() if later is None else later
+        return self.group_key(g) in later
+
+    def group_filed(self, g, filed=None):
+        filed = self.filed_keys() if filed is None else filed
+        return self.group_key(g) in filed
 
     def sheet_title(self, s):
         """What to CALL this sheet.
@@ -1172,6 +1210,9 @@ class Project:
             # ⭐️ the sets put by for later — "book:<id>" for a box of sheets,
             # "set:<id>" for a set of components with no box. See later_keys().
             "later": sorted(self.later_keys()),
+            # ⭐️ the sets FINISHED and filed away — same key shape, opposite
+            # meaning. See filed_keys() for why it is not the same list.
+            "filed": sorted(self.filed_keys()),
             "hooks": [{"id": h.get("id"), "label": h.get("label")}
                       for h in (self.meta.get("hooks") or [])],
             "kinds": KINDS,
@@ -1356,16 +1397,27 @@ class Project:
         # must not drag the figure down for ever.
         later = self.later_keys()
         put_by = {g.get("id", ""): self.group_later(g, later) for g in groups}
+        # ⭐️ and which sets are FINISHED and filed away. It changes no figure
+        # — a filed set is done and counts as done — but every list in the
+        # room puts it last, so the page has to be told. See filed_keys().
+        filed = self.filed_keys()
+        away = {g.get("id", ""): self.group_filed(g, filed) for g in groups}
 
         def is_later(gid):
             if gid in put_by:
                 return put_by[gid]
             return ("set:" + str(gid or "")) in later
 
+        def is_filed(gid):
+            if gid in away:
+                return away[gid]
+            return ("set:" + str(gid or "")) in filed
+
         per_group = {}
         for it in out:
             g = it.get("group", "")
-            d = per_group.setdefault(g, {"total": 0, "done": 0, "later": is_later(g)})
+            d = per_group.setdefault(g, {"total": 0, "done": 0, "later": is_later(g),
+                                         "filed": is_filed(g)})
             d["total"] += 1
             d["done"] += 1 if it["state"] in ("cut", "probably") else 0
         for d in per_group.values():
@@ -1388,6 +1440,7 @@ class Project:
         got_pieces = sum(min(i["got"], i["need"]) for i in live)
         return {"items": out, "groups": groups, "kinds": book.get("kinds") or KINDS,
                 "note": book.get("note", ""), "later": sorted(later),
+                "filed": sorted(filed),
                 "worked_out": list(WORKED_OUT),
                 "summary": {"total": len(out), "done": done,
                             "pct": (round(100.0 * done / len(out)) if out else 0),
@@ -1462,6 +1515,12 @@ class Project:
             if g not in by_group:
                 by_group[g] = {"id": g, "name": names.get(g, g) or "Everything else",
                                "later": bool((per_group.get(g) or {}).get("later")),
+                               # ⭐️ a filed set is still checked and still
+                               # counted — filing is a CLAIM that it is
+                               # finished, and this report is the only thing
+                               # that checks it (fault 81). All the mark does
+                               # here is say so on the band.
+                               "filed": bool((per_group.get(g) or {}).get("filed")),
                                "total": 0, "accounted": 0,
                                "missing": [], "part": [], "probably": []}
                 order.append(g)
@@ -2643,7 +2702,8 @@ def checklist_page(pr, game):
         out.append("<h2>%s — %d of %d still to cut (%d%% done)%s</h2>"
                    % (esc_html(names.get(g, g) or "Everything else"), left, len(got),
                       band.get("pct", 0),
-                      " · put by for later" if band.get("later") else ""))
+                      " · put by for later" if band.get("later")
+                      else " · filed away" if band.get("filed") else ""))
         out.append("<table><tr><th>Component</th><th>Kind</th><th>Where it stands</th></tr>")
         for it in sorted(got, key=lambda i: (i["state"] != "missing", (i.get("name") or "").lower())):
             out.append('<tr class="%s"><td><span class="box%s"></span>%s</td>'
@@ -2725,8 +2785,14 @@ def review_page(pr, game, rv=None, home=None):
                    "half-done, and which cut pieces answer to nothing on the "
                    "list.</p>")
     for band in rv["sets"]:
-        out.append("<h2>%s — %d of %d accounted for</h2>"
-                   % (esc_html(band["name"]), band["accounted"], band["total"]))
+        # ⭐️ FILING A SET AWAY IS A CLAIM, AND THIS PAGE IS WHAT CHECKS IT.
+        # The room takes somebody at their word and files the set — but it
+        # goes on counting it, so anything left undone in it still turns up
+        # here under its own name. A mark that stopped the checking would be
+        # a mark that quietly buried the one thing it was hiding.
+        out.append("<h2>%s — %d of %d accounted for%s</h2>"
+                   % (esc_html(band["name"]), band["accounted"], band["total"],
+                      " · filed away" if band.get("filed") else ""))
         if not (band["missing"] or band["part"] or band["probably"]):
             out.append("<p class=\"good\">Every component in this set is "
                        "accounted for. \u2713</p>")
@@ -4123,19 +4189,24 @@ class Room(BaseHTTPRequestHandler):
         # ⚠️ IT DELETES NOTHING AND HIDES NOTHING: the sheets stay where they
         # are and anything already cut from them still counts. All it changes
         # is which sets the room adds up when it says how far you have got.
-        if head == "later" and len(rest) == 1 and method == "POST":
+        # ⭐️ ONE DOOR FOR BOTH MARKS. `later` is a set not being cut yet and
+        # `filed` is one that is finished (see filed_keys); they are opposite
+        # in meaning and identical in mechanism, so writing the route out
+        # twice would be fault 24 over the two switches most likely to be
+        # pressed by mistake for one another.
+        if head in ("later", "filed") and len(rest) == 1 and method == "POST":
             d = self.body_json()
             key = str(d.get("key") or "").strip()[:120]
             if not (key.startswith("book:") or key.startswith("set:")):
-                return self.send_json({"error": "a set is put by as book:<id> "
+                return self.send_json({"error": "a set is marked as book:<id> "
                                                 "or set:<id>"}, 400)
             with pr.lock:
-                keys = [k for k in (pr.meta.get("later") or []) if k != key]
-                if d.get("later"):
+                keys = [k for k in (pr.meta.get(head) or []) if k != key]
+                if d.get(head):
                     keys.append(key)
-                pr.meta["later"] = sorted(keys)
+                pr.meta[head] = sorted(keys)
                 pr.save_meta()
-            return self.send_json({"ok": True, "later": pr.meta["later"]})
+            return self.send_json({"ok": True, head: pr.meta[head]})
 
         # ⭐️⭐️ PUTTING SHEETS INTO ONE SET. The designer, 25 August 2026, having dragged
         # twelve files in at once: "assuming they would all stay together as a

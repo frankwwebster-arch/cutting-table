@@ -91,9 +91,23 @@ fix is to write it down here, not to put it in the next prompt.
 
 ---
 
-## Status (27 August 2026)
+## Status (1 September 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 654 checks, documented
+**1 September**: the designer, having cut and named every component in the
+second game's core box and ticked every one of its seventeen sheets: *"There
+should now be a way to move those (not out of sight) but just to ensure they
+don't pop up anymore, no need for them to populate dropdowns, or the sheets
+page anymore etc."* Built as **filing a set away**. ⭐️ See fault 91 — and note
+that the room already had a mark for a box that is *not being cut*, and this
+is the opposite one: a filed set **counts as done**, which is the whole reason
+it could not be the same list.
+
+⚠️⚠️ **The same day, a check put a modal dialog on the designer's screen** in
+the middle of their afternoon. See fault 92, which is worth more than the
+feature: the guard was written on the copy of the launcher that was *expected
+to fail*, and not on the copy expected to succeed.
+
+⭐️ **Where it stands.** The room is built, checked by 674 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered.
@@ -2206,6 +2220,88 @@ rather than by reading the code.
     up — not by the check, which could not see it. *When a check has been green
     for a week, the thing to ask is what it cannot see.*
 
+91. ⭐️⭐️ **A BOX THAT IS FINISHED IS NOT A BOX THAT IS PUT BY, AND THE
+    DIFFERENCE IS THE COUNTING.** The designer, 1 September 2026, having cut
+    and named every component in the second game's core box and ticked every
+    one of its seventeen sheets: *"There should now be a way to move those (not
+    out of sight) but just to ensure they don't pop up anymore, no need for
+    them to populate dropdowns, or the sheets page anymore etc."*
+    ⚠️⚠️ **THE OBVIOUS FIX WAS THE WRONG ONE.** The room already had a mark
+    that takes a set out of the way — *put by for later* (fault 68) — and
+    reaching for it would have been one line. But put by means **not cut yet**
+    and is left out of every figure precisely because a percentage counting
+    work you have decided not to do can never reach 100; a finished box marked
+    that way would be reported by the end-of-job check as a box **nobody ever
+    cut**, which is a lie about the very work the mark is celebrating. So
+    `filed` is a second list beside `later`: the same key shape, the same
+    route, and ⚠️ **one rule for which key a set answers to** (`group_key()` in
+    the room, `groupMarkKey()` in the page), because two copies of that would
+    drift and the one that drifted would be the one that marked the wrong box.
+    ⭐️⭐️ **IT PUTS THINGS LAST; IT DOES NOT HIDE THEM.** That is fault 51's
+    rule — *it ORDERS, it does not hide* — and it is what makes this safe:
+    every list that narrows by box still offers a filed box, in a band of its
+    own at the end, collapsed from a line per sheet to **one line**. A piece
+    cut from a finished box is exactly the sort of thing somebody comes back
+    for. On the Sheets page its sheets keep out of the views, and there are
+    **two doors back**: a chip of its own, and a **search, which always
+    overrules the filing** (fault 37's rule about folds, on a different
+    mechanism).
+    ⭐️ **THE ROOM OFFERS IT AT THE MOMENT IT IS EARNED.** It already knows
+    whether every sheet is ticked and every piece named, so the button says so
+    rather than waiting to be found. ⚠️ Still only an offer: a box may be as
+    done as it is ever going to be, so a box that is not ready is filed anyway
+    if the person says so — and the question **says what is outstanding**
+    first. Fault 80's rule, that a tool which refuses because it suspects
+    trouble is worse than one that warns.
+    ⚠️ **AND FILING IS A CLAIM, SO THE END-OF-JOB CHECK GOES ON CHECKING IT** —
+    the band says *filed away* and still asks for anything missing out of it.
+    A mark that stopped the checking would bury the one thing it was hiding.
+    ⚠️⚠️ **Two faults were mended on the way, and both were made by the feature
+    itself.** The Sheets headings were drawn only when the list **shown** held
+    more than one box — so filing the first of two boxes left one box shown,
+    the headings vanished, and with them the only way to file the second or
+    bring the first back: fault 50's shape (a mark nothing can clear),
+    manufactured by the thing being built. They are decided by what the GAME
+    holds now. And Match's *Show* list was built `if (sel.options.length <= 1)`
+    — once, and never again — which is **fault 57 exactly** and would have gone
+    stale the moment a box was filed with that board open. It goes through
+    `fillSelect()` like the others.
+    ⚠️ Its own first run turned up the fault this kind of filter always has:
+    the new chip let every **other** sheet through as well, because a non-filed
+    sheet fell past the new test and hit the `return true` at the bottom. The
+    chip that exists to show what has been filed showed the whole game.
+    ⭐️ Twenty new checks, ten through the room's own door and ten by pressing
+    the buttons in a real browser — because a check through the API is a green
+    light over a button that does nothing (fault 61).
+
+92. ⚠️⚠️⚠️ **A CHECK PUT A MODAL DIALOG ON THE DESIGNER'S SCREEN, AND THE
+    GUARD AGAINST IT HAD BEEN WRITTEN ON THE OTHER COPY.** On 1 September 2026
+    the designer, working at their machine, got an alert box: *"The Cutting
+    Room could not open."* It was not their room — it was `check/check.sh`.
+    The launcher's last act when the room will not start is an `osascript
+    display dialog` (fault 79), which is a real modal alert waiting for a real
+    person to press OK. The checks press **two** copies of that launcher: a
+    working one, and a deliberately broken one. The broken one had its dialog
+    swapped for an `echo`, with a comment saying in as many words that *a check
+    must not put a box on somebody's screen*. ⭐️ **The working copy did not,
+    because nobody writes a guard for the case they are sure will not happen.**
+    That is **fault 14** — a guard only some of a set remember — arriving in
+    the checks rather than in the room. It is one substitution now (`NO_DIALOG`)
+    and every copy takes it.
+    ⚠️⚠️ **What made the working copy fail was a port collision inside the run
+    itself.** The launcher section and the pretend slow download were both
+    written as `PORT + 3`, four hundred lines apart, neither knowing about the
+    other. They got away with it because the launcher's room is closed before
+    the download starts — until a run that stopped half way left its trickle
+    server on that port, and the next run's launcher could not bind. **Fault 24
+    in arithmetic**: every port the run uses is declared in one place now.
+    ⚠️ And the run that stopped half way was stopped with `kill -9`, which
+    takes the exit trap with it — the trap is careful and correct (fault 53)
+    and cannot run at all if the shell is not allowed to. *Stop a check run
+    with TERM and wait for it; never `-9`.*
+    ⭐️ The lesson worth keeping is the first one: **a check that assumes it
+    will pass is a check that has not been written for the day it does not.**
+
 ---
 
 ## Architecture
@@ -2356,7 +2452,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 654 checks, about a minute
+check/check.sh          # 674 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -2504,6 +2600,21 @@ and ⚠️ when the mend shifts the numbering the room cuts the **whole sheet**
 instead and says so, with every name following its own piece. Teeth tried:
 take the guard away and the checks catch the names landing on the wrong
 pieces.
+
+It works **filing a finished box away**: the mark is written, and ⚠️ **not one
+figure moves** — which is the check the whole feature turns on, because a
+filed set is done and counts as done where a set put by comes out of the
+reckoning; the end-of-job report goes on asking for what is missing out of it
+and says *filed away* on the band; the two marks are two lists and neither
+press disturbs the other; and a mark naming neither a box nor a set is
+refused. Then in the browser, because the fault to stop is a button that does
+nothing (fault 61): the heading **offers** it, a box that is not finished
+**says what is outstanding** and refusing that question changes nothing at
+all, filing takes its sheets out of the views, the page **says how many that
+is and where they went**, the chip and a **search** both reach them again, the
+list that narrows the pieces by box collapses it to one line in a band of its
+own — ⚠️ still there, not dropped — and bringing it back out puts every sheet
+in front of you again.
 
 It works **cutting a run of sheets**: asked for the lot, the room takes only
 the sheets not cut yet; with nothing left it refuses in a sentence rather than

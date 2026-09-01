@@ -18,9 +18,17 @@ cd "$(dirname "$0")/.."
 
 PY=${PYTHON:-python3}
 PORT=${PORT:-8799}
-# a port of its own for the launcher section, which starts a room of its own
+# ⚠️⚠️ A PORT APIECE, AND THEY ARE LISTED HERE TOGETHER SO THEY CANNOT CLASH.
+# The launcher section and the pretend slow download were both written as
+# PORT + 3, hundreds of lines apart, and neither knew about the other. They
+# got away with it only because the launcher's room is closed before the
+# download starts — until a run that stopped half way left something of its
+# own on that port, and the NEXT run's launcher could not bind: it fell
+# through to its "could not open" dialog, on a real person's screen.
+# One list, and every port in the run comes off it.
 APPPORT=$((PORT + 3))
 BROKENPORT=$((PORT + 4))
+SLOW_PORT=$((PORT + 5))
 HERE=$(pwd)
 TMP=$(mktemp -d /tmp/cutting-check.XXXXXX)
 
@@ -124,6 +132,16 @@ PYTWICE
 # ⭐️ The last of the designer's "a simpler way to open and quit. I don't like
 # terminal at the best of times." Quitting and starting again were already a
 # press on the page; opening still put a Terminal window on the screen.
+# ⚠️⚠️ NO COPY OF THE LAUNCHER THAT THIS RUN PRESSES MAY PUT A BOX ON
+# SOMEBODY'S SCREEN. The launcher's last act, when the room will not start, is
+# an `osascript display dialog` — which is a modal alert on the real machine,
+# waiting for a real person to press OK. The copy EXPECTED to fail had that
+# swapped for an echo; the copy expected to succeed did not, because nobody
+# writes a guard for the case they are sure will not happen. Then a stray
+# process held its port, the working copy failed, and the designer got an
+# alert in the middle of their afternoon. That is fault 14 — a guard only some
+# of a set remember — so it is ONE substitution now and every copy takes it.
+NO_DIALOG="s|^/usr/bin/osascript|echo THE-ROOM-COULD-NOT-OPEN|"
 say "the launcher that opens the room with no terminal window"
 
 APPDESK="$TMP/desk"
@@ -245,6 +263,7 @@ sed -i.bak \
     -e "s|/usr/bin/open \"\$url\"|touch $TMP/opened|" \
     -e "s|cutting_room.py --port \"\$port\"|cutting_room.py --port \"\$port\" --home $TMP/apphome|" \
     -e "s|^log=.*|log=$TMP/room.log|" \
+    -e "$NO_DIALOG" \
     "$TMP/try.app/Contents/MacOS/cutting-room"
 rm -f "$TMP/try.app/Contents/MacOS/cutting-room.bak" "$TMP/opened"
 
@@ -293,7 +312,7 @@ sed -i.bak \
     -e "s|^port=.*|port=$BROKENPORT|" \
     -e "s|^url=.*|url=\"http://127.0.0.1:$BROKENPORT/\"|" \
     -e "s|cutting_room.py|no_such_room.py|" \
-    -e "s|^/usr/bin/osascript|echo THE-ROOM-COULD-NOT-OPEN|" \
+    -e "$NO_DIALOG" \
     -e "s|^log=.*|log=$TMP/broken.log|" \
     "$TMP/broken.app/Contents/MacOS/cutting-room"
 if press "$TMP/broken.app/Contents/MacOS/cutting-room" "$TMP/broken.txt"; then
@@ -1498,7 +1517,6 @@ PY7
 # it's stalled." A file served instantly proves nothing about that, so this
 # serves a real sheet a tenth at a time with a wait between each — the same
 # shape as a slow link, and it takes about two and a half seconds.
-SLOW_PORT=$((PORT + 3))
 $PY - "$SLOW_PORT" <<'PYSLOW' > /dev/null 2>&1 &
 import http.server, socketserver, sys, time
 data = open("demo/demo-sheet.png", "rb").read()
@@ -1904,6 +1922,64 @@ check("and the report asks for its components again",
       sorted(i["name"] for band in rv["sets"] for i in band["missing"]))
 code, d = call("/later", {"key": "advanced", "later": True})
 check("a mark that says neither a box nor a set is refused in a sentence",
+      code == 400 and "book:" in d.get("error", ""), d)
+
+# ⭐️⭐️ AND THE OTHER END OF THE SAME SHELF: A BOX FINISHED AND FILED AWAY.
+# The designer, 1 September 2026, having cut and named every component in a
+# game's core box and ticked every one of its sheets: "There should now be a
+# way to move those (not out of sight) but just to ensure they don't pop up
+# anymore, no need for them to populate dropdowns, or the sheets page anymore
+# etc."
+print("")
+print("a box finished and filed away")
+code, d = call("/filed", {"key": "book:adv-scans", "filed": True})
+check("a box of sheets can be filed away as finished with",
+      d.get("filed") == ["book:adv-scans"], d.get("filed"))
+d = json.load(urllib.request.urlopen(API + "/wanted"))
+s2 = d["summary"]
+# ⚠️⚠️ THE CHECK THIS WHOLE FEATURE TURNS ON, and the reason it is not the
+# same mark as `later`. Put by means NOT CUT YET and comes out of the figures;
+# filed means DONE and stays in them. A filed set that dropped out of the
+# reckoning would report a finished box as one nobody ever cut — which is a
+# lie about the very work the mark is celebrating.
+check("filing changes not one figure — a finished set is done, and counts as done",
+      (s2["live_done"], s2["live_total"], s2["later_total"], s2["pct"]) == (2, 4, 0, 50),
+      [s2["live_done"], s2["live_total"], s2["later_total"], s2["pct"]])
+check("and nothing is hidden — every component is still on the list",
+      len(d["items"]) == 4, len(d["items"]))
+check("the checklist says which of its sets are filed, so every list can put them last",
+      (d["summary"]["groups"]["advanced"]["filed"],
+       d["summary"]["groups"]["core"]["filed"]) == (True, False),
+      d["summary"]["groups"])
+rv = json.load(urllib.request.urlopen(API + "/review"))
+# ⭐️ FILING IS A CLAIM, AND THE END-OF-JOB CHECK IS WHAT CHECKS IT. The room
+# takes somebody at their word and files the set — and goes on asking for
+# whatever is missing out of it. A mark that stopped the checking would bury
+# the one thing it was hiding.
+check("but the end-of-job check still asks for what is missing out of it",
+      sorted(i["name"] for band in rv["sets"] for i in band["missing"])
+      == ["Advanced marker", "Advanced tile"],
+      sorted(i["name"] for band in rv["sets"] for i in band["missing"]))
+check("and the report says on the band that this set is filed away",
+      [(x["name"], x["filed"]) for x in rv["sets"] if x["id"] == "advanced"]
+      == [("The advanced rules", True)],
+      [(x["name"], x.get("filed")) for x in rv["sets"]])
+check("filing a set does not put it by, which is the opposite mark",
+      not [x for x in rv["put_by"]], [x["name"] for x in rv["put_by"]])
+# ⚠️ THE TEETH. The two marks are kept on two lists on purpose, and a set can
+# be in both — imported for later, and the little of it that was cut finished
+# with. Neither press may disturb the other.
+code, d = call("/later", {"key": "book:adv-scans", "later": True})
+proj = json.load(urllib.request.urlopen(API))
+check("the two marks are two lists, and one press does not clear the other",
+      d.get("later") == ["book:adv-scans"]
+      and proj.get("filed") == ["book:adv-scans"], [d.get("later"), proj.get("filed")])
+code, d = call("/later", {"key": "book:adv-scans", "later": False})
+code, d = call("/filed", {"key": "book:adv-scans", "filed": False})
+check("and taking it back out of the files leaves nothing marked",
+      d.get("filed") == [], d.get("filed"))
+code, d = call("/filed", {"key": "advanced", "filed": True})
+check("a filing that says neither a box nor a set is refused in a sentence",
       code == 400 and "book:" in d.get("error", ""), d)
 
 # ⭐️⭐️ THE CHECKLIST LEARNT FROM WHAT IS CUT — the inverse of Match, and the

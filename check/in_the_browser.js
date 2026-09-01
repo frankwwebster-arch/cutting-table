@@ -2565,6 +2565,179 @@ const SHAPE = `(function () {
             home.says === "" && !home.later, home);
     }
 
+    {
+      /* ⭐️⭐️ A BOX FINISHED AND FILED AWAY. The designer, 1 September 2026,
+         having cut and named every component in a game's core box and ticked
+         every one of its sheets: "There should now be a way to move those
+         (not out of sight) but just to ensure they don't pop up anymore, no
+         need for them to populate dropdowns, or the sheets page anymore etc."
+         ⚠️ Checked by PRESSING THE BUTTON, not through the room's own door:
+         "Add them" worked perfectly through the API for a day while the
+         button it was behind did nothing at all (fault 61). */
+      console.log("\nfiling a finished box away, from the page");
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=sheets`);
+      await sleep(400);
+      const all0 = await page.val(`(function () {
+        var a = document.querySelector('#sFilter button[data-f=""]');
+        if (a) a.click();
+        return document.querySelectorAll(".sheets .sheet").length; })()`);
+      /* ⚠️ IT WARNS AND STILL DOES AS IT IS TOLD (fault 80). This box is not
+         finished, so the room must say what is outstanding — and say it
+         BEFORE anything is written down. Refused, nothing may change. */
+      const asked = await page.val(`(function () {
+        window.__said = "";
+        window.confirm = function (t) { window.__said = t; return false; };
+        var rows = document.querySelectorAll(".boxrow"), hit = null, b = null;
+        for (var i = 0; i < rows.length; i++) {
+          var w = rows[i].querySelector(".fold .what");
+          if (w && /odd-one-out/i.test(w.textContent)) hit = rows[i];
+        }
+        if (!hit) return { found: false };
+        hit.querySelectorAll("button").forEach(function (x) {
+          if (/File this set away/.test(x.textContent)) b = x;
+        });
+        if (b) b.click();
+        return { found: true, pressed: !!b, said: window.__said }; })()`);
+      check("a box's heading offers to file the set away when it is finished with",
+            asked.found && asked.pressed, asked);
+      check("and a box that is NOT finished says what is outstanding before it asks",
+            /not ticked as finished with/.test(asked.said || "") &&
+            /anyway\?/.test(asked.said || ""), asked.said);
+      await sleep(500);
+      const refused = await page.val(`document.querySelectorAll(".sheets .sheet").length`);
+      check("refusing that question changes nothing at all",
+            refused === all0, { was: all0, now: refused });
+
+      const filed = await page.val(`(function () {
+        window.confirm = function () { return true; };
+        var rows = document.querySelectorAll(".boxrow"), b = null;
+        for (var i = 0; i < rows.length; i++) {
+          var w = rows[i].querySelector(".fold .what");
+          if (w && /odd-one-out/i.test(w.textContent)) {
+            rows[i].querySelectorAll("button").forEach(function (x) {
+              if (/File this set away/.test(x.textContent)) b = x;
+            });
+          }
+        }
+        if (b) b.click();
+        return !!b; })()`);
+      await sleep(900);
+      const gone = await page.val(`(function () {
+        return { cards: document.querySelectorAll(".sheets .sheet").length,
+                 note: (document.getElementById("sFiledNote") || {}).textContent || "",
+                 hidden: (document.getElementById("sFiledNote") || {}).hidden }; })()`);
+      check("filing it takes its sheets out of the views on the Sheets page",
+            filed && gone.cards === all0 - 1, { was: all0, now: gone.cards });
+      /* ⚠️ A NARROWING MAY NEVER BE SILENT (fault 81). A page quietly showing
+         one sheet fewer than the game has, with nothing to say why, is how
+         "cut every outlined sheet" came to cut a whole game. */
+      check("and the page says how many sheets that is, and where they went",
+            !gone.hidden && /1 sheet/.test(gone.note) && /not shown/.test(gone.note),
+            gone.note);
+      // ⚠️ TWO WAYS BACK TO IT, because a mark nothing can clear is fault 50.
+      const chip = await page.val(`(function () {
+        var f = document.querySelector('#sFilter button[data-f="filed"]');
+        if (f) f.click();
+        return { chip: !!f, cards: document.querySelectorAll(".sheets .sheet").length,
+                 says: (document.querySelector(".boxrow.filed .putby") || {}).textContent || "" }; })()`);
+      check("they are still here, under a chip of their own, and the heading says so",
+            chip.chip && chip.cards === 1 && /filed away/.test(chip.says), chip);
+      /* ⭐️ AND A SEARCH OVERRULES THE FILING. Somebody typing a sheet's name
+         is asking for that sheet, wherever it has got to — the same rule a
+         fold has had since fault 37. */
+      await page.val(`(function () {
+        var a = document.querySelector('#sFilter button[data-f=""]');
+        if (a) a.click();
+        var f = document.getElementById("sFind");
+        f.value = "odd-one-out";
+        f.dispatchEvent(new Event("input", { bubbles: true })); })()`);
+      await sleep(600);          // ⚠️ the find box is debounced; wait as a person does
+      const found = await page.val(`document.querySelectorAll(".sheets .sheet").length`);
+      check("and a search finds a filed sheet anyway, filed or not",
+            found === 1, found);
+      await page.val(`(function () {
+        var f = document.getElementById("sFind");
+        f.value = ""; f.dispatchEvent(new Event("input", { bubbles: true })); })()`);
+
+      /* ⭐️⭐️ "NO NEED FOR THEM TO POPULATE DROPDOWNS." The box with the cut
+         pieces in it is the one that can show this: filed, it collapses from
+         a sheet apiece to a single line in a band of its own at the END —
+         ⚠️ put last rather than dropped, because fault 51's rule about this
+         very sort of list is that it orders and never hides. */
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=pieces`);
+      await sleep(1200);
+      const before = await page.val(`(function () {
+        var s = document.getElementById("pSheet");
+        return { opts: s.options.length,
+                 bands: Array.prototype.map.call(s.querySelectorAll("optgroup"),
+                                                 function (g) { return g.label; }) }; })()`);
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=sheets`);
+      await sleep(400);
+      const filed2 = await page.val(`(function () {
+        window.confirm = function () { return true; };
+        var rows = document.querySelectorAll(".boxrow"), b = null;
+        for (var i = 0; i < rows.length; i++) {
+          var w = rows[i].querySelector(".fold .what");
+          if (w && /proving-ground-sheets/i.test(w.textContent)) {
+            rows[i].querySelectorAll("button").forEach(function (x) {
+              if (/File this set away/.test(x.textContent)) b = x;
+            });
+          }
+        }
+        if (b) b.click();
+        return !!b; })()`);
+      await sleep(900);
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=pieces`);
+      await sleep(1200);
+      const after = await page.val(`(function () {
+        var s = document.getElementById("pSheet");
+        return { opts: s.options.length,
+                 bands: Array.prototype.map.call(s.querySelectorAll("optgroup"),
+                                                 function (g) { return g.label; }),
+                 still: !!s.querySelector('option[value^="book:proving-ground-sheets"]') }; })()`);
+      check("a filed box stops filling the list that narrows the pieces by box",
+            filed2 && after.opts < before.opts, { was: before, now: after });
+      check("but it is still THERE, on one line, in a band that says what it is",
+            after.still && after.bands.some(function (b) { return /filed away/.test(b); }),
+            after.bands);
+
+      /* ⚠️ AND IT IS PUT BACK, both of them — this bench is used by the
+         checks after it, and a check that leaves the room rearranged reports
+         somebody else's fault as its own. */
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=sheets`);
+      await sleep(500);
+      /* ⚠️ ONE PRESS AT A TIME. Each of these writes to the room and draws
+         the rows again, so pressing both out of one list of buttons presses
+         the second on a row that no longer exists. */
+      const press1 = `(function () {
+        var a = document.querySelector('#sFilter button[data-f="filed"]');
+        if (a) a.click();
+        var b = null;
+        document.querySelectorAll(".boxrow").forEach(function (row) {
+          row.querySelectorAll("button").forEach(function (x) {
+            if (!b && /Bring it back out/.test(x.textContent)) b = x;
+          });
+        });
+        if (b) b.click();
+        return !!b; })()`;
+      let back = 0;
+      for (let i = 0; i < 4; i++) {
+        if (!(await page.val(press1))) break;
+        back += 1;
+        await sleep(900);
+      }
+      await sleep(600);
+      const restored = await page.val(`(function () {
+        var a = document.querySelector('#sFilter button[data-f=""]');
+        if (a) a.click();
+        return document.querySelectorAll(".sheets .sheet").length; })()`);
+      check("and bringing them back out puts every sheet in front of you again",
+            back > 0 && restored === all0, { pressed: back, was: all0, now: restored });
+      await page.val(`(function () {
+        var t = document.querySelector('#sFilter button[data-f="todo"]');
+        if (t) t.click(); })()`);
+    }
+
     /* ⭐️⭐️ THE CHECKLIST LEARNT FROM WHAT IS CUT. The inverse of Match, for
        a game whose contents list nobody has typed out — which is most games.
        ⚠️ The GROUPING is done in the page, off the same look-alike rule the

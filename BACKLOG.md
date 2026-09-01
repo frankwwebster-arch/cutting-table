@@ -228,6 +228,68 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️⭐️ A finished box, filed away — **built**, 1 September 2026
+
+The designer, having cut and named every component in a game's core box and
+ticked every one of its sheets: *"There should now be a way to move those (not
+out of sight) but just to ensure they don't pop up anymore, no need for them to
+populate dropdowns, or the sheets page anymore etc."*
+
+⚠️⚠️ **It is not the mark the room already had.** *Put by for later* means NOT
+CUT YET and comes out of every figure (fault 68); this means DONE and goes on
+counting as done. A finished box marked *later* would be reported by the
+end-of-job check as a box nobody ever cut. Two marks, one mechanism — the same
+key shape, the same route, one rule for which key a set answers to.
+
+- `[x]` ⭐️⭐️ **File this set away**, on a box of sheets' heading and on the
+  checklist section's — the **same switch**, because a set made from a box
+  answers to that box (fault 64).
+- `[x]` ⭐️ **The room offers it at the moment it is earned**: it already knows
+  whether every sheet is ticked and every piece named, so the button says so.
+  ⚠️ Still only an offer — a box can be filed before it is ready, and then the
+  question **says what is outstanding** and files it anyway if told to
+  (fault 80).
+- `[x]` **Its sheets keep out of the views on Sheets**, under a **Filed away**
+  chip of their own — ⚠️ and a **search always overrules the filing**, the same
+  rule a fold has had since fault 37.
+- `[x]` ⚠️ **The page says how many sheets that is and where they went.** A
+  narrowing may never be silent (fault 81).
+- `[x]` ⭐️⭐️ **Last, not gone, in the dropdowns**: *Show* on Pieces and on
+  Match collapse a filed box to **one line** in a band of its own at the end,
+  and the component dropdown puts a filed set's components under *finished and
+  filed away*. ⚠️ Fault 51's rule stands — it orders, it does not hide.
+  ⚠️ And a filed box **opens itself** for a sheet being asked for by name, or
+  the narrowing would silently do nothing (faults 44 and 73).
+- `[x]` ⭐️ **The end-of-job report goes on checking it**, and says *filed away*
+  on the band. Filing is a claim; that report is what checks it.
+- `[x]` ⚠️ Two faults mended on the way: the Sheets headings were decided by
+  what was **shown** rather than by what the game holds, so filing the first of
+  two boxes would have taken away the only way to file the second or to bring
+  the first back (fault 50's shape, made by the feature itself); and Match's
+  *Show* list was built **once** and never again, which is fault 57 and would
+  have gone stale the moment a box was filed with that board open.
+
+See CLAUDE.md 91. Twenty new checks — ten through the room's own door and ten
+by pressing the buttons in a real browser, because a check through the API is a
+green light over a button that does nothing (fault 61).
+
+### `[x]` ⚠️⚠️ A check must not put a box on somebody's screen — **fixed**, 1 September 2026
+
+While the above was being checked, the designer got a modal alert on their own
+machine: *"The Cutting Room could not open."* It was `check/check.sh` pressing
+the launcher, whose last act when the room will not start is an `osascript
+display dialog`. The copy of the launcher **expected to fail** had that swapped
+for an echo; the copy expected to succeed did not.
+
+- `[x]` ⚠️ **One substitution** (`NO_DIALOG`), taken by every copy of the
+  launcher the run presses — fault 14, in the checks rather than in the room.
+- `[x]` ⚠️⚠️ **The port collision underneath it**: the launcher section and the
+  pretend slow download were both `PORT + 3`, four hundred lines apart. Every
+  port the run uses is declared in one place now.
+
+See CLAUDE.md 92. ⭐️ Its lesson: **a check that assumes it will pass is a check
+nobody wrote for the day it does not.**
+
 ### `[x]` ⭐️⭐️ Fit together — do these two pieces meet? — **built**, 27 August 2026
 
 *"I have a component (the spine) which extends over 2 pages. I need a way to
@@ -952,7 +1014,7 @@ laser cut files. Still wanted, but not urgent:
 
 ### `[~]` A test suite — the editor is covered, the cutting is not
 
-`check/check.sh`, 654 checks in about a minute. It makes a throwaway 66-sheet
+`check/check.sh`, 674 checks in about a minute. It makes a throwaway 66-sheet
 game out of the demonstration sheet, in a registry of its own, and drives a
 real Chrome over it.
 

@@ -298,6 +298,13 @@ outline, and its components leave the figure at the top, which is the point —
 a percentage that counts work you have decided not to do can never reach 100.
 Nothing is deleted, and the line under the figure says what it left out.
 
+⭐️ **And a box you have FINISHED takes File this set away**, on the same
+heading. It goes on counting as done — that is the whole difference between
+the two marks — but it stops filling the sheet list and the dropdowns with
+work there is nothing left to do about. The room offers it by name the moment
+every sheet is ticked and every piece named. The **Filed away** chip on Sheets
+brings it back, and so does typing a sheet's name in the find box.
+
 ⭐️⭐️ **One line, one piece — unless every one is different.** A sheet prints
 twenty-six identical damage counters and the game repeats one for ever, so *26
 Damage counters* wants **one** piece cut. But *24 Damage cards* is twenty-four
