@@ -1157,6 +1157,21 @@ check("a back naming a piece this game has not got is refused, with a reason",
 code, d = call("/wanted/back", {"id": "no-such-component", "stem": back_stem})
 check("and so is a component it has not got", code == 400, code)
 
+# ⚠️⚠️ A PIECE THAT FILLS THE SHEET IS STILL A PIECE, IF SOMEBODY DREW IT.
+# The designer, 26 August 2026: "I have outlined the single large component on
+# the sheet. But it won't cut. Is that a size constraint?" It was: 90% of the
+# sheet, and anything over 85% was binned as the scanner's own frame. The cut
+# ran, kept nothing, and said nothing.
+code, d = call("/outlines/newbox-02", {"pieces": [
+    {"pts": [[40, 40], [1760, 40], [1760, 2360], [40, 2360]]}]}, "PUT")
+code, d = call("/cut/newbox-02", {})
+check("an outline covering almost the whole sheet is cut, not binned",
+      code == 200 and len(d.get("made") or []) == 1, [code, d.get("made") or d])
+big = (d.get("made") or [{}])[0]
+check("and it comes out at nearly the size of the sheet",
+      big.get("w_in", 0) > 5 and big.get("h_in", 0) > 7,
+      [big.get("w_in"), big.get("h_in")])
+
 # ⭐️⭐️ CALLING IT A DECK IS SAYING ITS CARDS ARE ALL DIFFERENT. The designer,
 # 26 August 2026: "when something is a deck it should also report that each
 # component dropped is unique in the checklist ie '[n] needed' rather than '1

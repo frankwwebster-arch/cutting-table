@@ -3055,8 +3055,20 @@
       cell.className = "mcell" + (wid ? " linked" : "") + (d.spare ? " aside" : "");
       cell.dataset.stem = p.stem;
       cell.draggable = true;
+      /* ⭐️⭐️ THE PIECE AT A SIZE WORTH LOOKING AT, ON HOVER. The designer,
+         26 August 2026: "some of the previews of the pieces in Match are too
+         large for me to be able to fully see. the full piece should be shown
+         in that preview, perhaps it can zoom on hover or something if it has
+         text that is too small."
+         A room tile is a foot across and this cell is 148 pixels: the whole
+         piece IS in the thumbnail, and that is exactly the trouble — at that
+         size nothing on it can be read, so you cannot tell one room from
+         another. The look-alike tiles had this answered in August (fault 40)
+         and Match, which is where the naming actually happens, never got it.
+         ⚠️ ONE mechanism, `data-big`, so the two cannot drift; and ⚠️ no
+         `title` on the cell, or tips.js puts a text bubble over the picture. */
       cell.innerHTML =
-        '<div class="pic"><img src="' + BASE + "/piece-thumb/" + encodeURIComponent(p.stem) + '.png"' + turned(d) + '></div>' +
+        '<div class="pic"' + bigAttrs(p) + '><img src="' + BASE + "/piece-thumb/" + encodeURIComponent(p.stem) + '.png"' + turned(d) + '></div>' +
         '<div class="cap"><b>' + esc(d.name || "(unnamed)") + "</b>" +
         '<span class="tiny muted">' + esc(p.stem) + (p.w_in ? " · " + p.w_in + '" \u00d7 ' + p.h_in + '"' : "") + "</span>" +
         (wid ? '<span class="tag cut">' + esc((wantedById[wid] || {}).name || wid) + "</span>" : "") + "</div>";
@@ -3204,6 +3216,23 @@
       renderWanted();
     });
   }
+  /* ⚠️⚠️ A PAGE MUST NOT DEPEND SILENTLY ON A FIELD THE ROOM MAY NOT SEND.
+     `each_on` is the room's own answer to "is this counted as all different?"
+     — and the pages are read fresh off the disk on every request while the
+     PYTHON is whatever was loaded when the room started (fault 38). So a new
+     page in front of an older room got `undefined` for every row: the button
+     read "one is enough" on everything, and pressing it set `each` to the
+     opposite of undefined — true — for ever, so it NEVER CHANGED. The
+     designer, 26 August 2026: "Hitting the toggle doesn't seem to do
+     anything."
+     ⚠️ That is fault 58 — half working is worse than not working — arriving
+     by fault 38's door. Falling back to the stored `each` makes the control
+     behave exactly as it did before against an old room, and the stale-code
+     banner still says to restart. Any future field this page reads from the
+     room needs the same treatment. */
+  function eachOn(it) {
+    return it && it.each_on !== undefined ? !!it.each_on : !!(it && it.each);
+  }
   function renderWanted() {
     var body = document.getElementById("wBody");
     body.innerHTML = "";
@@ -3337,15 +3366,15 @@
              (see counts_each). Reading `it.each` here would have put "one is
              enough" on a button beside a figure reading 0 of 32. */
           '<button class="quiet each" data-each="1" title="' +
-            (it.each_on
+            (eachOn(it)
               ? ("Every one of them is a different card, so all of them must be cut before this is done." +
                  (!it.each ? " The room is counting it this way because you have called it a deck; press to count it as one design instead."
                            : " Press to go back to counting it as one design."))
               : "One design, printed this many times — cutting one is enough, and that is how the room counts it. Press if these are all DIFFERENT, like a deck of cards, and every one has to be cut.") +
-          '">' + (it.each_on ? "all different" : "one is enough") + "</button>" +
+          '">' + (eachOn(it) ? "all different" : "one is enough") + "</button>" +
           // ⭐️ and say plainly WHY, where nobody pressed it — a figure that
           // changed itself is a figure somebody has to be able to account for
-          (it.each_on && !it.each
+          (eachOn(it) && !it.each
             ? '<div class="tiny muted">counted as a deck</div>' : "") + "</td>" +
         '<td><input data-k="where" value="' + esc(it.where || "") + '" style="width:9em" title="' + esc(it.source || "") + '"></td>' +
         '<td class="st"><span class="tag ' + it.state + '"' +
@@ -3430,7 +3459,7 @@
         // ⚠️ `each_said` is what makes the press STICK. Every component is
         // made carrying `each: false` whether or not anybody chose it, so
         // that value alone cannot be read as an answer — see counts_each().
-        now.each = !now.each_on;
+        now.each = !eachOn(now);
         now.each_said = true;
         // saveWantedAll takes the room's fresh answer back, so `each_on` and
         // the figure beside it are the room's, not this page's guess at them
@@ -3479,14 +3508,51 @@
        out here as well as in the room, which is fault 24 waiting to happen:
        the room now takes them off in the one place that saves the list, so
        this sends what it was given and nothing has to agree with anything. */
-    return put(API + "/wanted", { items: wantedData.items,
-                                 // ⚠️ THE SETS GO TOO. A set made from a
-                                 // component's own Set box lived in this page
-                                 // and nowhere else, so its NAME was lost on
-                                 // the next load and the set showed as the
-                                 // bare id it was made from.
-                                 groups: wantedData.groups || [] }).then(function (d) { wantedData = d; flash("Saved."); loadWantedSummary(d); });
+    /* ⚠️⚠️ ONE SAVE AT A TIME, AND ITS ANSWER IS MERGED, NEVER SWAPPED IN.
+       The designer, 26 August 2026: "I edited 'small room(6)' to note that it
+       is 6 unique pieces… but despite it now showing 6, I cant seem to toggle
+       that immediately… Hitting the toggle doesn't seem to do anything."
+       Pressing a button in a row BLURS the box you were typing in, so the
+       box's own save goes out first and the press follows a moment later —
+       two writes of the whole list in flight at once. This line then did
+       `wantedData = d`, which throws away every edit made since that request
+       was sent: the first save came back carrying the pre-press list and
+       wiped the press out of the page's copy, and the re-render showed the
+       old word. Nothing was broken; the answer to an older question simply
+       arrived last.
+       ⭐️ So the room's answer refreshes only what the ROOM works out — it
+       says which fields those are, rather than this page keeping a second
+       copy of that list (fault 24) — and everything a person typed stays as
+       they left it. */
+    saving = saving.then(function () {
+      return put(API + "/wanted", { items: wantedData.items,
+                                   // ⚠️ THE SETS GO TOO. A set made from a
+                                   // component's own Set box lived in this page
+                                   // and nowhere else, so its NAME was lost on
+                                   // the next load and the set showed as the
+                                   // bare id it was made from.
+                                   groups: wantedData.groups || [] });
+    }).then(function (d) {
+      var fresh = {};
+      (d.items || []).forEach(function (x) { fresh[x.id] = x; });
+      var keys = d.worked_out || [];
+      (wantedData.items || []).forEach(function (it) {
+        var now = fresh[it.id];
+        if (!now) return;
+        keys.forEach(function (k) { it[k] = now[k]; });
+        delete fresh[it.id];
+      });
+      // anything the room has that this page has not seen yet
+      Object.keys(fresh).forEach(function (id) { wantedData.items.push(fresh[id]); });
+      wantedData.summary = d.summary;
+      wantedData.later = d.later;
+      flash("Saved.");
+      loadWantedSummary(wantedData);
+      return wantedData;
+    });
+    return saving;
   }
+  var saving = Promise.resolve();
   /* The figure worked out again here on the page, without asking the room,
      so that linking a piece moves it at once rather than a second later.
      ⚠️ It has to do the same arithmetic the room does — both readings, the

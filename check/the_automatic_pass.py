@@ -303,6 +303,44 @@ check("and so is a plain half-inch counter",
 check("and a printed strip, which is long and thin and perfectly real",
       S.worth_offering(box_in(0.3, 6.0)))
 
+# ⚠️⚠️ WHAT THE AUTOMATIC PASS BINS, AND WHAT A PERSON'S OWN OUTLINE KEEPS.
+# The designer, 26 August 2026, of a sheet holding one large board: "I have
+# outlined the single large component on the sheet. But it won't cut. Is that
+# a size constraint?" It was — anything over 85% of the sheet was thrown away
+# as the scanner's frame, and their board covered 90%. Fault 76 had already
+# settled the principle at the small end and the large end never got it.
+import numpy as np                                                   # noqa: E402
+
+H, W = 2400, 1800
+
+
+def one_blob(x0, y0, x1, y1):
+    lab = np.zeros((H, W), np.int32)
+    lab[y0:y1, x0:x1] = 1
+    return lab
+
+
+# a board filling 90% of the sheet — exactly the designer's case
+big = one_blob(20, 20, W - 20, H - 20)
+check("the automatic pass will not offer a blob covering the whole sheet",
+      len(S.keep(big, 1, (H, W))) == 0)
+check("but a piece that big, OUTLINED BY A PERSON, is cut",
+      len(S.keep(big, 1, (H, W), drawn=True)) == 1)
+# and the same at the other end of the scale — fault 76's own subject
+tiny = one_blob(100, 100, 110, 140)
+check("the automatic pass will not offer a speck",
+      len(S.keep(tiny, 1, (H, W))) == 0)
+check("but a piece that small, outlined by a person, is cut",
+      len(S.keep(tiny, 1, (H, W), drawn=True)) == 1)
+# ⚠️ THE NOISE TEST: an ordinary counter is kept either way, or the rule above
+# is just a way of keeping everything.
+mid = one_blob(200, 200, 500, 500)
+check("an ordinary piece is kept whichever way it was found",
+      len(S.keep(mid, 1, (H, W))) == 1 and
+      len(S.keep(mid, 1, (H, W), drawn=True)) == 1)
+check("and its box is the same either way",
+      S.keep(mid, 1, (H, W))[0]["box"] == S.keep(mid, 1, (H, W), drawn=True)[0]["box"])
+
 print("")
 if bad:
     print("\033[31m%d of the automatic pass's checks are WRONG\033[0m" % len(bad))

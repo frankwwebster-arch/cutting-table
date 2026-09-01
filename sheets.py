@@ -141,7 +141,21 @@ def label(mask):
     pad = np.zeros(w + 2, np.int8)
     prev_s = prev_e = np.empty(0, np.int64)
     prev_l = []
-    for y in range(h):
+    # ⚠️⚠️ ONLY THE ROWS THAT HAVE ANYTHING IN THEM. This walked all fifteen
+    # thousand rows of a big scan in a PYTHON loop, and label_shapes() calls
+    # it once per ink colour — so a sheet drawn in eight colours walked the
+    # whole sheet eight times over to find eight small groups of pieces. On
+    # the designer's 170-megapixel sheets that was five seconds a sheet.
+    # ⚠️ A gap resets the run linkage, which is not merely an optimisation:
+    # skipping a row without resetting would let a run above a blank row join
+    # a run below it. A blank row cannot connect anything, so this is exact.
+    prev_y = -2
+    for y in np.flatnonzero(mask.any(axis=1)):
+        y = int(y)
+        if y != prev_y + 1:
+            prev_s = prev_e = np.empty(0, np.int64)
+            prev_l = []
+        prev_y = y
         pad[1:w + 1] = mask[y]
         d = np.diff(pad)
         starts = np.flatnonzero(d == 1)
@@ -162,7 +176,7 @@ def label(mask):
             if lab[i] == 0:
                 parent.append(len(parent))
                 lab[i] = len(parent) - 1
-        rows.append((starts, ends, lab))
+        rows.append((y, starts, ends, lab))
         prev_s, prev_e, prev_l = starts, ends, lab
 
     remap = np.zeros(len(parent), np.int32)
@@ -175,7 +189,7 @@ def label(mask):
         remap[i] = remap[r]
 
     out = np.zeros((h, w), np.int32)
-    for y, (starts, ends, lab) in enumerate(rows):
+    for y, starts, ends, lab in rows:
         row = out[y]
         for i in range(len(starts)):
             row[starts[i]:ends[i]] = remap[lab[i]]
@@ -223,22 +237,61 @@ def label_shapes(ink, colour):
     two pieces if they are different colours."""
     if colour is None:
         return label(ink)
-    q = (colour.astype(np.int16) // 48)
-    key = (q[:, :, 0] * 36 + q[:, :, 1] * 6 + q[:, :, 2]) * ink
+    # ⚠️ THE KEY STAYS ONE BYTE WIDE. `colour.astype(np.int16)` made a copy
+    # three times the size of the sheet — a gigabyte on a 170-megapixel scan —
+    # to hold numbers that never exceed 215 (5*36 + 5*6 + 5). uint8 arithmetic
+    # cannot overflow here and costs a sixth of the memory.
+    q = colour // 48                                    # 0..5, still uint8
+    key = q[:, :, 0] * 36 + q[:, :, 1] * 6 + q[:, :, 2]
+    # ⚠️ 255 marks "not drawn on", which no real key can be — so the colours
+    # present can be counted in ONE pass instead of sorting every ink pixel,
+    # and a piece drawn in black (key 0) is still told from the background.
+    key = np.where(ink, key, np.uint8(255))
     out = np.zeros(ink.shape, np.int32)
     total = 0
-    for v in np.unique(key[ink]):
-        lab, n = label(ink & (key == v))
+    seen = np.bincount(key.reshape(-1), minlength=256)
+    for v in range(216):
+        if not seen[v]:
+            continue
+        sel = key == v
+        # ⚠️⚠️ AND EACH COLOUR IS LABELLED IN ITS OWN CORNER OF THE SHEET.
+        # This ran the connected-components pass — a Python loop over every
+        # row — across the WHOLE sheet once per ink colour, and then wrote its
+        # answer back with two more full-sheet passes. Eight colours on a big
+        # scan meant walking a hundred and seventy megapixels eight times to
+        # find eight small groups of pieces.
+        rows = sel.any(axis=1)
+        cols = sel.any(axis=0)
+        y0 = int(rows.argmax()); y1 = int(rows.size - rows[::-1].argmax())
+        x0 = int(cols.argmax()); x1 = int(cols.size - cols[::-1].argmax())
+        lab, n = label(sel[y0:y1, x0:x1])
         if not n:
             continue
-        out[lab > 0] = lab[lab > 0] + total
+        sub = out[y0:y1, x0:x1]
+        hit = lab > 0
+        sub[hit] = lab[hit] + total
         total += n
     return out, total
 
 
-def keep(lab, n, shape):
+def keep(lab, n, shape, drawn=False):
     """Turn labelled regions into pieces, binning scanner dirt and the scan's
-    own frame."""
+    own frame.
+
+    ⚠️⚠️ `drawn=True` MEANS THESE SHAPES WERE OUTLINED BY A PERSON, AND THEN
+    NONE OF THE BINNING APPLIES. The designer, 26 August 2026, of a sheet
+    holding one big board: "I have outlined the single large component on the
+    sheet. But it won't cut. Is that a size constraint?" It was: their piece
+    covered 90% of the sheet and anything over 85% was thrown away as the
+    scanner's own frame — so the cut ran, found nothing worth keeping, and
+    said nothing at all.
+
+    ⭐️ These guards exist to stop the AUTOMATIC pass offering the paper it is
+    printed on, and fault 76 already settled the principle at the other end of
+    the scale: "a thin outline somebody DREW is a decision, and the room does
+    not overrule those." A big one is a decision in exactly the same way. The
+    ceiling was simply never given the same treatment as the floor.
+    """
     h, w = shape
     sizes = np.bincount(lab.reshape(-1), minlength=n + 1)
     limit = h * w * MAX_SHEET_FRACTION
@@ -246,15 +299,26 @@ def keep(lab, n, shape):
     min_area = (MIN_PIECE_IN * DPI * 0.8) ** 2
     pieces = []
     for i in range(1, n + 1):
-        if sizes[i] < min_area or sizes[i] > limit:
+        if sizes[i] == 0:
+            continue
+        if not drawn and (sizes[i] < min_area or sizes[i] > limit):
             continue
         m = lab == i
-        ys, xs = np.nonzero(m)
-        box = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
-        if (box[2] - box[0]) < min_px and (box[3] - box[1]) < min_px:
-            continue
-        if (box[2] - box[0]) > w * 0.95 and (box[3] - box[1]) > h * 0.95:
-            continue                 # the scan's own frame, not a component
+        # ⚠️ THE BOX FROM PROJECTIONS, NOT FROM EVERY COORDINATE. `np.nonzero`
+        # builds two int64 arrays as long as the piece — 160MB for one room
+        # tile off a 170-megapixel scan — only to take four numbers off them.
+        # Two boolean reductions give the same four, measured 34 times faster
+        # and with nothing to allocate.
+        rows = m.any(axis=1)
+        cols = m.any(axis=0)
+        y0 = int(rows.argmax()); y1 = int(rows.size - rows[::-1].argmax())
+        x0 = int(cols.argmax()); x1 = int(cols.size - cols[::-1].argmax())
+        box = (x0, y0, x1, y1)
+        if not drawn:
+            if (box[2] - box[0]) < min_px and (box[3] - box[1]) < min_px:
+                continue
+            if (box[2] - box[0]) > w * 0.95 and (box[3] - box[1]) > h * 0.95:
+                continue             # the scan's own frame, not a component
         pieces.append({"mask": m, "box": box, "px": int(sizes[i])})
     return pieces
 

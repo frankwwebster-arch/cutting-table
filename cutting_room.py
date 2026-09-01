@@ -282,10 +282,25 @@ def paint_mask(pieces, size):
         poly = flatten(pts, pc.get("curve", False))
         ink = INKS[int(pc.get("ink", 0)) % len(INKS)]
         rgb = tuple(int(ink[i:i + 2], 16) for i in (1, 3, 5))
-        layer = Image.new("L", (w, h), 0)
-        ImageDraw.Draw(layer).polygon(poly, fill=255)
-        mask.paste(Image.new("RGBA", (w, h), rgb + (255,)), (0, 0), layer)
         drawn += 1
+        # ⚠️⚠️ EACH PIECE COSTS ITS OWN BOX, NOT THE WHOLE SHEET. This made two
+        # full-sheet images per piece — an L layer and an RGBA patch — and
+        # composited both across the entire sheet. On a 170-megapixel scan
+        # that is 200MB of allocation and pixel work for one counter, and the
+        # designer's seventeen sheets carried a hundred and forty outlines.
+        # Drawing the polygon in its own bounding box and pasting it at that
+        # offset is the identical picture: a piece drawn over another still
+        # replaces it exactly, because the paste still happens in order.
+        px0 = max(0, int(min(q[0] for q in poly)) - 1)
+        py0 = max(0, int(min(q[1] for q in poly)) - 1)
+        px1 = min(w, int(max(q[0] for q in poly)) + 2)
+        py1 = min(h, int(max(q[1] for q in poly)) + 2)
+        if px1 <= px0 or py1 <= py0:
+            continue                     # drawn entirely off the sheet
+        layer = Image.new("L", (px1 - px0, py1 - py0), 0)
+        ImageDraw.Draw(layer).polygon([(q[0] - px0, q[1] - py0) for q in poly], fill=255)
+        mask.paste(Image.new("RGBA", (px1 - px0, py1 - py0), rgb + (255,)),
+                   (px0, py0), layer)
     return mask, drawn
 
 
@@ -1348,6 +1363,10 @@ class Project:
         # BLUNT (fault 67). The whole-game figure is still here and still
         # true; the live one is what the room leads with, and the page says
         # in as many words what the difference between them is made of.
+        # ⭐️ WHICH FIELDS THE ROOM WORKS OUT, told to the page. It has to
+        # know, because a save must refresh these and keep everything else the
+        # page holds (see saveWantedAll) — and a second copy of this list in
+        # JavaScript is fault 24 with a saved store underneath it.
         live = [i for i in out if not is_later(i.get("group", ""))]
         live_done = sum(1 for i in live if i["state"] in ("cut", "probably"))
         # ⭐️ and the same sum in CARDS as well as in components, because a
@@ -1358,6 +1377,7 @@ class Project:
         got_pieces = sum(min(i["got"], i["need"]) for i in live)
         return {"items": out, "groups": groups, "kinds": book.get("kinds") or KINDS,
                 "note": book.get("note", ""), "later": sorted(later),
+                "worked_out": list(WORKED_OUT),
                 "summary": {"total": len(out), "done": done,
                             "pct": (round(100.0 * done / len(out)) if out else 0),
                             "live_total": len(live), "live_done": live_done,
@@ -2068,7 +2088,20 @@ def cut_sheet(project, sid):
         ink = a[:, :, 3] > 128
         colour = a[:, :, :3]
         lab, n = sheetlib.label_shapes(ink, colour)
-        found = sheetlib.keep(lab, n, (h, w))
+        # ⚠️ `drawn` — these outlines were made by a person, so nothing here
+        # is thrown away for being too big or too small. See keep().
+        found = sheetlib.keep(lab, n, (h, w), drawn=True)
+        # ⚠️⚠️ A CUT THAT KEEPS NOTHING MUST SAY SO. The designer, 26 August
+        # 2026: "I have outlined the single large component on the sheet. But
+        # it won't cut." The cut had run perfectly, thrown the one piece away
+        # for covering 90% of the sheet, written an empty answer and reported
+        # success — so there was nothing to read and nothing to go on. Silence
+        # reads as a broken button (fault 58).
+        if not found:
+            raise RuntimeError(
+                "%d outline%s on %s, but nothing came off it. The outlines may "
+                "be drawn over one another, or lie outside the picture."
+                % (drawn, "" if drawn == 1 else "s", s.get("label", sid)))
         found.sort(key=lambda p: (p["box"][1] // (project.dpi // 2), p["box"][0]))
 
         stem = stem_of(sid)
@@ -2094,10 +2127,25 @@ def cut_sheet(project, sid):
             piece.save(project.piece_path(name))
             entry = {"name": name, "w": piece.width, "h": piece.height, "sheet": sid,
                      "box": [int(v) for v in p["box"]], "dpi": dpi, "cut_at": now_ms()}
-            under = colour[p["mask"]]
-            if len(under):
-                vals, counts = np.unique(under.reshape(-1, 3), axis=0, return_counts=True)
-                entry["ink_rgb"] = [int(v) for v in vals[counts.argmax()]]
+            # ⚠️⚠️ THE COMMONEST INK UNDER THE PIECE, AND IT WAS 85% OF THE
+            # WHOLE CUT. `np.unique(..., axis=0)` lexsorts three columns of
+            # every pixel in the piece, and it was asked over a WHOLE-SHEET
+            # boolean besides. On the designer's own sheets — 10909 x 15355,
+            # a hundred and seventy megapixels each — that was 87 seconds of a
+            # 102-second sheet, and seventeen sheets took eighteen minutes.
+            # ⭐️ Packing the three channels into one number and asking the
+            # same question of a 1-D array is the identical answer, measured
+            # 117 times faster; cropping to the piece's own box first is
+            # another threefold. Measured, not reasoned — see the note in
+            # CLAUDE.md under *Measuring*.
+            bx0, by0, bx1, by1 = p["box"]
+            sub = colour[by0:by1, bx0:bx1][p["mask"][by0:by1, bx0:bx1]]
+            if len(sub):
+                packed = (sub[:, 0].astype(np.uint32) * 65536 +
+                          sub[:, 1].astype(np.uint32) * 256 + sub[:, 2])
+                vals, counts = np.unique(packed, return_counts=True)
+                best = int(vals[counts.argmax()])
+                entry["ink_rgb"] = [best >> 16, (best >> 8) & 255, best & 255]
             made.append(entry)
 
         # ⚠️ NAMES FOLLOW THEIR PIECES WHEN A SHEET IS CUT AGAIN. Pieces are

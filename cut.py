@@ -166,7 +166,9 @@ def cut_sheet(sheet_path, mask_path, out_dir, prefix=None, overrides=None):
         colour = a[:, :, :3]
 
     lab, n = sheets.label_shapes(ink, colour)
-    pieces = sheets.keep(lab, n, (h, w))
+    # ⚠️ a mask painted from outlines somebody drew — see keep(): the room
+    # does not overrule a decision by calling the piece too big or too small
+    pieces = sheets.keep(lab, n, (h, w), drawn=True)
     pieces.sort(key=lambda p: (p["box"][1] // (DPI // 2), p["box"][0]))
     os.makedirs(out_dir, exist_ok=True)
     print("%s — %d pieces" % (stem, len(pieces)))

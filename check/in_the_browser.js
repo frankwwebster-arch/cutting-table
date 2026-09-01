@@ -2301,6 +2301,63 @@ const SHAPE = `(function () {
       check("pressing “one is enough” on a deck sticks, and it wants one again",
             /one is enough/.test(pressed.each) && !/of 32/.test(pressed.stands),
             pressed);
+
+      /* ⚠️⚠️ EDIT A FIELD AND PRESS THE TOGGLE IN ONE MOVEMENT. The designer,
+         26 August 2026: "I edited 'small room(6)' to note that it is 6 unique
+         pieces… but despite it now showing 6, I cant seem to toggle that
+         immediately… Hitting the toggle doesn't seem to do anything."
+         Clicking the button BLURS the box, so the box's own save fires first
+         and a second save follows from the press — two writes of the whole
+         list in flight at once, each replacing the page's copy when it
+         answers. Whichever lands last wins, and it is not always the press. */
+      const race = await page.val(`(function () {
+        var row = null;
+        document.querySelectorAll("#wBody tr").forEach(function (r) {
+          var nm = r.querySelector('input[data-k="name"]');
+          if (nm && nm.value === "Spell deck") row = r; });
+        if (!row) return { found: false };
+        var qty = row.querySelector('input[data-k="qty"]');
+        qty.value = "6";
+        qty.dispatchEvent(new Event("change", { bubbles: true }));   // the blur
+        row.querySelector("[data-each]").click();                    // and the press
+        return { found: true }; })()`);
+      await sleep(2500);
+      const settled = await page.val(row);
+      check("editing a field and pressing the toggle in one movement still toggles",
+            race.found && /all different/.test(settled.each) &&
+            /of 6/.test(settled.stands), settled);
+      // ⚠️ and the disk agrees with the screen, or the next load undoes it
+      const disk = await fetch(`${ROOM}/api/p/${QUEUE}/wanted`).then(r => r.json());
+      const sd = (disk.items || []).filter(i => i.name === "Spell deck")[0] || {};
+      check("and the room has it written down the same way",
+            sd.each === true && sd.qty === "6" && sd.need === 6,
+            { each: sd.each, qty: sd.qty, need: sd.need });
+
+      /* ⚠️⚠️ AND IT STILL WORKS IN FRONT OF AN OLDER ROOM. The pages are read
+         fresh off the disk on every request; the Python is whatever was
+         loaded when the room started (fault 38). So a page that quietly
+         depends on a field a running room does not send yet gets `undefined`
+         — and this control then said "one is enough" on everything and never
+         changed, whatever you pressed. Falling back to the stored `each` is
+         what makes it behave as it always did until the room is restarted. */
+      // ⚠️ the page's own functions are not on `window`, so this asks the
+      // question the way a person would: press it twice and it must come back
+      // to where it started. A control that answers `!undefined` for ever
+      // sticks on "all different" and never returns.
+      const twice = [];
+      for (let i = 0; i < 2; i++) {
+        await page.val(`(function () {
+          var b = null;
+          document.querySelectorAll("#wBody tr").forEach(function (r) {
+            var nm = r.querySelector('input[data-k="name"]');
+            if (nm && nm.value === "Spell deck") b = r.querySelector("[data-each]"); });
+          if (b) b.click(); return !!b; })()`);
+        await sleep(1200);
+        twice.push((await page.val(row)).each);
+      }
+      check("and the toggle really is a toggle — two presses come back",
+            twice[0] !== twice[1] && /one is enough|all different/.test(twice[1]),
+            twice);
     }
 
     {

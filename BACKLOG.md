@@ -223,6 +223,65 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⚠️⚠️ The cut, twelve times faster — **fixed**, 27 August 2026
+
+*"Pressed cut, and it is INCREDIBLY slow… it took 1081 seconds to cut the 17
+sheets."*
+
+⭐️⭐️ Reading their own `project.json` settled it in ten minutes: those sheets
+are **10909 × 15355 — a hundred and seventy megapixels**, twenty times the size
+anything here had been tried on. Four costs that scale with *pieces × sheet
+area* were invisible at eight megapixels:
+
+- `np.unique(..., axis=0)` for the ink under each piece — **85% of the whole
+  cut**. Packed into one number and asked of a 1-D array: 117× faster.
+- `label_shapes()` walked the whole sheet once per ink colour and built an
+  `int16` copy three times the sheet's size. uint8, per-colour bounding box,
+  and `label()` skips blank rows.
+- `paint_mask()` made two full-sheet images **per piece**. It draws in the
+  polygon's own box now.
+- `keep()` called `np.nonzero` per piece for four numbers. Two reductions.
+
+⚠️ **Checked by difference, not by reasoning**: the old code out of git, run
+beside the new on six awkward sheets and on the demonstration sheet through the
+automatic pass — every answer identical, pixel for pixel.
+
+One sheet 102.6s → 8.2s. Seventeen: **1081s → about 140s.** See fault 84.
+
+### `[x]` ⚠️⚠️ A piece that fills the sheet is still a piece — **fixed**, 27 August 2026
+
+*"I have outlined the single large component on the sheet. But it won't cut. Is
+that a size constraint?"* It was: anything over 85% of the sheet was binned as
+the scanner's own frame, and their board covered 90.3%. Fault 76 had already
+settled this principle at the small end — *a thin outline somebody drew is a
+decision* — and the ceiling never got the same treatment. And the cut **said
+nothing**, reporting success over an empty answer. Both fixed; see fault 85.
+
+### `[x]` ⚠️⚠️ The checklist toggle that did nothing — **fixed**, 27 August 2026
+
+*"I edited 'small room(6)'… but despite it now showing 6, I cant seem to toggle
+that immediately… Hitting the toggle doesn't seem to do anything."* Two faults
+at once:
+
+- Pressing a button **blurs the box you were typing in**, so two whole-list
+  saves went out together and the first one's answer — carrying the list as it
+  was before the press — arrived last and wiped the press out of the page. The
+  room's answer is **merged** now, not swapped in, and it says which fields it
+  works out rather than the page keeping a second copy of that list.
+- And `each_on`, added the day before, is a field an **older running room does
+  not send** — pages are read fresh, Python is not (fault 38) — so the button
+  read *one is enough* on everything and never changed. It falls back now.
+
+See fault 86.
+
+### `[x]` ⭐️ The Match preview, big enough to read — **built**, 27 August 2026
+
+*"some of the previews of the pieces in Match are too large for me to be able
+to fully see."* The whole piece was in the cell, and that was the trouble: a
+board a foot across is nothing at 148 pixels. Match now carries the same hover
+preview the look-alike tiles have had since fault 40 — one mechanism, not two —
+and it takes what the window will give it. See fault 87.
+
 ### `[x]` ⭐️⭐️ Calling a line a deck counts it as a deck — **fixed**, 26 August 2026
 
 The designer: *"when something is a deck it should also report that each
@@ -924,6 +983,25 @@ anything that speeds up cutting.
 ---
 
 ## Done
+
+### 27 August 2026 — the cut at the size of a real game
+
+- `[x]` ⚠️⚠️ **The cut is twelve times faster.** Four costs scaled with pieces
+  × sheet area and only showed at 170 megapixels a sheet: `np.unique(axis=0)`
+  (85% of the whole cut), `label_shapes` walking the sheet per ink colour,
+  `paint_mask` making two full-sheet images per piece, `keep` calling
+  `np.nonzero` per piece. 1081s → about 140s for seventeen sheets.
+- `[x]` ⭐️⭐️ **Checked by difference against the old code**, pixel for pixel,
+  on six awkward sheets and the demonstration sheet.
+- `[x]` ⚠️⚠️ **A piece covering 90% of a sheet is cut**, not binned as the
+  scanner's frame — fault 76's principle, which the ceiling never got. And a
+  cut that keeps nothing says so instead of reporting success.
+- `[x]` ⚠️⚠️ **The checklist toggle works again**: a save merges the room's
+  answer rather than replacing the list, and the page no longer depends
+  silently on a field an older running room does not send.
+- `[x]` ⭐️ **The Match preview is big enough to read**, using the one
+  `data-big` mechanism the look-alike tiles already had.
+- `[x]` ⚠️ **11 new checks** — 619 to 630.
 
 ### 26 August 2026 — calling a line a deck counts it as a deck
 

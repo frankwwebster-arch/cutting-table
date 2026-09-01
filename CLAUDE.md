@@ -93,11 +93,22 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (25 August 2026)
 
-⭐️ **Where it stands.** The room is built, checked by 619 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 630 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered. That has not been true
 before, and it is why *NOW* is now numbered — see the rule above.
+
+**27 August**: *"Pressed cut, and it is INCREDIBLY slow… it took 1081 seconds
+to cut the 17 sheets."* ⭐️⭐️ Read their `project.json` and the reason was
+immediate: their sheets are **170 megapixels**, twenty times anything this had
+been tried on, and four separate costs scaled with *pieces × sheet area*. See
+fault 84 — and note that it was made safe by **running the old code beside the
+new one and comparing pixel for pixel**, which is the only honest way to speed
+up the cut. 1081s → about 140s. In the same day: a piece covering 90% of a
+sheet was binned as the scanner's frame and the cut said nothing (fault 85),
+and the checklist toggle appeared dead for two reasons at once (fault 86, whose
+second half was mine from the day before).
 
 **26 August, last thing of all**: *"when something is a deck it should also
 report that each component dropped is unique in the checklist ie '[n] needed'
@@ -1936,6 +1947,108 @@ rather than by reading the code.
     for a choice they made on purpose stops being read**, which is fault 50's
     lesson arriving on a page rather than a chip.
 
+84. ⚠️⚠️⚠️ **THE CUT DID FULL-SHEET WORK PER PIECE, AND ON A REAL GAME'S
+    SCANS THAT WAS EIGHTEEN MINUTES.** The designer, 26 August 2026: *"I have
+    highlighted 17 pages of AHQ components. Pressed cut, and it is INCREDIBLY
+    slow"* — and then, *"finished, it took 1081 seconds to cut the 17 sheets."*
+    ⭐️⭐️ **Habit 2 found it in ten minutes and no amount of reading the code
+    would have.** Their project's own `project.json` says the sheets are
+    **10909 × 15355** — a hundred and seventy megapixels each, twenty times the
+    size anything here had been tried on. Every cost that scales with *pieces ×
+    sheet area* was invisible at eight megapixels and ruinous at a hundred and
+    seventy. **Measure on the real thing's dimensions, not on the demonstration
+    sheet.**
+    Four of them, in the order they cost:
+    - ⚠️⚠️ **`np.unique(..., axis=0)` was 85% of the whole cut.** It lexsorts
+      three columns of every pixel in a piece, to find the commonest ink under
+      it — and it was handed a **whole-sheet** boolean besides. Packing the
+      three channels into one number and asking a 1-D array is the identical
+      answer **117 times faster**; cropping to the piece's own box first is
+      another threefold. 87s a sheet became under 2.
+    - ⚠️ **`label_shapes()` walked the whole sheet once per ink colour**, in a
+      Python row loop, and built a `int16` copy three times the sheet's size to
+      hold numbers that never exceed 215. It is uint8 now, each colour is
+      labelled **in its own bounding box**, and `label()` skips rows with
+      nothing in them (⚠️ resetting the run linkage across a gap, which is
+      exact because a blank row cannot connect anything).
+    - ⚠️ **`paint_mask()` made two full-sheet images per piece** — an L layer
+      and an RGBA patch — and composited both across the entire sheet: 200MB of
+      work for one counter. It draws in the polygon's own box now, which is the
+      identical picture because the paste still happens in order.
+    - ⚠️ **`keep()` called `np.nonzero` per piece** to take four numbers off
+      two int64 arrays as long as the piece. Two boolean reductions give the
+      same four, 34 times faster.
+    ⭐️⭐️ **It was checked by DIFFERENCE, not by reasoning.** The old code was
+    taken out of git and run beside the new one on six awkward sheets —
+    overlapping pieces in the same ink and in different inks, curves, a piece
+    against the edge, a piece drawn over another, a piece in the darkest ink
+    (key 0, which the sentinel had to keep apart from the background), thin
+    pieces with blank rows between them — and on the real demonstration sheet
+    through the automatic pass. **Every answer identical, pixel for pixel.**
+    That is the only honest way to speed up the most delicate code in the room.
+    ⭐️ One sheet: 102.6s → 8.2s. Their seventeen: **1081s → about 140s.**
+
+85. ⚠️⚠️ **A PIECE THAT FILLS THE SHEET IS STILL A PIECE, IF SOMEBODY DREW
+    IT.** The designer, 26 August 2026: *"I have outlined the single large
+    component on the sheet. But it won't cut. Is that a size constraint?"* It
+    was. `keep()` bins anything covering more than 85% of the sheet as the
+    scanner's own frame, and their board covered **90.3%** — so the cut ran,
+    threw the one piece away, wrote an empty answer and **reported success**.
+    ⭐️ **Fault 76 had already settled this principle at the other end of the
+    scale** and said so in `sheets.py` in as many words: *"a thin outline
+    somebody DREW is a decision, and the room does not overrule those… it is
+    deliberately not part of `keep()`, which the CUT uses as well."* The floor
+    got that treatment; the **ceiling never did**. `keep(..., drawn=True)` now
+    means these shapes came from a person and none of the binning applies —
+    and the automatic pass, which is what those guards are for, is unchanged.
+    ⚠️ **And the silence was half the fault.** A cut that keeps nothing now
+    says so, naming the sheet and how many outlines it had. Reporting success
+    over an empty answer is fault 58 — half working reads as broken, and here
+    there was nothing at all to read.
+    ⭐️ Verified against the designer's own sheet, read-only: 0 pieces before,
+    one piece of 22.7 × 44.5 inches after.
+
+86. ⚠️⚠️⚠️ **A SAVE THAT REPLACES THE LIST THROWS AWAY EVERY EDIT MADE WHILE
+    IT WAS IN FLIGHT.** The designer, 26 August 2026: *"I edited 'small
+    room(6)' to note that it is 6 unique pieces… but despite it now showing 6,
+    I cant seem to toggle that immediately… Hitting the toggle doesn't seem to
+    do anything."*
+    ⭐️ **Pressing a button in a row BLURS the box you were typing in**, so the
+    box's own save goes out first and the press follows a moment later — two
+    writes of the whole list in flight at once. `saveWantedAll()` ended with
+    `wantedData = d`, so the **first** save's answer, carrying the list as it
+    was *before* the press, arrived last and wiped the press out of the page's
+    copy. Nothing was broken; the answer to an older question simply won.
+    ⭐️ The room's answer is now **merged**, not swapped in: it refreshes only
+    the fields the room works out and leaves everything a person typed alone.
+    ⚠️ And the room **says which fields those are** (`worked_out` in the
+    payload) rather than the page keeping a second copy of that list — fault
+    24, with a saved store underneath it. Saves are also chained, one at a
+    time.
+    ⚠️⚠️ **AND A SECOND FAULT UNDERNEATH IT, WHICH WAS MINE FROM THE DAY
+    BEFORE.** Fault 83 had the page read `each_on` — a field the room sends.
+    **The pages are read fresh off the disk on every request and the Python is
+    whatever was loaded when the room started** (fault 38), so a new page in
+    front of an older room got `undefined` for every row: the button read *one
+    is enough* on everything, and pressing it set `each` to the opposite of
+    undefined — true — for ever, **so it never changed**. That is fault 58 by
+    fault 38's door. `eachOn()` falls back to the stored value, so the control
+    behaves exactly as it always did until the room is restarted. ⭐️ **Any
+    future field this page reads from the room needs the same treatment**, and
+    that is the general lesson: a page may not depend silently on a field a
+    running room might not send yet.
+
+87. ⭐️ **A ROOM TILE AT A HUNDRED AND FORTY-EIGHT PIXELS IS NOT A PICTURE OF
+    ANYTHING.** The designer, 26 August 2026: *"some of the previews of the
+    pieces in Match are too large for me to be able to fully see. the full
+    piece should be shown in that preview, perhaps it can zoom on hover."*
+    The whole piece **was** in the Match cell — that is exactly the trouble: a
+    board a foot across, shrunk into a thumbnail, tells you nothing, and Match
+    is where the naming actually happens. Fault 40 answered this for the
+    look-alike tiles in August and Match never got it. ⚠️ **One mechanism** —
+    the same `data-big` — so the two cannot drift, and the preview now takes
+    what the window will give it rather than a fixed 360px.
+
 ---
 
 ## Architecture
@@ -2078,7 +2191,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 619 checks, about a minute
+check/check.sh          # 630 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
