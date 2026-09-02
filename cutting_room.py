@@ -4528,6 +4528,12 @@ class Room(BaseHTTPRequestHandler):
             # name or it drops off the screen altogether
             stems = sorted(set(idx) | set(pr.piece_files()) | pr.spare_stems())
             sizes = {s["id"]: (s.get("w"), s.get("h")) for s in pr.sheets}
+            # ⚠️ WORKED OUT HERE, NOT IN THE PAGE. Which pieces have lost
+            # their sheet decides what a delete button sweeps, and a second
+            # copy of that rule in JavaScript would eventually disagree with
+            # this one — over the one action in the room that destroys a
+            # piece. See lost_pieces() and fault 95.
+            lost = set(lost_pieces(pr))
             out = []
             for st in stems:
                 meta = idx.get(st, {})
@@ -4539,6 +4545,7 @@ class Room(BaseHTTPRequestHandler):
                 guess = None if mm.get("edge") else guess_kind(
                     mm.get("w_in"), mm.get("h_in"), mm.get("cover"))
                 out.append({"stem": st, "sheet": meta.get("sheet", ""),
+                            "lost": st in lost,
                             "guess": guess,
                             "w_in": mm.get("w_in"), "h_in": mm.get("h_in"),
                             "hash": mm.get("hash"), "cover": mm.get("cover"),
@@ -4555,6 +4562,43 @@ class Room(BaseHTTPRequestHandler):
             return self.send_json({"pieces": out, "types": pr.meta.get("types") or {},
                                    "kinds": KINDS, "wanted": wb.get("items", []),
                                    "groups": wb.get("groups", [])})
+
+        # ⚠️⚠️ THE ONE PLACE, BESIDES REMOVING A SHEET, THAT REALLY DELETES A
+        # CUT PIECE — and it is deliberately the narrowest door in the room.
+        # The designer, 1 September 2026: "how do I remove all the pieces…
+        # I can't see any other way to do it." There was no other way: a box's
+        # removal asks about its pieces, a single sheet's × never did, and once
+        # the sheet was gone the pieces were unreachable.
+        # ⚠️ It sweeps ONLY what lost_pieces() names — never a joined piece,
+        # whose sheet is empty by design, and never a file the index does not
+        # know, which may belong to a game's own repository. It will not take a
+        # stem the caller merely asks for.
+        # ⭐️ THE NAME IS NOT THROWN AWAY: it goes to `retired`, the same as a
+        # name whose piece disappears across a re-cut. Somebody who deletes
+        # pieces has not asked to forget what they were called.
+        if head == "pieces" and len(rest) == 2 and rest[1] == "lost" and method == "POST":
+            with pr.lock:
+                stems = lost_pieces(pr)
+                if not stems:
+                    return self.send_json(
+                        {"error": "Nothing here has lost its sheet. Pieces made "
+                                  "by joining two others, and files the room did "
+                                  "not cut, are left alone on purpose."}, 400)
+                idx = pr.index()
+                man = pr.manifest()
+                kept = 0
+                for st in stems:
+                    was = (man.get("pieces") or {}).pop(st, None)
+                    if was and (was.get("name") or was.get("component")):
+                        man.setdefault("retired", {})[st] = was
+                        kept += 1
+                    idx.get("pieces", {}).pop(st, None)
+                    for path in (pr.piece_path(st), pr.spare_path(st)):
+                        if os.path.exists(path):
+                            os.remove(path)
+                pr.save_index(idx)
+                pr.save_manifest(man)
+            return self.send_json({"ok": True, "removed": len(stems), "names_kept": kept})
 
         if head == "pieces" and len(rest) == 2 and rest[1] == "aside" and method == "POST":
             # ⭐️ Setting several aside at once is what makes the look-alike
@@ -5129,6 +5173,39 @@ def remove_sheets(pr, ids, with_pieces=False):
             took += 1
         pr.save_index(idx)
     return {"sheets": len(ids), "outlines": drawn, "pieces": took}
+
+
+# ⭐️⭐️ THE PIECES WHOSE SHEET HAS GONE — AND, MUCH MORE IMPORTANTLY, THE
+# ONES THAT ONLY LOOK LIKE THEM.
+#
+# The designer, 1 September 2026: "how do I remove all the pieces, 'remove this
+# set' doesn't clear the cut pieces, and I can't see any other way to do it."
+# Quite right: removing a box asks a second question about its pieces, but the
+# single sheet's × never did, and once the sheet is gone its pieces are
+# orphans with no route to them at all. Nothing in the room could delete them.
+#
+# ⚠️⚠️ THREE DIFFERENT THINGS SIT UNDER "Not off any sheet this project knows",
+# and only ONE of them may ever be swept:
+#   • a piece whose sheet was removed — its `sheet` names an id the game no
+#     longer has. That is this list.
+#   • a JOINED piece — `sheet` is deliberately EMPTY, because it came off two
+#     sheets and naming either would let the next re-cut drop its record
+#     (fault 89). Sweeping these would destroy the one copy of somebody's
+#     hand-made piece.
+#   • a file the index knows nothing about — and `paths.pieces` may point
+#     inside a GAME's own repository (fault 39), so these are very likely not
+#     the room's to delete at all.
+# One rule, in one place, because a second copy of it would eventually sweep
+# one of the other two. See fault 95.
+def lost_pieces(project):
+    """Stems whose recorded sheet is an id this project no longer has."""
+    live = {s["id"] for s in project.sheets}
+    out = []
+    for st, meta in (project.index().get("pieces") or {}).items():
+        sid = meta.get("sheet") or ""
+        if sid and sid not in live:          # empty sheet = joined, never swept
+            out.append(st)
+    return sorted(out)
 
 
 def inherit_back(item, cur):

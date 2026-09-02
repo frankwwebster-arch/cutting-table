@@ -228,6 +228,26 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⚠️⚠️ Pieces whose sheet has gone can be removed — **built**, 2 September 2026
+
+The designer: *"how do I remove all the pieces, 'remove this set' doesn't clear
+the cut pieces, and I can't see any other way to do it."* There was no other
+way — a box's removal asks about its pieces, a single sheet's × never did
+(though the route had taken the option all along), and once the sheet was gone
+the pieces were unreachable.
+
+- `[x]` Both doors ask now. Keeping the pieces is still the default.
+- `[x]` A button on *Not off any sheet this project knows* removes the ones
+  whose sheet has gone.
+- `[x]` ⚠️⚠️ And **only** those — never a joined piece, whose sheet is empty on
+  purpose, and never a file the room did not cut, which may belong to a game's
+  own repository. One rule, in the room, with the page told the answer.
+- `[x]` ⭐️ What each was called is kept in `retired`.
+- `[x]` Twelve checks. Teeth tried: drop two words from the guard and four go
+  red, one of them reporting a joined piece deleted off the disk.
+
+See CLAUDE.md 95.
+
 ### `[x]` ⚠️⚠️ An import that replaces sheets now says so — **built**, 2 September 2026
 
 The designer: *"Tile Sheets.pdf was processed but isn't showing."* It had been.

@@ -1311,8 +1311,36 @@
           post(API + "/sheet/" + encodeURIComponent(s.id), { done: !s.done }).then(function () { s.done = !s.done; renderSheets(); });
         });
         d.querySelector("button.del").addEventListener("click", function () {
-          if (!window.confirm("Take " + s.label + " out of the project? Its outlines go too. (The cut pieces stay.)")) return;
-          fetch(API + "/sheet/" + encodeURIComponent(s.id), { method: "DELETE" }).then(function () { load(); });
+          if (!window.confirm("Take " + s.label + " out of the project?\n\n" +
+              "• The sheet goes, and " + (s.outlines
+                ? "the " + s.outlines + " outline" + (s.outlines === 1 ? "" : "s") + " on it"
+                : "nothing is outlined on it") + ".\n" +
+              (s.cut ? "• The " + s.cut + " piece" + (s.cut === 1 ? "" : "s") +
+                       " cut from it stay, unless you say otherwise next.\n" : "") +
+              "\nIf this turns out to be a mistake, the scan has to be imported " +
+              "again — but any outlines drawn on it are kept in the room's own " +
+              "history (Settings), so the work is not lost with it.")) return;
+          /* ⚠️⚠️ THE SECOND QUESTION, WHICH ONLY THE OTHER DOOR ASKED.
+             Removing a BOX has always offered to delete its cut pieces; the
+             single sheet's × said flatly "(The cut pieces stay.)" and gave no
+             way to say otherwise — so a sheet deleted here left pieces that
+             nothing in the room could then reach. The route has taken
+             ?pieces=1 the whole time; only the page never asked. That is
+             fault 14 — a choice only some of a set of doors offer. See fault
+             95. ⭐️ Keeping them is still the default, because nothing else in
+             the room throws a cut piece away. */
+          var alsoPieces = false;
+          if (s.cut) {
+            alsoPieces = window.confirm(
+              "Delete the " + s.cut + " piece" + (s.cut === 1 ? "" : "s") +
+              " cut from this sheet as well?\n\n" +
+              "OK deletes them — the pictures go from the disk and that cannot " +
+              "be undone.\n\nCancel keeps them, which is the usual answer: they " +
+              "stay in the project as pieces off no sheet the room knows, and " +
+              "the Pieces page can remove them later.");
+          }
+          fetch(API + "/sheet/" + encodeURIComponent(s.id) + (alsoPieces ? "?pieces=1" : ""),
+                { method: "DELETE" }).then(function () { piecesData = null; load(); });
         });
         if (many) d.dataset.fold = g;
         box.appendChild(d);
@@ -2865,6 +2893,51 @@
     }).forEach(function (set) {
       var h = Fold.head("pieces", set.key, set.key, list);
       h.classList.add("sheet-head");
+      /* ⚠️⚠️ THE ONLY DELETE BUTTON ON THIS PAGE, and it is here because this
+         is the only heading whose rows can have nothing left to belong to.
+         The designer, 1 September 2026: "how do I remove all the pieces…
+         I can't see any other way to do it." There was no other way — a box's
+         removal asks about its pieces, a single sheet's × never did, and once
+         the sheet had gone its pieces were unreachable.
+         ⚠️ It sweeps ONLY the pieces the ROOM marks `lost` — a joined piece
+         has no sheet on purpose (fault 89) and a file the room did not cut may
+         belong to a game's own repository (fault 39). Both sit under this same
+         heading and neither is ever touched, which is why the count on the
+         button is not simply "the rows you can see". */
+      var lost = (set.rows || []).filter(function (p) { return p.lost; });
+      if (lost.length) {
+        var rm = document.createElement("button");
+        rm.className = "btn small";
+        rm.textContent = "Remove the " + lost.length + " whose sheet has gone";
+        rm.title = "Delete the pieces here whose sheet was removed from this " +
+                   "game — the pictures go from the disk and that cannot be " +
+                   "undone. What each one was called is kept. Pieces made by " +
+                   "joining two others, and files the room did not cut, are " +
+                   "left exactly as they are.";
+        rm.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var others = (set.rows || []).length - lost.length;
+          if (!window.confirm(
+              "Delete " + lost.length + " piece" + (lost.length === 1 ? "" : "s") +
+              " whose sheet is no longer in this game?\n\n" +
+              "• The picture" + (lost.length === 1 ? "" : "s") + " go from the disk. " +
+              "That cannot be undone.\n" +
+              "• What each one was called is kept, in case you cut it again.\n" +
+              (others ? "• The other " + others + " here " +
+                        (others === 1 ? "is" : "are") + " left alone — a piece made " +
+                        "by joining two others has no sheet on purpose, and a file " +
+                        "the room did not cut is not the room's to delete.\n" : ""))) return;
+          post(API + "/pieces/lost", {}).then(function (r) {
+            if (r.error) { flash(r.error, true); return; }
+            flash(r.removed + " piece" + (r.removed === 1 ? "" : "s") + " removed" +
+                  (r.names_kept ? ", and " + r.names_kept + " name" +
+                   (r.names_kept === 1 ? "" : "s") + " kept in case you cut " +
+                   (r.names_kept === 1 ? "it" : "them") + " again" : "") + ".");
+            piecesData = null; load();
+          });
+        });
+        h.appendChild(rm);
+      }
       list.appendChild(h);
       heads.push([set.key, h]);
       set.rows.forEach(function (p) {

@@ -757,6 +757,31 @@ the flags you have waved through.
 and the piece it was counted from appears, full size. The piece names beside it
 do the same.
 
+### ⚠️ Removing pieces whose sheet has gone
+
+Deleting a sheet does not delete what was cut from it — a piece is a finished
+thing in its own right, and nothing else in the room throws one away. Both
+doors now **ask**: taking one sheet out, and taking a whole box out, each offer
+a second question about the pieces. **Cancel keeps them**, which is the usual
+answer.
+
+Pieces kept that way gather on the Pieces page under **Not off any sheet this
+project knows**, and that heading carries a button — *Remove the N whose sheet
+has gone*.
+
+⚠️ **It removes only those.** Two other kinds of piece sit under the same
+heading and neither is ever touched:
+
+- a piece made by **joining two others**, which has no sheet on purpose — it
+  came off two, and naming either would let the next re-cut lose its record;
+- a **file the room did not cut**, which may belong to a game's own repository
+  if this project writes its pieces there.
+
+The button says how many it is leaving alone and why.
+
+⭐️ **What each piece was called is kept**, in `retired`, in case you cut it
+again — the same as a name whose piece disappears across a re-cut.
+
 ### Setting a piece aside
 
 ⚠️ **Nothing in the room throws a cut piece away.** *Set this piece aside* — on

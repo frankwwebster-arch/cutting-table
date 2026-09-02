@@ -115,7 +115,7 @@ the middle of their afternoon. See fault 92, which is worth more than the
 feature: the guard was written on the copy of the launcher that was *expected
 to fail*, and not on the copy expected to succeed.
 
-⭐️ **Where it stands.** The room is built, checked by 704 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 716 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered.
@@ -2394,6 +2394,42 @@ rather than by reading the code.
     sheet and can never take this path — which is also the honest advice to
     anybody it bites.
 
+95. ⭐️⭐️⚠️ **"NOT OFF ANY SHEET THIS PROJECT KNOWS" IS THREE DIFFERENT
+    THINGS, AND ONLY ONE OF THEM MAY EVER BE SWEPT.** The designer, 1
+    September 2026: *"how do I remove all the pieces, 'remove this set'
+    doesn't clear the cut pieces, and I can't see any other way to do it."*
+    There was no other way. Removing a **box** asks a second question about
+    its cut pieces; the **single sheet's ×** said flatly *"(The cut pieces
+    stay.)"* and offered no way to say otherwise — **though the route had
+    taken `?pieces=1` the whole time**. That is fault 14 exactly: a choice
+    only some of a set of doors offer. And once the sheet was gone its pieces
+    were orphans that **nothing in the room could reach**.
+    ⚠️⚠️ **THE OBVIOUS FIX WOULD HAVE DESTROYED TWO OTHER THINGS.** That
+    heading gathers every piece with no sheet, and they are not alike:
+    - a piece whose **sheet was removed** — its `sheet` names an id the game
+      no longer has. This is the only one that may go.
+    - a **JOINED** piece — `sheet` is deliberately **empty**, because it came
+      off two sheets and naming either would let the next re-cut drop its
+      record (fault 89). It is hand-made and there is one copy of it.
+    - a **file the index never knew** — and `paths.pieces` may point inside a
+      GAME's own repository (fault 39), so these are very likely not the
+      room's to delete at all.
+    ⭐️ So there is one `lost_pieces()`, in the room, and the page is **told**
+    which pieces qualify rather than working it out — a second copy of that
+    rule in JavaScript would eventually disagree with this one, over the one
+    action in the room that destroys a piece. Fault 24, on the highest stakes
+    it has yet turned up on.
+    ⭐️⭐️ **Teeth tried, and the failure is the point**: drop the four
+    characters `sid and` from the guard and four checks go red — one of them
+    reporting `joined_thing.png` gone from the disk, which is precisely the
+    damage.
+    ⭐️ **The name is not thrown away**: it goes to `retired`, exactly as a
+    name whose piece disappears across a re-cut does. Somebody deleting a
+    piece has not asked to forget what it was called.
+    ⚠️ **And asked again with nothing to do it refuses in a sentence** that
+    says what it leaves alone — otherwise somebody looking at rows still on
+    the screen is left wondering whether the button worked (fault 58).
+
 ---
 
 ## Architecture
@@ -2544,7 +2580,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 704 checks, about a minute
+check/check.sh          # 716 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

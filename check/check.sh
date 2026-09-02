@@ -766,6 +766,7 @@ say "a throwaway game, in a home of its own"
 $PY demo/make_demo_sheet.py > /dev/null
 $PY - "$TMP" <<'PY'
 import json, os, shutil, sys
+from PIL import Image          # the lost-property pieces are drawn here
 tmp = sys.argv[1]
 bed = os.path.join(tmp, "home", "proving-ground")
 os.makedirs(os.path.join(bed, "sheets"))
@@ -845,7 +846,37 @@ json.dump({"id": "the-import-desk", "name": "The Import Desk", "game": "nothing 
            "dpi": 300, "notes": "", "paths": {}, "hooks": [], "sheets": []},
           open(os.path.join(desk, "project.json"), "w"), indent=1)
 
-json.dump({"projects": [bed, other, spare, queue, desk]},
+# ⭐️⭐️ A project holding the three things that all look like "no sheet", so
+# the one that may be swept can be told from the two that may not. See
+# lost_pieces() and fault 95.
+lost = os.path.join(tmp, "home", "the-lost-property")
+os.makedirs(os.path.join(lost, "pieces"), exist_ok=True)
+json.dump({"id": "the-lost-property", "name": "The Lost Property", "game": "nothing real",
+           "dpi": 300, "notes": "", "paths": {}, "hooks": [], "sheets": [
+               {"id": "still-here-01", "label": "still here p.1", "name": "", "w": 600,
+                "h": 800, "done": False, "rot": 0, "source": "still-here.pdf"}]},
+          open(os.path.join(lost, "project.json"), "w"), indent=1)
+for stem, sheet in (("orphan_a", "a-sheet-that-went-01"),
+                    ("orphan_b", "a-sheet-that-went-01"),
+                    ("joined_thing", ""),            # a joined piece: no sheet ON PURPOSE
+                    ("still_here_p01_00", "still-here-01")):
+    Image.new("RGBA", (60, 60), (200, 30, 30, 255)).save(
+        os.path.join(lost, "pieces", stem + ".png"))
+# ⚠️ and a file the index knows nothing about — paths.pieces may point inside
+# a GAME's own repository, so these are very likely not the room's to delete
+Image.new("RGBA", (60, 60), (30, 30, 200, 255)).save(
+    os.path.join(lost, "pieces", "not_ours_at_all.png"))
+json.dump({"pieces": {
+    "orphan_a": {"sheet": "a-sheet-that-went-01", "w": 60, "h": 60, "dpi": 300},
+    "orphan_b": {"sheet": "a-sheet-that-went-01", "w": 60, "h": 60, "dpi": 300},
+    "joined_thing": {"sheet": "", "w": 60, "h": 60, "dpi": 300},
+    "still_here_p01_00": {"sheet": "still-here-01", "w": 60, "h": 60, "dpi": 300}}},
+    open(os.path.join(lost, "pieces", "index.json"), "w"), indent=1)
+json.dump({"pieces": {"orphan_a": {"name": "A name worth keeping"},
+                      "joined_thing": {"name": "Two halves of a spine"}}},
+          open(os.path.join(lost, "manifest.json"), "w"), indent=1)
+
+json.dump({"projects": [bed, other, spare, queue, desk, lost]},
           open(os.path.join(tmp, "home", "projects.json"), "w"), indent=1)
 print("   %d sheets out of %d books" % (len(sheets), len(books)))
 PY
@@ -1145,6 +1176,90 @@ check("and the game now has four", sheets_now() == 4, sheets_now())
 
 sys.exit(1 if bad else 0)
 PYIMPORT
+
+# ⚠️⚠️ REMOVING THE PIECES WHOSE SHEET HAS GONE — AND LEAVING THE TWO KINDS
+# THAT ONLY LOOK LIKE THEM. The designer, 1 September 2026: "how do I remove
+# all the pieces, 'remove this set' doesn't clear the cut pieces, and I can't
+# see any other way to do it." There was no other way. But "Not off any sheet
+# this project knows" covers three different things and only one may be swept:
+# a piece whose sheet was removed, a JOINED piece whose sheet is empty on
+# purpose (fault 89), and a file the index never knew, which may belong to a
+# game's own repository (fault 39). Sweeping either of the last two destroys
+# something nothing can rebuild.
+say "the pieces whose sheet has gone, and the ones that only look like them"
+$PY - "$TMP" "$PORT" <<'PYLOST' || code=1
+import json, os, sys, urllib.error, urllib.request
+tmp, port = sys.argv[1], sys.argv[2]
+API = "http://127.0.0.1:%s/api/p/the-lost-property" % port
+PIECES = os.path.join(tmp, "home", "the-lost-property", "pieces")
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+def call(path, body=None, method="POST"):
+    req = urllib.request.Request(API + path, data=json.dumps(body or {}).encode(),
+                                 headers={"Content-Type": "application/json"},
+                                 method=method)
+    try:
+        return 200, json.load(urllib.request.urlopen(req))
+    except urllib.error.HTTPError as e:
+        return e.code, json.load(e)
+
+
+def pieces():
+    return {p["stem"]: p for p in json.load(urllib.request.urlopen(API + "/pieces"))["pieces"]}
+
+
+now = pieces()
+check("a piece whose sheet was removed is marked as having lost it",
+      now.get("orphan_a", {}).get("lost") is True, now.get("orphan_a", {}).get("lost"))
+# ⭐️⭐️ THE TWO THAT MATTER.
+check("⭐️ a JOINED piece is not — its sheet is empty on purpose",
+      now.get("joined_thing", {}).get("lost") is False, now.get("joined_thing", {}).get("lost"))
+check("⭐️ a file the room did not cut is not either",
+      now.get("not_ours_at_all", {}).get("lost") in (False, None),
+      now.get("not_ours_at_all", {}).get("lost"))
+check("and a piece off a sheet that is still here is not",
+      now.get("still_here_p01_00", {}).get("lost") is False,
+      now.get("still_here_p01_00", {}).get("lost"))
+
+code_, d = call("/pieces/lost")
+check("removing them takes exactly the two that lost their sheet",
+      code_ == 200 and d.get("removed") == 2, d)
+# ⭐️ A NAME IS NOT THROWN AWAY. Somebody deleting a piece has not asked to
+# forget what it was called — the same rule as a name lost across a re-cut.
+check("and keeps the name of the one that had been named",
+      d.get("names_kept") == 1, d.get("names_kept"))
+man = json.load(open(os.path.join(tmp, "home", "the-lost-property", "manifest.json")))
+check("in retired, where a re-cut would have put it",
+      (man.get("retired") or {}).get("orphan_a", {}).get("name") == "A name worth keeping",
+      man.get("retired"))
+
+left = sorted(f for f in os.listdir(PIECES) if f.endswith(".png"))
+check("the two pictures really went from the disk",
+      "orphan_a.png" not in left and "orphan_b.png" not in left, left)
+check("⭐️⭐️ and the joined piece is still there, name and all",
+      "joined_thing.png" in left and
+      (man.get("pieces") or {}).get("joined_thing", {}).get("name") == "Two halves of a spine",
+      left)
+check("⭐️⭐️ as is the file the room did not cut", "not_ours_at_all.png" in left, left)
+check("and so is the piece off the sheet that is still here",
+      "still_here_p01_00.png" in left, left)
+
+# ⚠️ ASKED AGAIN WITH NOTHING TO DO, it refuses in a sentence rather than
+# reporting a cheerful nothing — and says which things it leaves alone, or the
+# person is left wondering why the rows are still on the screen.
+code_, d = call("/pieces/lost")
+check("asked again with nothing lost, it refuses in words",
+      code_ == 400 and "joining" in (d.get("error") or ""), d.get("error"))
+
+sys.exit(1 if bad else 0)
+PYLOST
 
 # ⚠️⚠️ CUTTING THE SHEETS WAITING, AND ONLY THOSE. The designer, 26 August
 # 2026, having outlined 22 new sheets: "I think pressed 'cut every outlined
