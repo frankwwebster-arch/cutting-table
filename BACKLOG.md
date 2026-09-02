@@ -228,6 +228,34 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⚠️⚠️⚠️ A speck of one pixel is no longer cut as a piece — **built**, 2 September 2026
+
+The designer, cutting a real game: *"Three keep coming up as blank... The
+numbering is also haywire - more cut than I have outlined?"* Three sheets, each
+one piece over: 18/19, 15/16, 4/5, and the extra one showed no size at all.
+
+- `[x]` The rogue pieces measured **1 × 2, 1 × 1 and 1 × 1 pixels** — ink
+  stranded inside the tile beside them by that tile's own fill. `keep()` has no
+  floor for a shape a person drew (fault 85, rightly), so a single pixel was
+  cut, numbered, filed and counted as a component.
+- `[x]` `_absorb_dust()` puts a speck under `DUST_PX` into the nearest shape of
+  its own colour — the one whose fill dropped it. Nothing refused, no pixel
+  lost. ⚠️ Not fault 85's floor returning: three orders of magnitude below the
+  smallest piece any real game holds, and a check holds it to that margin.
+- `[x]` `_merge_corners()` as well, from the first (wrong) diagnosis: a
+  four-connected label split by a corner-only pinch is one piece. Real, kept,
+  but **not** what was reported.
+- `[x]` Thirteen checks, teeth tried on both halves. Verified read-only against
+  the designer's own three sheets: 19 → 18, 5 → 4.
+- `[x]` The three already in their project were deleted for them.
+
+⚠️⚠️ **Read fault 96 for the lesson, which is worth more than the fix**: the
+first diagnosis was reasoned out of the source, was wrong, and cost the
+designer an hour. Their own `index.json` had the answer in one line. That is
+habit 2, skipped because the code seemed to explain itself.
+
+See CLAUDE.md 96.
+
 ### `[x]` ⚠️⚠️ Pieces whose sheet has gone can be removed — **built**, 2 September 2026
 
 The designer: *"how do I remove all the pieces, 'remove this set' doesn't clear
