@@ -228,6 +228,23 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⚠️⚠️ An import that replaces sheets now says so — **built**, 2 September 2026
+
+The designer: *"Tile Sheets.pdf was processed but isn't showing."* It had been.
+The room takes a file name it has seen before as a better scan of the same
+sheets and replaces their pictures in place — and then reported them as
+*added*, so the sheet count never moved and it read as a silent failure.
+
+- `[x]` The import says which sheets it **added** and which it **replaced**.
+- `[x]` ⚠️ Where a replaced sheet carried outlines, it says so loudly and names
+  them — those outlines now lie over a picture they were never drawn on.
+- `[x]` ⭐️ And is quiet where nothing was outlined, because a warning nobody
+  needs stops being read.
+- `[x]` One wording, shared by the drop and the fetch-a-link box.
+- `[x]` Eleven checks, on a project of their own.
+
+See CLAUDE.md 94.
+
 ### `[x]` ⭐️⭐️ What scale the scans are — **built**, 1 September 2026
 
 The designer, given a project set up by hand for 600dpi scans: *"can you

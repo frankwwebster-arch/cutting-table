@@ -837,7 +837,15 @@ json.dump({"id": "the-cutting-queue", "name": "The Cutting Queue", "game": "noth
           open(os.path.join(queue, "project.json"), "w"), indent=1)
 json.dump({"sheets": qout}, open(os.path.join(queue, "outlines.json"), "w"), indent=1)
 
-json.dump({"projects": [bed, other, spare, queue]},
+# ⭐️ A project of its own for the import checks, because they add sheets and
+# every other project in this run has its sheet count asserted somewhere.
+desk = os.path.join(tmp, "home", "the-import-desk")
+os.makedirs(desk, exist_ok=True)
+json.dump({"id": "the-import-desk", "name": "The Import Desk", "game": "nothing real",
+           "dpi": 300, "notes": "", "paths": {}, "hooks": [], "sheets": []},
+          open(os.path.join(desk, "project.json"), "w"), indent=1)
+
+json.dump({"projects": [bed, other, spare, queue, desk]},
           open(os.path.join(tmp, "home", "projects.json"), "w"), indent=1)
 print("   %d sheets out of %d books" % (len(sheets), len(books)))
 PY
@@ -1045,6 +1053,98 @@ check("setting it back puts the editor back with it", table_dpi() == 300, table_
 
 sys.exit(1 if bad else 0)
 PYDPI
+
+# ⚠️⚠️ AN IMPORT THAT REPLACES SHEETS RATHER THAN ADDING THEM. The designer,
+# 1 September 2026: "Tile Sheets.pdf was processed but isn't showing." It had
+# been processed perfectly — and had REPLACED thirteen sheets in place, because
+# the room decides what is new by the FILE NAME alone. The page then reported
+# "13 sheets added", which was simply untrue: fault 81's shape, a sentence
+# claiming something nothing was checking. There was no check on any of this.
+say "an import that replaces sheets instead of adding them"
+$PY - "$TMP" "$PORT" <<'PYIMPORT' || code=1
+import json, os, sys, urllib.error, urllib.request
+from PIL import Image
+tmp, port = sys.argv[1], sys.argv[2]
+API = "http://127.0.0.1:%s/api/p/the-import-desk" % port
+bad = []
+
+
+def check(what, ok, saw=""):
+    print(("  ok   " if ok else "  WRONG ") + what + ("   — saw %s" % (saw,) if saw != "" else ""))
+    if not ok:
+        bad.append(what)
+
+
+def send(filename, blob):
+    """The synchronous door, so the answer comes back with the request."""
+    req = urllib.request.Request(
+        API + "/import", data=blob,
+        headers={"X-Filename": urllib.parse.quote(filename), "X-Wait": "1",
+                 "Content-Type": "application/octet-stream"},
+        method="POST")
+    return json.load(urllib.request.urlopen(req))
+
+
+def pdf_of(colour):
+    """A two-page PDF, so the pages have numbers — an IMAGE is always its own
+    new sheet, and only a numbered page can be refreshed in place."""
+    a = Image.new("RGB", (600, 800), colour)
+    b = Image.new("RGB", (600, 800), colour)
+    path = os.path.join(tmp, "two-pages.pdf")
+    a.save(path, "PDF", save_all=True, append_images=[b])
+    return open(path, "rb").read()
+
+
+def sheets_now():
+    return len(json.load(urllib.request.urlopen(API)).get("sheets") or [])
+
+
+first = send("a-box-of-scans.pdf", pdf_of((200, 40, 40)))
+check("a file the room has not seen makes new sheets",
+      len(first.get("sheets") or []) == 2 and len(first.get("added") or []) == 2, first.get("added"))
+check("and nothing was replaced", not (first.get("refreshed") or []), first.get("refreshed"))
+check("the game has those sheets", sheets_now() == 2, sheets_now())
+
+# ⚠️⚠️ THE FAULT. The same NAME, a different picture — which is exactly what
+# the designer did — replaces the sheets rather than adding any.
+again = send("a-box-of-scans.pdf", pdf_of((40, 80, 200)))
+check("⭐️ the same file name again REPLACES those sheets rather than adding",
+      len(again.get("refreshed") or []) == 2, again.get("refreshed"))
+check("and says it added nothing, because it did not",
+      not (again.get("added") or []), again.get("added"))
+check("so the game still has two sheets, not four", sheets_now() == 2, sheets_now())
+check("and it names the sheets it replaced, so the page can say which",
+      all(r.get("label") for r in (again.get("refreshed") or [])),
+      [r.get("label") for r in (again.get("refreshed") or [])])
+
+# ⭐️⭐️ THE HALF THAT MATTERS: outlines are filed under the sheet id, so a
+# replaced picture leaves work lying over artwork it was never drawn on. The
+# room cannot know whether that is wanted — only the person can — so it has to
+# report how much is at risk.
+sid = (again["refreshed"][0]["id"])
+urllib.request.urlopen(urllib.request.Request(
+    API + "/outlines/" + sid,
+    data=json.dumps({"pieces": [{"pts": [[10, 10], [200, 10], [200, 300], [10, 300]],
+                                 "ink": 0, "curve": False}]}).encode(),
+    headers={"Content-Type": "application/json"}, method="PUT"))
+third = send("a-box-of-scans.pdf", pdf_of((30, 160, 60)))
+mine = [r for r in (third.get("refreshed") or []) if r["id"] == sid]
+check("⭐️ and it says how many outlines the replaced sheet was carrying",
+      mine and mine[0].get("outlines") == 1, mine)
+check("while a sheet with nothing drawn on it reports none",
+      any(r.get("outlines") == 0 for r in (third.get("refreshed") or [])),
+      [r.get("outlines") for r in (third.get("refreshed") or [])])
+
+# ⭐️ AND THE WAY ROUND IT IS A DIFFERENT NAME, which is what the room tells
+# somebody to do. A different file name is a different set of sheets.
+other = send("a-different-name.pdf", pdf_of((90, 90, 90)))
+check("a different file name makes new sheets instead of replacing",
+      len(other.get("added") or []) == 2 and not (other.get("refreshed") or []),
+      {"added": other.get("added"), "refreshed": other.get("refreshed")})
+check("and the game now has four", sheets_now() == 4, sheets_now())
+
+sys.exit(1 if bad else 0)
+PYIMPORT
 
 # ⚠️⚠️ CUTTING THE SHEETS WAITING, AND ONLY THOSE. The designer, 26 August
 # 2026, having outlined 22 new sheets: "I think pressed 'cut every outlined

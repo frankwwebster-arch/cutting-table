@@ -134,6 +134,28 @@ come from?* panel has the box, or:
 /usr/bin/python3 cutting_room.py --register /path/to/that/folder
 ```
 
+#### ⚠️⚠️ The same file name means "a better scan of these sheets"
+
+The room decides what is new by the **file name**. Import `Tile Sheets.pdf`
+when you have imported a `Tile Sheets.pdf` before and it does **not** make new
+sheets — it **replaces the pictures** of the sheets that file made last time,
+keeping their ids, their labels and their outlines.
+
+⭐️ That is deliberate and useful: it is how you swap a better scan in
+underneath outlines you have already drawn.
+
+⚠️ **But it is not what you want if this is a different box that happens to
+share a name.** The room says which it did — *"13 sheets replaced in place (a
+file name already used)"* rather than *"13 sheets added"* — and if any of the
+replaced sheets had outlines on them it says so loudly, naming them and how
+many, because those outlines now lie over a picture they were never drawn on.
+
+**To import as new sheets instead, give the file a different name.** A
+different name is a different set of sheets.
+
+⭐️ Images are never affected: a PNG or a TIFF has no page number, so it is
+always its own new sheet.
+
 #### ⭐️⭐️ What scale are the scans?
 
 Everything the room measures comes from one number, and it is worth thirty

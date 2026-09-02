@@ -1399,7 +1399,7 @@
       rows[i].className = "q " + cls;
       rows[i].querySelector(".s").textContent = text;
     }
-    var chain = Promise.resolve(), n = 0, bad = 0, done = 0;
+    var chain = Promise.resolve(), n = 0, bad = 0, done = 0, redone = [];
     arr.forEach(function (f, i) {
       chain = chain.then(function () {
         mark(i, "busy", "sending…");
@@ -1415,16 +1415,24 @@
           })
           .then(function (res) {
             var got = (res && res.sheets ? res.sheets.length : 0);
+            var again = (res && res.refreshed) || [];
             n += got; done++;
-            mark(i, "done", got + (got === 1 ? " sheet" : " sheets"));
+            redone = redone.concat(again);
+            /* ⚠️ "3 sheets" over a file that REPLACED three is the sentence
+               that cost the designer an evening — fault 94. */
+            mark(i, "done", again.length
+              ? again.length + (again.length === 1 ? " sheet replaced" : " sheets replaced")
+              : got + (got === 1 ? " sheet" : " sheets"));
           })
           .catch(function (e) { bad++; mark(i, "failed", e.message.slice(0, 60)); });
       });
     });
     chain.then(function () {
-      prog.textContent = n + " sheet" + (n === 1 ? "" : "s") + " added from " + done +
+      var fresh = n - redone.length;
+      prog.textContent = sayImport(fresh, redone) + " from " + done +
         " file" + (done === 1 ? "" : "s") + (bad ? ", " + bad + " could not be read" : "") +
-        (batch && n ? ", as one set — “" + batch.name + "”. Rename it on its heading." : ".");
+        (batch && fresh ? ", as one set — “" + batch.name + "”. Rename it on its heading." : ".");
+      warnIfReplaced(redone);
       // ⚠️ a set that already has a name keeps it: dropping more sheets into
       // an existing set must not rename it back to its file names
       if (batch && n && !((project && project.books) || {})[batch.prefix]) {
@@ -1434,6 +1442,63 @@
         load();
       }
     });
+  }
+
+  /* ⚠️⚠️ AN IMPORT THAT REPLACED SHEETS MUST SAY SO, AND ONCE.
+     The designer, 1 September 2026, having exported a different scan of a
+     different box under a file name they had used earlier: "Tile Sheets.pdf
+     was processed but isn't showing." It had been processed perfectly. It had
+     REPLACED thirteen sheets in place — same ids, same labels, same outlines,
+     new pictures — because the room decides what is new by the file name
+     alone. The page then said "13 sheets added", which was a plain untruth,
+     and it took an hour of reading timestamps to work out what had happened.
+
+     ⭐️ Replacing is worth keeping — it is how a better scan is swapped in
+     under outlines already drawn. All that was wrong is that nothing said so.
+     ⚠️ ONE WORDING, shared by the drop and the fetch-a-link box, or the two
+     would drift and the one that drifted would be the one that lied. Fault
+     24, for the umpteenth time. See fault 94. */
+  function sayImport(added, redone) {
+    var bits = [];
+    if (added) bits.push(added + " sheet" + (added === 1 ? "" : "s") + " added");
+    if (redone && redone.length) {
+      bits.push(redone.length + " sheet" + (redone.length === 1 ? "" : "s") +
+                " replaced in place (a file name already used)");
+    }
+    return bits.length ? bits.join(", ") : "nothing new";
+  }
+
+  /* ⚠️⚠️ AND WHERE THE REPLACED SHEETS CARRIED OUTLINES, SAY IT LOUDLY.
+     This is the real damage rather than the surprise: an outline is filed
+     under its sheet's id, so replacing the picture leaves the work sitting
+     over artwork it was never drawn on. The room cannot know whether the new
+     scan is the same page laid out the same way — only the person can — so it
+     says exactly what is at risk and leaves the judgement with them.
+     ⭐️ It is quiet when there is nothing to lose: replacing a sheet nobody
+     has outlined is harmless, and a warning nobody needs is a warning that
+     stops being read (fault 50). */
+  function warnIfReplaced(redone) {
+    var atRisk = (redone || []).filter(function (r) { return (r.outlines || 0) > 0; });
+    if (!atRisk.length) return;
+    var drawn = atRisk.reduce(function (t, r) { return t + r.outlines; }, 0);
+    window.alert(
+      "⚠️ " + atRisk.length + " sheet" + (atRisk.length === 1 ? "" : "s") +
+      " you had already outlined " + (atRisk.length === 1 ? "was" : "were") +
+      " replaced, not added.\n\n" +
+      "The room takes a file whose name it has seen before as a better scan " +
+      "of the same sheets, so it swapped the pictures and kept everything " +
+      "else — including " + drawn + " outline" + (drawn === 1 ? "" : "s") + ", which now " +
+      (drawn === 1 ? "lies" : "lie") + " over the new picture" +
+      (atRisk.length === 1 ? "" : "s") + ":\n\n" +
+      atRisk.map(function (r) {
+        return "  • " + r.label + " — " + r.outlines +
+               " outline" + (r.outlines === 1 ? "" : "s");
+      }).join("\n") +
+      "\n\nIf that is what you meant, open one and check the outlines still " +
+      "sit where they should. If it is not — if this was a different scan " +
+      "that happened to share a file name — Settings keeps the outlines you " +
+      "had, and importing under a different file name would have made new " +
+      "sheets instead.");
   }
 
   /* The whole window takes a drop — and a FOLDER is walked to the bottom,
@@ -1527,7 +1592,9 @@
       return watchJob(r.job, "the link");
     }).then(function (res) {
       var n = (res && res.sheets ? res.sheets.length : 0);
-      prog.textContent = n + " sheet" + (n === 1 ? "" : "s") + " added.";
+      var redone = (res && res.refreshed) || [];
+      prog.textContent = sayImport(n - redone.length, redone) + ".";
+      warnIfReplaced(redone);
       hideBar();
       box.value = ""; b.disabled = false; b.textContent = "Fetch it";
       load();

@@ -115,7 +115,7 @@ the middle of their afternoon. See fault 92, which is worth more than the
 feature: the guard was written on the copy of the launcher that was *expected
 to fail*, and not on the copy expected to succeed.
 
-⭐️ **Where it stands.** The room is built, checked by 693 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 704 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered.
@@ -2357,6 +2357,43 @@ rather than by reading the code.
     API nor the field: it is **reading `var DPI` out of the page the room
     actually serves.**
 
+94. ⚠️⚠️ **AN IMPORT DECIDES WHAT IS NEW BY THE FILE NAME ALONE, SO A
+    DIFFERENT SCAN UNDER A NAME YOU HAVE USED BEFORE REPLACES THIRTEEN SHEETS
+    AND SAYS "13 SHEETS ADDED".** The designer, 1 September 2026: *"Tile
+    Sheets.pdf was processed but isn't showing."*
+    It had been processed, perfectly. `import_into()` takes a file whose name
+    it has seen before as **a better scan of the same sheets** and replaces
+    their pictures in place — keeping their ids, their labels, and their
+    outlines — rather than making new ones. Nothing in the room said so, and
+    the page reported the replaced sheets as *added*, so the sheet count did
+    not move and it read as an import that had silently failed. It took an
+    hour of comparing `added` timestamps against PNG mtimes to work out what
+    had actually happened.
+    ⭐️⭐️ **THE BEHAVIOUR IS RIGHT AND THE SILENCE WAS THE FAULT.** Replacing
+    in place is exactly how somebody swaps a better scan in underneath
+    outlines they have already drawn — which is a thing this very evening
+    turned out to want. It cost an evening only because nothing said which of
+    its two quite different jobs it had just done. **Fault 81's shape**: a
+    sentence claiming something nothing was checking, and — as there — *there
+    was no check on any of it*.
+    ⚠️⚠️ **THE REAL DAMAGE IS THE OUTLINES.** An outline is filed under its
+    sheet's id, so a replaced picture leaves the work lying over artwork it
+    was never drawn on. The room cannot know whether the new scan is the same
+    page laid out the same way — **only the person can** — so it says exactly
+    how many outlines are on each replaced sheet and leaves the judgement with
+    them (the same rule as the kinds, the look-alikes and the splitting).
+    ⭐️ **And it is quiet when there is nothing to lose.** Replacing a sheet
+    nobody has outlined is harmless, and a warning nobody needs is a warning
+    that stops being read — fault 50's lesson, arriving on an alert.
+    ⚠️ **ONE WORDING**, shared by the drop and the fetch-a-link box, because
+    two copies would drift and the one that drifted would be the one that
+    lied. Fault 24 again.
+    ⭐️ Eleven checks, and the one that matters is that the same file name
+    twice leaves the game with **two** sheets rather than four. ⚠️ Note they
+    need a **PDF**: an image has no page number, so it is always its own new
+    sheet and can never take this path — which is also the honest advice to
+    anybody it bites.
+
 ---
 
 ## Architecture
@@ -2507,7 +2544,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 693 checks, about a minute
+check/check.sh          # 704 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway

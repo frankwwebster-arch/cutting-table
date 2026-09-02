@@ -2054,8 +2054,33 @@ def fetch_url(url, progress=None):
     return name, data
 
 
-def import_into(project, filename, data, prefix=None, progress=None):
-    """Turn an uploaded file into sheets. Returns the sheet records made."""
+def import_into(project, filename, data, prefix=None, progress=None, report=None):
+    """Turn an uploaded file into sheets. Returns the sheet records made.
+
+    ⚠️⚠️ `report` IS HOW THE ROOM SAYS WHAT IT DID, and it exists because this
+    function has two quite different behaviours that looked identical from the
+    outside. A file whose name matches one already imported does NOT make new
+    sheets: it REPLACES the pictures of the sheets that file made before,
+    keeping their ids, their labels and — the dangerous part — their outlines.
+
+    The designer, 1 September 2026, having exported a different scan of a
+    different box under a name they had used before: "Tile Sheets.pdf was
+    processed but isn't showing." It had been processed. It had quietly
+    replaced thirteen sheets, and the page said "13 sheets added", which is
+    fault 81's shape — a sentence claiming something nothing was checking.
+
+    ⭐️ Refreshing in place is worth keeping: it is how somebody swaps a better
+    scan in under outlines they have already drawn. But it must be SAID, and
+    where the sheets being replaced carry outlines it must be said loudly,
+    because those outlines now lie over a picture that may be nothing like the
+    one they were drawn on. See fault 94.
+
+    Callers pass a dict; it comes back with `added` and `refreshed` in it, and
+    is threaded through the zip recursion so a folder reports as one thing.
+    """
+    if report is not None:
+        report.setdefault("added", [])
+        report.setdefault("refreshed", [])
     name = os.path.basename(filename)
     ext = os.path.splitext(name)[1].lower()
     base = prefix or slug(name)
@@ -2089,7 +2114,7 @@ def import_into(project, filename, data, prefix=None, progress=None):
                         continue
                     if mext in IMAGE_EXT + (".pdf", ".docx", ".doc"):
                         made += import_into(project, os.path.basename(member), z.read(member),
-                                            None, progress)
+                                            None, progress, report)
             return made
         else:
             raise RuntimeError("I do not know how to read a %s file. PDF, PNG, JPEG, TIFF, DOCX, DOC or ZIP." % (ext or "nameless"))
@@ -2106,7 +2131,21 @@ def import_into(project, filename, data, prefix=None, progress=None):
             for page, path, label in pages:
                 if page is not None and (base + "-%02d" % page) in existing and \
                         any(s.get("source") == name for s in project.sheets if s["id"] == base + "-%02d" % page):
-                    sid = base + "-%02d" % page           # same file again: refresh the image
+                    # ⚠️⚠️ THE SAME FILE NAME AGAIN, so this REPLACES the
+                    # picture of a sheet that already exists rather than making
+                    # a new one — keeping its id, its label and its outlines.
+                    # That is how a better scan is swapped in under work
+                    # already done, and it is also how a completely different
+                    # scan silently overwrote thirteen sheets. It is only safe
+                    # because the room now says so. See fault 94.
+                    sid = base + "-%02d" % page
+                    if report is not None:
+                        drew = len(((project.outlines().get("sheets") or {}).get(sid)
+                                    or {}).get("pieces") or [])
+                        report["refreshed"].append(
+                            {"id": sid,
+                             "label": project.sheet_title(project.sheet(sid) or {"id": sid}),
+                             "outlines": drew})
                 else:
                     n = (max(used_nums) + 1) if used_nums else 1
                     while (base + "-%02d" % n) in existing:
@@ -2122,6 +2161,8 @@ def import_into(project, filename, data, prefix=None, progress=None):
                            "done": False, "rot": 0, "source": name, "added": now_ms()}
                     project.sheets.append(rec)
                     existing.add(sid)
+                    if report is not None:
+                        report["added"].append(sid)
                 else:
                     rec.update({"w": w, "h": h, "source": name})
                 for stale in (os.path.join(project.p("cache"), sid + ".jpg"),
@@ -4137,11 +4178,19 @@ class Room(BaseHTTPRequestHandler):
             data = self.body()
             if not data:
                 return self.send_json({"error": "empty upload"}, 400)
+            # ⚠️ `report` — what the import DID, which is not always what it
+            # looks like: a file whose name has been used before replaces the
+            # pictures of the sheets it made last time. See fault 94.
             if self.headers.get("X-Wait"):
-                made = import_into(pr, fname, data, prefix)
-                return self.send_json({"ok": True, "sheets": made})
-            job = start_job("import " + fname,
-                            lambda progress: {"sheets": import_into(pr, fname, data, prefix, progress)})
+                report = {}
+                made = import_into(pr, fname, data, prefix, None, report)
+                return self.send_json(dict({"ok": True, "sheets": made}, **report))
+
+            def run(progress):
+                report = {}
+                made = import_into(pr, fname, data, prefix, progress, report)
+                return dict({"sheets": made}, **report)
+            job = start_job("import " + fname, run)
             return self.send_json({"job": job["id"]})
 
         if head == "fetch" and method == "POST":
@@ -4153,11 +4202,12 @@ class Room(BaseHTTPRequestHandler):
 
             def run(progress):
                 made = []
+                report = {}
                 for i, u in enumerate(urls, 1):
                     progress(i - 1, len(urls), "fetching link %d of %d" % (i, len(urls)))
                     name, blob = fetch_url(u, progress)
-                    made += import_into(pr, name, blob, prefix, progress)
-                return {"sheets": made}
+                    made += import_into(pr, name, blob, prefix, progress, report)
+                return dict({"sheets": made}, **report)
             job = start_job("fetch %d link(s)" % len(urls), run)
             return self.send_json({"job": job["id"]})
 
