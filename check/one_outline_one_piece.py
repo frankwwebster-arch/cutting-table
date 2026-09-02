@@ -102,6 +102,48 @@ _, n4 = S.label_shapes(solo, colour4)
 check("an ordinary, unpinched piece is still exactly one piece",
       n4 == 1, n4)
 
+# ---- ⚠️⚠️ THE ONE THAT WAS REALLY REPORTED: a speck of a pixel or two,
+# stranded clear of the tile whose own fill dropped it. Two of these were
+# read off a real game — one 1x2 pixels, one a single pixel — and each had
+# been cut, numbered and counted as a whole piece of cardboard.
+dusty = np.zeros((400, 400), bool)
+dusty[40:360, 40:360] = True             # the tile
+dusty[200, 380] = True                   # a speck well clear of it
+colour5 = np.zeros((400, 400, 3), np.uint8)
+colour5[dusty] = [255, 45, 149]
+_, n5 = S.label_shapes(dusty, colour5)
+check("a speck of a pixel off a tile's own fill is not a piece of its own",
+      n5 == 1, n5)
+check("and its pixels are not thrown away — they go into the shape it came off",
+      int((S.label_shapes(dusty, colour5)[0] > 0).sum()) == int(dusty.sum()))
+
+# ⚠️ THE NOISE TEST, and it is the important half: raising the floor until the
+# specks go is the cheap way to pass everything above, and it would refuse
+# real cardboard. The smallest piece in a real game measures 0.288 square
+# inches — a hundred thousand pixels at 600dpi, thousands even at 150.
+small_but_real = np.zeros((400, 400), bool)
+small_but_real[40:360, 40:360] = True
+small_but_real[10:35, 10:35] = True      # a 25 x 25 px piece, well over the floor
+colour6 = np.zeros((400, 400, 3), np.uint8)
+colour6[small_but_real] = [255, 45, 149]
+_, n6 = S.label_shapes(small_but_real, colour6)
+check("but a genuinely small piece somebody drew is still cut (fault 85 stands)",
+      n6 == 2, n6)
+check("and the floor is far below the smallest piece a real game has ever held",
+      S.DUST_PX < (0.288 * 150 * 150) / 10, (S.DUST_PX, 0.288 * 150 * 150))
+
+# ⚠️ two specks near each other must not merge into one slightly bigger speck
+# and go on being cut as a piece — every speck lands on something real.
+two_specks = np.zeros((400, 400), bool)
+two_specks[40:360, 40:360] = True
+two_specks[200, 380] = True
+two_specks[202, 381] = True
+colour7 = np.zeros((400, 400, 3), np.uint8)
+colour7[two_specks] = [255, 45, 149]
+_, n7 = S.label_shapes(two_specks, colour7)
+check("two specks near each other both land on the piece, not on one another",
+      n7 == 1, n7)
+
 print("")
 if bad:
     print("\033[31m%d of these checks are WRONG\033[0m" % len(bad))

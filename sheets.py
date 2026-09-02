@@ -29,6 +29,13 @@ WHITE = 242             # the paper margin counts as background too
 SEAL = 1                # shrink the free space before flooding, so the flood
                         # cannot squeeze through a hairline gap
 MIN_PIECE_IN = 0.25     # anything smaller in both directions is scanner dirt
+# ⚠️ A SPECK THIS SMALL IS AN ARTEFACT OF A FILL, NOT A PIECE. The rogue one
+# that found this was 1 x 2 pixels. It is not fault 85's floor returning: the
+# smallest real piece ever cut is 0.288 square inches — over a hundred thousand
+# pixels at 600dpi, thousands even at 150 — so this sits three orders of
+# magnitude below anything anybody has drawn on purpose, and it absorbs the
+# speck into its own shape rather than refusing it. See _absorb_dust().
+DUST_PX = 256           # px in a blob, below which it is a fleck off a fill
 MAX_SHEET_FRACTION = 0.85   # anything bigger than this is the scan's frame
 FIELD_FRACTION = 0.015      # a flat expanse this big is the sheet, not a piece
 
@@ -280,13 +287,76 @@ def _merge_corners(lab, n):
     return remap[lab], nxt
 
 
+def _absorb_dust(lab, n, floor=DUST_PX):
+    """A speck of a few pixels is not a piece somebody meant to draw.
+
+    ⚠️⚠️ THE ROGUE PIECE THAT STARTED THIS WAS ONE PIXEL WIDE AND TWO TALL.
+    A sheet came back with nineteen pieces cut off eighteen outlines, and the
+    extra one was two pixels of ink sitting inside the tile beside it — an
+    artefact of that tile's OWN fill, where the curve through a sharp corner
+    overshoots and strands a dot clear of the shape it belongs to. `keep()`
+    has no floor at all for a shape a person drew (fault 85, quite rightly),
+    so those two pixels were cut, numbered, filed and counted, and showed
+    "?" x "?" everywhere a size should be, because there was nothing in them
+    to measure.
+    ⭐️ THIS IS NOT FAULT 85'S FLOOR COMING BACK. That floor was about a
+    PIECE being refused for its size, and it must never return: the smallest
+    real piece in a real game measures 0.288 square inches — a hundred
+    thousand pixels at 600dpi, and thousands even at 150. This is three
+    orders of magnitude below that, and it does not REFUSE anything: the
+    speck is absorbed into the nearest shape of its own colour, which is the
+    shape whose fill dropped it, so not one pixel is thrown away.
+    """
+    if n < 2:
+        return lab, n
+    sizes = np.bincount(lab.reshape(-1), minlength=n + 1)
+    dust = [i for i in range(1, n + 1) if 0 < sizes[i] < floor]
+    if not dust:
+        return lab, n
+    boxes = {}
+    for i in range(1, n + 1):
+        if not sizes[i]:
+            continue
+        m = lab == i
+        rows = m.any(axis=1)
+        cols = m.any(axis=0)
+        y0 = int(rows.argmax()); y1 = int(rows.size - rows[::-1].argmax())
+        x0 = int(cols.argmax()); x1 = int(cols.size - cols[::-1].argmax())
+        boxes[i] = (x0, y0, x1, y1)
+    # ⚠️ every speck must land on something REAL, or two specks that happen to
+    # be near each other would merge into one slightly bigger speck and still
+    # be cut as a piece.
+    solid = [i for i in boxes if i not in dust]
+    if not solid:
+        return lab, n
+
+    def gap(a, b):
+        ax0, ay0, ax1, ay1 = boxes[a]
+        bx0, by0, bx1, by1 = boxes[b]
+        dx = max(ax0 - bx1, bx0 - ax1, 0)
+        dy = max(ay0 - by1, by0 - ay1, 0)
+        return dx * dx + dy * dy
+
+    into = {d: min(solid, key=lambda i: gap(d, i)) for d in dust}
+    remap = np.zeros(n + 1, np.int32)
+    nxt = 0
+    for i in range(1, n + 1):
+        if not sizes[i] or i in into:
+            continue
+        nxt += 1
+        remap[i] = nxt
+    for d, host in into.items():
+        remap[d] = remap[host]
+    return remap[lab], nxt
+
+
 def label_shapes(ink, colour):
     """One label per drawn shape. Shapes are separated by being apart, or by
     being drawn in different colours — so two that overlap still come out as
     two pieces if they are different colours."""
     if colour is None:
         lab, n = label(ink)
-        return _merge_corners(lab, n)
+        return _absorb_dust(*_merge_corners(lab, n))
     # ⚠️ THE KEY STAYS ONE BYTE WIDE. `colour.astype(np.int16)` made a copy
     # three times the size of the sheet — a gigabyte on a 170-megapixel scan —
     # to hold numbers that never exceed 215 (5*36 + 5*6 + 5). uint8 arithmetic
@@ -317,7 +387,7 @@ def label_shapes(ink, colour):
         lab, n = label(sel[y0:y1, x0:x1])
         if not n:
             continue
-        lab, n = _merge_corners(lab, n)
+        lab, n = _absorb_dust(*_merge_corners(lab, n))
         sub = out[y0:y1, x0:x1]
         hit = lab > 0
         sub[hit] = lab[hit] + total
