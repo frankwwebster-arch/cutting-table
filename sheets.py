@@ -231,12 +231,62 @@ def within(mask, k):
     return out
 
 
+def _merge_corners(lab, n):
+    """Two same-colour blobs touching only at a corner are one piece, not
+    two. `label()` is four-connected on purpose (see its own note), so a
+    hand-drawn outline whose fill pinches to a single diagonal pixel — a
+    tight notch, a sharp reflex corner the curve smoothing overshoots —
+    comes back as two labels that only ever touch corner to corner. Left
+    alone, `keep()` has no floor for a shape a person drew (fault 85), so
+    that sliver is kept as a real extra piece: a designer cutting a real
+    game saw a sheet come back with one more piece cut than outlined, and
+    the extra piece was a handful of near-invisible pixels off a notched
+    edge. This is the same rule `label_shapes()` already states — shapes
+    are separated by being APART — read to include a corner."""
+    if n < 2:
+        return lab, n
+    parent = list(range(n + 1))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+
+    merged = False
+    for a, b in ((lab[:-1, :-1], lab[1:, 1:]), (lab[:-1, 1:], lab[1:, :-1])):
+        hit = (a > 0) & (b > 0) & (a != b)
+        if not hit.any():
+            continue
+        for pa, pb in np.unique(np.stack([a[hit], b[hit]], axis=1), axis=0):
+            union(int(pa), int(pb))
+            merged = True
+    if not merged:
+        return lab, n
+
+    remap = np.zeros(n + 1, np.int32)
+    nxt = 0
+    for i in range(1, n + 1):
+        r = find(i)
+        if remap[r] == 0:
+            nxt += 1
+            remap[r] = nxt
+        remap[i] = remap[r]
+    return remap[lab], nxt
+
+
 def label_shapes(ink, colour):
     """One label per drawn shape. Shapes are separated by being apart, or by
     being drawn in different colours — so two that overlap still come out as
     two pieces if they are different colours."""
     if colour is None:
-        return label(ink)
+        lab, n = label(ink)
+        return _merge_corners(lab, n)
     # ⚠️ THE KEY STAYS ONE BYTE WIDE. `colour.astype(np.int16)` made a copy
     # three times the size of the sheet — a gigabyte on a 170-megapixel scan —
     # to hold numbers that never exceed 215 (5*36 + 5*6 + 5). uint8 arithmetic
@@ -267,6 +317,7 @@ def label_shapes(ink, colour):
         lab, n = label(sel[y0:y1, x0:x1])
         if not n:
             continue
+        lab, n = _merge_corners(lab, n)
         sub = out[y0:y1, x0:x1]
         hit = lab > 0
         sub[hit] = lab[hit] + total

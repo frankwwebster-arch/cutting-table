@@ -91,7 +91,17 @@ fix is to write it down here, not to put it in the next prompt.
 
 ---
 
-## Status (1 September 2026)
+## Status (2 September 2026)
+
+**2 September**: the designer, mid-way through cutting a real game's sheets:
+*"Three keep coming up as blank... The numbering is also haywire - more cut
+than I have outlined?"* A hand-drawn outline with a sharp notch could pinch
+into two four-connected blobs touching only at a corner, and with no floor on
+a shape a person drew, the sliver was kept as a real extra piece — one more
+*cut* than *outlined*, with no pixels worth measuring. See fault 96: the fix
+reads `label_shapes()`'s own rule — shapes are separated by being apart — to
+include a corner, not only an edge, and the existing full-recut sweep clears
+out the rogue pieces already sitting in an affected project on its own.
 
 **1 September**: the designer, having cut and named every component in the
 second game's core box and ticked every one of its seventeen sheets: *"There
@@ -115,7 +125,7 @@ the middle of their afternoon. See fault 92, which is worth more than the
 feature: the guard was written on the copy of the launcher that was *expected
 to fail*, and not on the copy expected to succeed.
 
-⭐️ **Where it stands.** The room is built, checked by 716 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 724 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered.
@@ -2430,6 +2440,46 @@ rather than by reading the code.
     says what it leaves alone — otherwise somebody looking at rows still on
     the screen is left wondering whether the button worked (fault 58).
 
+96. ⭐️⭐️ **A SHARP NOTCH CAN PINCH ONE OUTLINE INTO TWO PIECES, TOUCHING
+    ONLY AT A CORNER.** The designer, 2 September 2026, having cut a real
+    game's sheets: *"Three keep coming up as blank, even though when I 'mend
+    on page' they clearly appear, and it seems I can cut them. The numbering
+    is also haywire - more cut than I have outlined?"* Two sheets, and the
+    same shape both times: one more piece cut than outlines drawn, and the
+    extra piece had no size to show at all.
+    ⚠️⚠️ **`label()` IS FOUR-CONNECTED ON PURPOSE** — its own note says so —
+    but a hand-drawn outline whose fill pinches down to a single diagonal
+    pixel, on a tight notch or a sharp reflex corner the curve smoothing in
+    `flatten()`/`_arc()` overshoots, comes back as TWO labels that only ever
+    touch corner to corner. `keep()` has no floor at all for a shape a person
+    drew (fault 85), so the sliver — often a handful of near-invisible pixels
+    — was kept as a real extra piece: one more *cut* than *outlined*, and one
+    with no opaque pixels worth measuring, so `piece_stats()` had nothing to
+    report and every size on the page read *"?" × "?"*.
+    ⭐️ **The rule was already written down and simply too narrow.**
+    `label_shapes()`'s own docstring says shapes *"are separated by being
+    apart"* — which was only ever checked edge to edge. A corner is a touch
+    too, and reading the rule that way is what fixes it: `_merge_corners()`
+    unions any same-colour labels that share a diagonal neighbour, before
+    `keep()` ever sees them, so two blobs from one pinched outline become one
+    piece again. Two blobs from genuinely SEPARATE outlines, with a real gap
+    between them, are untouched — the fix is confined to the moment two
+    labels actually touch.
+    ⚠️ **ONE PLACE, both callers.** `label_shapes()` is what `cut_sheet()`
+    (the room) and `cut.py`'s own standalone cutter both call from a painted
+    mask, so the fix reaches the offline table's cut as well without a second
+    copy of it — fault 24's rule, holding again.
+    ⭐️ Teeth tried: with `_merge_corners()` made a no-op, four of the eight
+    checks in `check/one_outline_one_piece.py` go red, naming the corner-pinch
+    case and both `label_shapes()` paths — colour-keyed and bare — that
+    depend on it.
+    ⭐️ **Fixing the split is what clears the rogue pieces already sitting in
+    a project** — no separate "delete this" was needed. A full re-cut of the
+    sheet (not the single-piece mend, which only ever touches the one piece
+    it was asked for) sweeps every old piece for that sheet and rebuilds from
+    the current outlines, so once the merge is in place, pressing *Cut* again
+    on an affected sheet reconciles it on its own.
+
 ---
 
 ## Architecture
@@ -2484,6 +2534,10 @@ sheets.py                the image work: flood, label, separate, draft — and
                          inches, read off a real game — fault 76).
                          ⚠️ The room and the baked table both use these; there
                          is no second copy. Faults 71 and 76.
+                         ⭐️ `label_shapes()` merges same-colour labels that
+                         only touch at a corner (`_merge_corners()`) — a
+                         hand-drawn outline with a sharp notch can pinch into
+                         two four-connected blobs otherwise. Fault 96.
 demo/make_demo_sheet.py  a pretend sheet, so the repo needs nobody's artwork
 docs/make_guide_pictures.sh  photographs the room for GUIDE.md — a throwaway
                          game in a home of its own, on a port of its own, off
@@ -2496,6 +2550,9 @@ check/check.sh           everything that can be checked without a person
                          draws, and — the half that matters — the ones it
                          refuses to call a rectangle or a circle. Draws its
                          own sheet, unevenly lit and speckled. See fault 71.
+  check/one_outline_one_piece.py  ⭐️ a hand-drawn outline that pinches to a
+                         single diagonal pixel is still ONE piece, not two —
+                         `_merge_corners()`'s own check. See fault 96.
 ```
 
 **The server is one file on purpose.** Standard library plus numpy and Pillow;
@@ -2580,7 +2637,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 716 checks, about a minute
+check/check.sh          # 724 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -2783,6 +2840,12 @@ teeth were tried and found blunt the first time — widening the tile rule to
 swallow whole boards left every silence check green, because each of them
 happened to be settled by a *different* rule. The fences round each band are
 there now.
+
+`check/one_outline_one_piece.py` is `label_shapes()`'s own check, no browser
+and no project: hand-built masks, the same way the checks above test `keep()`
+and `guess_kind()` directly. ⭐️ Its teeth were tried by making `_merge_corners()`
+a no-op — four of its eight checks go red, naming the corner-pinch case and
+both the colour-keyed and bare `label_shapes()` paths that depend on it.
 
 `check/names_across_a_recut.py` is the other half, and needs no browser — it is
 the cut itself. **Names, and variant marks, following their pieces across a

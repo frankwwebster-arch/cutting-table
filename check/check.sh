@@ -94,6 +94,7 @@ $PY -c "import ast; ast.parse(open('cut.py').read())"
 $PY -c "import ast; ast.parse(open('sheets.py').read())"
 $PY -c "import ast; ast.parse(open('check/names_across_a_recut.py').read())"
 $PY -c "import ast; ast.parse(open('check/the_automatic_pass.py').read())"
+$PY -c "import ast; ast.parse(open('check/one_outline_one_piece.py').read())"
 # ⚠️ A patch whose anchor has drifted raises here rather than serving an
 # editor that quietly saves nothing.
 $PY -c "import sys; sys.path.insert(0,'.'); import cutting_room; cutting_room.table_template()"
@@ -561,6 +562,15 @@ $PY check/guessing_the_kind.py
 # holds.
 say "does the automatic pass draw the shape that is printed — and only where it is sure?"
 $PY check/the_automatic_pass.py
+
+# ⭐️⭐️ ONE OUTLINE, ONE PIECE. The designer, 2 September 2026, having cut a
+# real game: "Three keep coming up as blank... The numbering is also haywire
+# - more cut than I have outlined?" A hand-drawn outline that pinches to a
+# single diagonal pixel — a tight notch, a sharp corner the curve smoothing
+# overshoots — was coming back as two four-connected labels instead of one,
+# and the sliver had no floor to stop it being kept as a real extra piece.
+say "is a hand-drawn outline still one piece where its fill only touches itself at a corner?"
+$PY check/one_outline_one_piece.py
 
 # ⭐️⭐️ EVERY CONTROL SAYS WHAT IT DOES. The designer, 23 August 2026: "I don't, for
 # example, have any idea what 'straight to the table' means on the project
