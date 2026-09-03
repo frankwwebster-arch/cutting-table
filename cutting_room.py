@@ -4413,6 +4413,36 @@ class Room(BaseHTTPRequestHandler):
                                "guides": d.get("guides") or [], "dpi": d.get("dpi") or 0,
                                "stamp": int(d.get("stamp") or now_ms()),
                                "w": s.get("w"), "h": s.get("h"), "label": s.get("label")}
+                        # ⚠️⚠️ A SAVE THAT CHANGES NOTHING MUST NOT MAKE THE
+                        # SHEET STALE. `stamp` is the whole of how the room
+                        # decides a sheet has been outlined again since its cut
+                        # (cut_state), and every such sheet goes back into
+                        # *Cut every outlined sheet* — so a save carrying the
+                        # identical work but a newer stamp puts a finished
+                        # sheet in the queue for ever.
+                        #
+                        # The designer, 3 September 2026: "it said 67 sheets
+                        # needed cutting... but I expected 66. I think there
+                        # may be a bug with the core box components, because
+                        # when I tried to 'put that set by' it noted there was
+                        # 1 sheet outlined (even though all 11 sheets have been
+                        # cut and finished with)." It was core-01, and it had
+                        # been silently re-cut on every run: the editor mends
+                        # repeated ink colours as a sheet loads, that sheet has
+                        # 17 outlines against a palette of 12, so the repeat is
+                        # unavoidable and it "mended" and saved every time.
+                        # Fifteen of that game's sheets were in the same state.
+                        #
+                        # ⭐️ This is fault 49's rule — "a save that changes
+                        # nothing must keep nothing" — arriving on staleness
+                        # rather than on the history. The editor's end is
+                        # mended too, but this is the guard that holds however
+                        # a pointless save arrives.
+                        was = (book.get("sheets") or {}).get(sid) or {}
+                        same = all(was.get(k) == rec[k]
+                                   for k in ("pieces", "draft", "guides", "dpi"))
+                        if same and was.get("stamp"):
+                            rec["stamp"] = was["stamp"]
                         book.setdefault("sheets", {})[sid] = rec
                         pr.save_outlines(book)
                     # ⚠️ so that closing the room knows somebody is at work

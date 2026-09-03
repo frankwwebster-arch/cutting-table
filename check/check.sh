@@ -1566,6 +1566,44 @@ check("asking for an outline that is not there cuts the sheet, and does not fail
       code == 200 and not d.get("one") and len(d.get("made") or []) == 3,
       [code, d.get("one"), len(d.get("made") or [])])
 
+# ⚠️⚠️ A SAVE THAT CHANGES NOTHING MUST NOT PUT A FINISHED SHEET BACK IN THE
+# QUEUE. The designer, 3 September 2026: "it said 67 sheets needed cutting...
+# but I expected 66. I think there may be a bug with the core box components,
+# because when I tried to 'put that set by' it noted there was 1 sheet
+# outlined (even though all 11 sheets have been cut and finished with)."
+#
+# It was one sheet of a box finished with days before. The editor mends
+# repeated ink colours as a sheet loads and saves when it does; the palette
+# holds twelve inks and that sheet has seventeen outlines, so the repeat could
+# never be mended — it "mended" and saved on every single load, the stamp
+# moved, and the sheet was stale for ever. Fifteen sheets of that game were in
+# the same state, silently re-cut on every run.
+#
+# ⭐️ Fault 49's rule on staleness rather than on the history. The teeth were
+# tried: keep the stamp bump and the second of these goes red.
+#
+# ⚠️ On oldbox-01, which nothing after this reads: the sheet is cut and its
+# three outlines are settled, which is exactly the state the fault needs.
+same = json.load(urllib.request.urlopen(API + "/outlines/oldbox-01"))["pieces"]
+call("/cut/oldbox-01", {})
+code, d = call("/cut-all", {})
+check("a sheet just cut is not waiting to be cut",
+      "oldbox-01" not in json.dumps(d), d)
+_t.sleep(1.1)
+call("/outlines/oldbox-01", {"pieces": same}, "PUT")
+code, d = call("/cut-all", {})
+check("saving the identical outlines again does not make it stale",
+      "oldbox-01" not in json.dumps(d), d)
+# ⭐️ ...and a real edit still does, or the fix would have gone too far and
+# nothing would ever be re-cut again. That is the cheap way to pass the above.
+moved = [dict(p) for p in same]
+moved[0] = dict(moved[0], pts=[[x + 10, y] for x, y in moved[0]["pts"]])
+call("/outlines/oldbox-01", {"pieces": moved}, "PUT")
+code, d = call("/cut-all", {})
+check("but moving an outline does put the sheet back in the queue",
+      "oldbox-01" in json.dumps(d), d)
+call("/cut/oldbox-01", {})           # leave it as it was found: cut and clean
+
 # ⚠️⚠️ A PIECE THAT FILLS THE SHEET IS STILL A PIECE, IF SOMEBODY DREW IT.
 # The designer, 26 August 2026: "I have outlined the single large component on
 # the sheet. But it won't cut. Is that a size constraint?" It was: 90% of the

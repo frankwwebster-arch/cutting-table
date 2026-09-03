@@ -2085,14 +2085,22 @@ const SHAPE = `(function () {
        green light over a button that does nothing gets written. */
     {
       console.log("\nthe button that cuts a run of sheets says what it will do");
-      // put fresh outlines on the two newbox sheets, so they are waiting
-      // again while oldbox-01 stays cut and untouched
+      /* put fresh outlines on the two newbox sheets, so they are waiting
+         again while oldbox-01 stays cut and untouched.
+         ⚠️ THEY HAVE TO BE DIFFERENT OUTLINES, not the same ones written
+         again. This wrote back exactly what was already on newbox-01 and
+         relied on the save itself making the sheet stale — which was the
+         fault of 3 September 2026: a sheet that had changed in no way was put
+         back in the cut queue, so one of the designer's finished boxes was
+         silently re-cut on every run. Now that a save changing nothing
+         changes nothing, a check that wants a sheet waiting must move
+         something. */
       for (const sid of ["newbox-01", "newbox-02"]) {
         await fetch(`${ROOM}/api/p/the-cutting-queue/outlines/${sid}`,
           { method: "PUT", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ pieces: [
-              { pts: [[200, 200], [700, 200], [700, 700], [200, 700]] },
-              { pts: [[900, 900], [1400, 900], [1400, 1400], [900, 1400]] }] }) });
+              { pts: [[220, 220], [720, 220], [720, 720], [220, 720]] },
+              { pts: [[920, 920], [1420, 920], [1420, 1420], [920, 1420]] }] }) });
       }
       await page.go(`${ROOM}/p/the-cutting-queue/?tab=sheets`);
       await sleep(500);

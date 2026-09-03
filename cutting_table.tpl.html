@@ -1205,16 +1205,35 @@
   }
 
   /* Anything stored back when colours could repeat gets sorted out on the
-     way in, rather than leaving the designer to spot it. */
+     way in, rather than leaving the designer to spot it.
+
+     ⚠️⚠️ IT ONLY COUNTS AS MENDED IF A COLOUR ACTUALLY CHANGED. The palette
+     holds twelve inks, so on a sheet with more than twelve outlines a repeat
+     is not damage — it is arithmetic, and nothing can mend it. This asked
+     "is this colour already used?" and saved whenever the answer was yes, so
+     such a sheet SAVED EVERY TIME IT WAS OPENED, with the identical work.
+     That bumps the outlines' stamp, which is how the room decides a sheet has
+     been outlined again since its cut, so the sheet went back into *Cut every
+     outlined sheet* for ever and was silently re-cut on every run. The
+     designer, 3 September 2026: "it said 67 sheets needed cutting... but I
+     expected 66." Fifteen sheets of that game were in that state, one of them
+     a 17-outline sheet in a box finished with days earlier.
+
+     ⭐️ `nextInk` still spreads the repeats as far apart as it can, which is
+     worth doing; it is deterministic, so the second load agrees with the
+     first and there is nothing to write. The room refuses a stale-making
+     save of unchanged work as well — one guard at each end, because this one
+     cannot know what is already on the disk. */
   function recolour() {
     var seen = {}, mended = 0;
     pieces.forEach(function (p, i) {
       if (p.ink === undefined || seen[p.ink]) {
+        var before = p.ink;
         var was = pieces;
         pieces = pieces.slice(0, i);          // only what came before counts
         p.ink = nextInk(p.pts);
         pieces = was;
-        mended++;
+        if (p.ink !== before) mended++;
       }
       seen[p.ink] = true;
     });
