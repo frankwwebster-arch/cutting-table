@@ -1853,7 +1853,16 @@
      file on disk stays exactly as it came off the sheet, which is what a
      re-cut and the look-alike hash both depend on. So every place that shows
      a piece has to apply the turn itself, and now every place asks here. */
-  function turnOf(d) { return parseInt((d || {}).rotate || 0, 10) || 0; }
+  /* ⚠️ parseFloat, not parseInt. A piece levelled by 1.4 degrees read back
+     as 1 and the levelling looked as though it had half worked — see the
+     drag-to-turn handle below, and fault 15, which is why every place that
+     shows a piece asks HERE rather than reading the field itself. */
+  function turnOf(d) { return Math.round((parseFloat((d || {}).rotate || 0) || 0) * 10) / 10; }
+  /* ⭐️ Is this turn nearer a quarter than a straight one? A picture on its
+     side has to be held to the SHORTER side of its box or it is clipped, and
+     that was decided by `r % 180`, which is true of 2 degrees as well as of
+     90. A card levelled by two degrees is not on its side. */
+  function quarterish(r) { var a = ((r % 180) + 180) % 180; return a > 45 && a < 135; }
   /* ⭐️ A LOOK-ALIKE IS NO USE AT FORTY-SIX PIXELS.
      The designer, 23 August 2026: "if platform is suggesting '[n] pieces look like
      this one' it's incredibly difficult to see them in the tiny viewport it
@@ -2147,7 +2156,7 @@
     return ' data-big="' + BASE + "/piece/" + encodeURIComponent(q.stem) + '.png"' +
       ' data-bigcap="' + esc(q.stem + (q.w_in ? "  ·  " + q.w_in + " × " + q.h_in + " in" : "") +
                             ((q.data && q.data.name) ? "  ·  " + q.data.name : "")) + '"' +
-      (r ? ' data-bigrot="rotate(' + r + 'deg)" data-bigturn="' + (r % 180 ? "turned" : "") + '"' : "");
+      (r ? ' data-bigrot="rotate(' + r + 'deg)" data-bigturn="' + (quarterish(r) ? "turned" : "") + '"' : "");
   }
 
   function turned(d) {
@@ -2155,7 +2164,7 @@
     if (!r) return "";
     // a quarter turn swaps the picture's width and height, so in a box that
     // is not square it must be held to the SHORTER side or it is clipped
-    return ' class="' + (r % 180 ? "turned" : "") + '" style="transform:rotate(' + r + 'deg)"';
+    return ' class="' + (quarterish(r) ? "turned" : "") + '" style="transform:rotate(' + r + 'deg)"';
   }
   var pieceFilter = "", pieceOrder = "book";
 
@@ -2992,7 +3001,7 @@
     var p = piecesData.pieces.filter(function (x) { return x.stem === stem; })[0];
     if (!p) return;
     var d = p.data || {};
-    var rot = parseInt(d.rotate || 0, 10) || 0;
+    var rot = turnOf(d);
     /* ⚠️ The grid is a RULER — one square, one inch — so the honest thing is
        96 CSS px to the inch. But a large sheet is nine inches tall and would
        run off the bottom of the screen with its own feet cut off, which is
@@ -3136,7 +3145,11 @@
       (Object.keys(types).length ? '<label class="f">Type (the rule it plays by, for terrain)</label><select id="fType">' + typeOpts + "</select>" : '<input id="fType" type="hidden" value="' + esc(d.type || "") + '">') +
       '<label class="f" data-tip="The word the game itself uses for this piece in its rules — damaged, spent, wound. Left blank by most people; it is here for a game engine that looks pieces up by their rule word.">Use (what the game calls it: damaged, spent…)</label><input id="fUse" value="' + esc(d.use || "") + '">' +
       '<label class="f" data-tip="A short name of your own for this piece, if something else has to refer to it by name. Optional, and safe to ignore.">Id (for terrain)</label><input id="fId" value="' + esc(d.id || "") + '">' +
-      '<label class="f" data-tip="Turn the piece so it stands the right way up. The picture on disk is never rewritten — the turn is remembered and applied everywhere, so it can be changed as often as you like without losing quality.">Turn it</label><div class="turn"><button type="button" id="rotL">↺ 90</button><input id="fRot" value="' + rot + '" size="4"><button type="button" id="rotR">↻ 90</button><span class="tiny">degrees clockwise, applied when the piece is finished</span></div>' +
+      '<label class="f" data-tip="Turn the piece so it stands the right way up, and level it if it was cut a little crooked. DRAG THE PICTURE ITSELF to turn it by any angle; the buttons here do quarter turns and small nudges. The picture on disk is never rewritten — the turn is remembered and applied everywhere, so it can be changed as often as you like without losing quality.">Turn it</label><div class="turn"><button type="button" id="rotL" data-tip="Turn it a quarter turn anticlockwise.">↺ 90</button><input id="fRot" value="' + rot + '" size="5" data-tip="The angle in degrees clockwise. Type any number, including tenths — 1.5 is a degree and a half."><button type="button" id="rotR" data-tip="Turn it a quarter turn clockwise.">↻ 90</button>' +
+      '<button type="button" id="rotMM" data-tip="A degree anticlockwise.">−1</button><button type="button" id="rotM" data-tip="A tenth of a degree anticlockwise — for levelling by eye.">−0.1</button>' +
+      '<button type="button" id="rotP" data-tip="A tenth of a degree clockwise — for levelling by eye.">+0.1</button><button type="button" id="rotPP" data-tip="A degree clockwise.">+1</button>' +
+      '<button type="button" id="rotZero" data-tip="Put the piece back to the way it came off the sheet, with no turn at all.">none</button>' +
+      '<span class="tiny">degrees clockwise &mdash; or <b>drag the picture</b> to turn it</span></div>' +
       '<label class="f" data-tip="A note to yourself that this piece is not ready — the artwork needs redoing, the rules are unclear. It stays in the folder; this only records why you are not using it yet.">Hold back (why it is not in play yet)</label><input id="fHold" value="' + esc(d.hold || "") + '" placeholder="e.g. artwork, template, counter — or blank">' +
       '<label class="f" data-tip="The piece that is the BACK of this one. Cut the back once, then point every card in the deck at it — a set with three different backs is just three pieces. It travels in the inventory as the file it is.">Its back</label><select id="fBack">' + pieceOptions(d.back || "", backsOnly) + "</select>" +
       '<p class="tiny muted"><label><input type="checkbox" id="fBackOnly" class="nosave" title="Show only the pieces you have marked as a card back, instead of every piece in the game. Nothing is changed either way — it only shortens the list."' +
@@ -3253,11 +3266,18 @@
     }
     form.querySelector("#fKind").addEventListener("change", sayWhatItLooksLike);
     sayWhatItLooksLike();
-    function turn(by) {
-      var r = (parseInt(form.querySelector("#fRot").value, 10) || 0) + by;
-      r = ((r % 360) + 360) % 360;
+    function turn(by) { setTurn((parseFloat(form.querySelector("#fRot").value) || 0) + by); }
+    /* ⭐️ ONE PLACE SETS THE ANGLE, because there are now four ways to: the
+       two quarter-turn buttons, the drag handle, the nudges and the box
+       itself. Four copies of "wrap it, write it, redraw it" is fault 24
+       waiting, on the one control that is easy to leave half-applied. */
+    function setTurn(r, quiet) {
+      r = Math.round((((r % 360) + 360) % 360) * 10) / 10;
       form.querySelector("#fRot").value = r;
       p.data = p.data || {}; p.data.rotate = r;
+      var img = document.querySelector("#pstage .frame img");
+      if (img) img.style.transform = "translate(-50%,-50%) rotate(" + r + "deg)";
+      if (quiet) return;
       save();
       showPiece(stem);
     }
@@ -3271,6 +3291,72 @@
     if (focusName) { nameBox.focus(); nameBox.select(); }
     form.querySelector("#rotL").addEventListener("click", function () { turn(-90); });
     form.querySelector("#rotR").addEventListener("click", function () { turn(90); });
+    form.querySelector("#rotMM").addEventListener("click", function () { turn(-1); });
+    form.querySelector("#rotM").addEventListener("click", function () { turn(-0.1); });
+    form.querySelector("#rotP").addEventListener("click", function () { turn(0.1); });
+    form.querySelector("#rotPP").addEventListener("click", function () { turn(1); });
+    form.querySelector("#rotZero").addEventListener("click", function () { setTurn(0); });
+    form.querySelector("#fRot").addEventListener("change", function () {
+      setTurn(parseFloat(this.value) || 0);
+    });
+
+    /* ⭐️⭐️ DRAG THE PICTURE TO TURN IT. The designer, 3 September 2026, of
+       cards cut from photographs: "the ability to drag to rotate a cut piece
+       - just flipping through 90 degrees is too crude when I may need to
+       rotate a piece by just a few degrees to level it."
+
+       ⚠️ The angle is taken from the pointer's bearing round the MIDDLE of
+       the picture, and what is applied is the CHANGE in that bearing since
+       the drag began — not the bearing itself. Setting the angle to the
+       bearing makes the piece jump to meet the pointer the instant you touch
+       it, wherever you touched it, and you are then levelling a piece that
+       has already moved.
+
+       ⚠️ It writes once, at the end. The picture follows the pointer live
+       (setTurn(r, true) leaves the disk alone), and the save happens on
+       release — otherwise a two-second drag is fifty saves of the manifest,
+       which is the store that cannot be rebuilt.
+
+       ⭐️ It SNAPS to the square angles within a degree, so the drag can still
+       do the plain job the two buttons do without anybody having to be
+       accurate; hold shift to refuse the snap. */
+    (function () {
+      var img = document.querySelector("#pstage .frame img");
+      if (!img) return;
+      img.style.cursor = "grab";
+      var from = 0, was = 0, live = false;
+      function bearing(ev) {
+        var b = img.getBoundingClientRect();
+        return Math.atan2(ev.clientY - (b.top + b.height / 2),
+                          ev.clientX - (b.left + b.width / 2)) * 180 / Math.PI;
+      }
+      img.addEventListener("pointerdown", function (ev) {
+        ev.preventDefault();
+        live = true;
+        from = bearing(ev);
+        was = parseFloat(form.querySelector("#fRot").value) || 0;
+        img.style.cursor = "grabbing";
+        img.setPointerCapture(ev.pointerId);
+      });
+      img.addEventListener("pointermove", function (ev) {
+        if (!live) return;
+        var r = was + (bearing(ev) - from);
+        if (!ev.shiftKey) {
+          var q = Math.round(r / 90) * 90;
+          if (Math.abs(r - q) < 1) r = q;
+        }
+        setTurn(r, true);
+      });
+      function letGo(ev) {
+        if (!live) return;
+        live = false;
+        img.style.cursor = "grab";
+        try { img.releasePointerCapture(ev.pointerId); } catch (e) { /* gone */ }
+        setTurn(parseFloat(form.querySelector("#fRot").value) || 0);
+      }
+      img.addEventListener("pointerup", letGo);
+      img.addEventListener("pointercancel", letGo);
+    })();
     // ⭐️ no confirmation, because there is nothing to be sorry about: the
     // piece is moved, not deleted, and the same button brings it back
     form.querySelector("#fDel").addEventListener("click", function () {

@@ -2566,13 +2566,28 @@ def turned(img, deg):
     IN — what leaves the room is finished, and somebody opening the folder
     wants the picture the way it reads, not the way it happened to be printed.
     """
-    deg = int(deg or 0) % 360
+    # ⚠️ FLOAT. This was int(), which silently threw away every angle the
+    # levelling tool exists to set: a piece turned 1.4 degrees came out
+    # turned 1. The quarter turns still take the exact path below.
+    try:
+        deg = round(float(deg or 0) % 360.0, 1)
+    except (TypeError, ValueError):
+        deg = 0.0
     if not deg:
         return img
     square = {90: Image.ROTATE_270, 180: Image.ROTATE_180, 270: Image.ROTATE_90}
     if deg in square:                    # exact, no resampling at all
         return img.transpose(square[deg])
-    return img.rotate(-deg, expand=True, resample=Image.BICUBIC)
+    out = img.rotate(-deg, expand=True, resample=Image.BICUBIC)
+    # ⭐️⭐️ AND RE-CROPPED TO WHAT IS ACTUALLY THERE. Rotating by a few
+    # degrees puts transparent wedges at the corners and `expand=True` grows
+    # the canvas to hold them, so a levelled piece would measure LARGER than
+    # the crooked one it came from — which is the wrong way round, since
+    # levelling is what makes the box fit. The designer, 3 September 2026:
+    # "I'm going to have to go through them all again and remove white space
+    # you have left." Trimming here is what stops that being true of a turn.
+    box = out.getbbox()
+    return out.crop(box) if box else out
 
 
 EXPORT_README = """WHAT IS IN THIS FOLDER
@@ -3173,7 +3188,9 @@ def export_project(pr, progress=None, book=None):
             "back": d.get("back") or "",
             # ⭐️ one design, cut once, wanted this many times by the game
             "copies": int(d.get("copies") or 1),
-            "turned_degrees": int(d.get("rotate") or 0),
+            # ⚠️ float, not int: a piece levelled by 1.4 degrees was reported
+            # in the inventory as 1, which is a picture of the wrong thing.
+            "turned_degrees": round(float(d.get("rotate") or 0), 1),
             "note": d.get("note") or "",
             "cut_from": stem,
         })
@@ -4898,13 +4915,27 @@ class Room(BaseHTTPRequestHandler):
                             cur["copies"] = min(c, 9999)
                         else:
                             cur.pop("copies", None)
+                    # ⭐️⭐️ ANY ANGLE, NOT JUST A QUARTER TURN. The designer,
+                    # 3 September 2026, on cards cut from photographs: "the
+                    # ability to drag to rotate a cut piece - just flipping
+                    # through 90 degrees is too crude when I may need to
+                    # rotate a piece by just a few degrees to level it."
+                    # ⚠️ A tenth of a degree is the grain. It is fine enough
+                    # to level a card by eye — a tenth of a degree across a
+                    # 3.5in card is six thousandths of an inch, under the
+                    # thickness of the printed line — and coarse enough that
+                    # the number in the box is one somebody can read and type
+                    # back. `turned()` has always rotated by any angle; only
+                    # this door insisted on whole quarters.
                     if "rotate" in d:
                         try:
-                            r = int(d["rotate"]) % 360
+                            r = round(float(d["rotate"]) % 360.0, 1)
                         except (TypeError, ValueError):
-                            r = 0
+                            r = 0.0
                         if r:
-                            cur["rotate"] = r
+                            # a whole number stays a whole number, so a
+                            # quarter turn does not become "90.0" in the file
+                            cur["rotate"] = int(r) if r == int(r) else r
                         else:
                             cur.pop("rotate", None)
                     if cur:

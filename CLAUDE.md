@@ -22,6 +22,29 @@ archiving an out-of-print box. **Any step shaped like a particular game belongs
 in that game's own repository**, the way a game's hand-over scripts do.
 When a feature could be built either here or there, it goes there.
 
+⚠️⚠️⚠️ **THE ROOM'S JOB IS TO CUT AND TO EXPORT. NOTHING ELSE.** The
+designer's standing rule, 3 September 2026: *"it is NEVER your job to do
+anything other than cut and export. Do not run any overlap into different
+projects, that is a disaster waiting to happen."*
+
+That day a session cut 64 cards for a game and then kept going — filed them
+into that game's manifest, ran its hand-over scripts, edited four of its tools
+and one of its data files, and committed to its repository. Every one of those
+looked like finishing the job, and every one was a step past the door. It cost
+him an evening, put badly-cut pictures into his game, and left him deleting
+work by hand while the session was still adding more of it.
+
+⭐️ **The deliverable is a folder of named, measured pieces and the export
+beside it.** Hand that over and stop. Do not write to another project's files,
+do not run its scripts or its hooks, do not commit to it — **even when the next
+step is obvious, and even to mend something you can plainly see is broken
+there.** Say what you found and leave the decision with him. ⚠️ And *"do the
+export"* means the export: the hand-over is a different thing and is not
+included in it.
+
+⚠️ A project's `hooks` exist so that **he** can press them. They are not a door
+for a session to walk through.
+
 ---
 
 ## Picking the work up
