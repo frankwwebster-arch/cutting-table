@@ -114,7 +114,28 @@ fix is to write it down here, not to put it in the next prompt.
 
 ---
 
-## Status (3 September 2026)
+## Status (4 September 2026)
+
+**4 September**: the designer, having used the levelling tool for an afternoon:
+*"levelling a piece with a flat bottom edge (once it has been rotated) should
+be the default position, not an option a user has to fit and click."* So it is
+— a crooked piece is turned straight as it is cut, and one press does the
+backlog of a game already cut. ⚠️⚠️ **The trap is fault 100 and it is worth
+reading before touching any stored setting: `rotate: 0` was POPPED**, being
+tidy, which was harmless until the room began levelling by itself and then
+meant a deliberate *none* left nothing behind to show for it — so the next
+re-cut would quietly undo it. *The key existing says a person decided; its
+value says what they decided.* That is `each`/`each_said` (fault 83) again.
+⭐️ And fault 101, which is what making a rare thing universal exposes: the
+Pieces page had been printing a crooked card's **bounding box** as its printed
+size (2.69 × 3.63 for a 2.5 × 3.5in card) while the export wrote the true
+figure. Two numbers for one piece of card, and nobody had noticed because
+almost nothing was turned.
+⭐️ It was also the day the layout was reported: *"the rotate/level tools spill
+over the right hand tool column."* Nine controls in a flex that could not wrap.
+**Photographing the panel on a throwaway game is what confirmed all three
+fixes** — *"it is not a substitute for looking"*, which is this file's oldest
+lesson and the one a green check run makes easiest to skip.
 
 **3 September**: the designer, of cards cut from photographs: *"crucial to the
 rotate tool being helpful will be the grid in the pieces tab... either the

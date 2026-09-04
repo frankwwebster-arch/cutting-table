@@ -3237,7 +3237,7 @@
       (Object.keys(types).length ? '<label class="f">Type (the rule it plays by, for terrain)</label><select id="fType">' + typeOpts + "</select>" : '<input id="fType" type="hidden" value="' + esc(d.type || "") + '">') +
       '<label class="f" data-tip="The word the game itself uses for this piece in its rules — damaged, spent, wound. Left blank by most people; it is here for a game engine that looks pieces up by their rule word.">Use (what the game calls it: damaged, spent…)</label><input id="fUse" value="' + esc(d.use || "") + '">' +
       '<label class="f" data-tip="A short name of your own for this piece, if something else has to refer to it by name. Optional, and safe to ignore.">Id (for terrain)</label><input id="fId" value="' + esc(d.id || "") + '">' +
-      '<label class="f" data-tip="Turn the piece so it stands the right way up, and level it if it was cut a little crooked. DRAG THE PICTURE ITSELF to turn it by any angle; the buttons here do quarter turns and small nudges. The picture on disk is never rewritten — the turn is remembered and applied everywhere, so it can be changed as often as you like without losing quality.">Turn it</label>' +
+      '<label class="f" data-tip="Which way up this piece is handed over. A piece cut a little crooked has ALREADY been levelled — the room measures the angle off the piece itself as it cuts it — so this is for standing it the right way up, or for correcting the levelling by eye. DRAG THE PICTURE ITSELF to turn it by any angle; the buttons here do quarter turns and small nudges. The picture on disk is never rewritten — the turn is remembered and applied everywhere, so it can be changed as often as you like without losing quality.">Turn it</label>' +
       /* ⚠️ THE ROW MUST WRAP AND ITS PARTS MUST HOLD TOGETHER. Nine controls
          in one nowrap flex ran straight off the side of the panel and the
          last of them could not be reached at all — the designer, 4 September
@@ -3269,7 +3269,7 @@
       '<label class="f" data-tip="Anything worth remembering about this piece — which rules page it is on, that its twin is on another sheet, that the scan is poor.">Note</label><textarea id="fNote">' + esc(d.note || "") + "</textarea>" +
       '<div class="row" style="margin-top:14px">' +
       '<button id="fShape" type="button" data-tip="Puts this piece\'s outline on the shelf of shapes, so the same shape can be laid down again with one click — on another sheet, or in another game. Nothing about this piece changes.">Keep the shape</button>' +
-      '<button id="fClear" type="button" data-tip="Empty every box above at once — name, component, kind, use, id, turn, note — and start this piece again. The picture, the outline and whether it is set aside are not touched.">Start this piece again</button>' +
+      '<button id="fClear" type="button" data-tip="Empty every box above at once — name, component, kind, use, id, turn, note — and start this piece again. The picture, the outline and whether it is set aside are not touched. Because it clears the turn, the room will level this piece again as it would a freshly cut one.">Start this piece again</button>' +
       '<span class="tiny muted">Puts this piece\'s outline on the shelf of shapes, to lay down again on any sheet, in any game</span>' +
       '</div>' +
       '<div class="row" style="margin-top:10px">' +

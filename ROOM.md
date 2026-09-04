@@ -794,7 +794,9 @@ times — so a deck stays short until you say so.
 name, component, kind, use, id, turn, note — in one press, for a piece filled
 in from the wrong row of a list. It asks first, and it does not touch the
 picture, the outline, whether the piece is set aside, its look-alike mark, or
-the flags you have waved through.
+the flags you have waved through. ⚠️ Because it clears the **turn**, the room
+will level that piece again as it would a freshly cut one — which is how to
+undo a **none** you no longer want.
 
 ⭐️ **On the Checklist, hover the green pill** on any component counted as cut
 and the piece it was counted from appears, full size. The piece names beside it

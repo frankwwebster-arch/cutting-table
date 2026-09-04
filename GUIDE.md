@@ -254,8 +254,14 @@ Things that make it quicker:
   one card that appears twenty times in a deck. You still cut it **once**, and
   the checklist counts it: a deck of thirty-two made of thirteen designs then
   reads as full rather than *13 of 32*.
-- **Turn it** — quarter turns, applied everywhere the piece is shown. The
-  picture on disk is never rewritten, so you can change your mind for ever.
+- **Turn it** — which way up the piece is handed over, applied everywhere it is
+  shown. Quarter turns for a piece printed sideways, and **any angle at all**
+  for one cut a little crooked: drag the picture itself, or nudge it by a tenth
+  of a degree. A crooked piece has **already been levelled** — the room measures
+  the angle off the piece's own edges as it cuts it — and the grid under the
+  piece lights up brass to say so. Pieces with no straight edge, like a round
+  counter, have no angle to level and the room says nothing about them.
+  The picture on disk is never rewritten, so you can change your mind for ever.
 
 ---
 
