@@ -256,13 +256,28 @@ horizontally and/or vertically aligned."*
   perfectly cheerfully (45°) and the answer is meaningless; offering *level it*
   on a chit and turning it 45° is a confident wrong answer drawn over
   somebody's artwork. Fault 25's rule arriving on geometry for the second time.
+- `[x]` ⭐️⭐️ **Levelling is the DEFAULT, not a button.** The designer, 4
+  September 2026: *"levelling a piece with a flat bottom edge (once it has been
+  rotated) should be the default position, not an option a user has to fit and
+  click."* A crooked piece is turned straight as it is cut, and **Level them**
+  on the Pieces page does the whole backlog in one press, saying how many.
+  ⚠️ A turn somebody set is never overruled — **including a deliberate
+  `none`**, which meant a nought had to start being written down instead of
+  dropped (fault 100).
+- `[x]` ⭐️ **The size shown is the piece's own edges, not its bounding box.** A
+  2.5 × 3.5in card lying three degrees off sits in a box of 2.69 × 3.63, and
+  that is what the page used to print while the export wrote 2.5 × 3.5. Fault
+  101 — and the awkward half was getting width and height the right way round.
+- `[x]` **The turn row wraps into three tidy groups** instead of running off
+  the side of the panel — *"the rotate/level tools spill over the right hand
+  tool column."*
 - `[x]` Checks: the API round trip keeps 1.4 as 1.4 and 90 as 90; a square-cut
   piece carries `skew` and reads level, **and a round one is handed out with no
   angle at all rather than an angle of nought**; in the browser the box shows
   tenths, a nudge is a tenth, *level it* lights the grid and reaches the disk,
   dragging the grid moves the grid and not the piece, and the readout is
   **measured** to be inside the plate rather than believed.
-  `check/is_it_level.py` is the geometry on its own — 23 checks, of which
+  `check/is_it_level.py` is the geometry on its own — 29 checks, of which
   **eight are the room keeping quiet** — and both halves had their teeth
   tried: drop the fill test and six go red, put the strided sample back in
   place of the silhouette and five go red.

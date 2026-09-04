@@ -165,7 +165,7 @@ the middle of their afternoon. See fault 92, which is worth more than the
 feature: the guard was written on the copy of the launcher that was *expected
 to fail*, and not on the copy expected to succeed.
 
-⭐️ **Where it stands.** The room is built, checked by 772 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 782 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered.
@@ -2573,7 +2573,7 @@ rather than by reading the code.
     true: a card sitting at 2.5° answered **2.1**, an error four times the
     tolerance the highlight works to. The silhouette is exact and faster.
     ⭐️ `check/is_it_level.py` is the geometry on its own — no browser, no
-    project — and **eight of its twenty-three checks are the room keeping
+    project — and **eight of its twenty-nine checks are the room keeping
     quiet**. Teeth tried on both halves: drop the fill test and six go red,
     put the stride back and five go red. ⚠️ And the noise test is the one that
     matters, because the cheap way to pass every silence is to refuse
@@ -2597,6 +2597,56 @@ rather than by reading the code.
     ⭐️ A real cut of a big sheet takes seconds, which is why this had never
     been seen — but the single-piece mend (fault 88) is fast, and it writes to
     exactly the same file name.
+
+100. ⭐️⭐️ **LEVELLING IS THE DEFAULT, NOT A BUTTON — AND A NOUGHT HAD TO
+    BECOME AN ANSWER.** The designer, 4 September 2026: *"levelling a piece
+    with a flat bottom edge (once it has been rotated) should be the default
+    position, not an option a user has to fit and click."* Quite right, and it
+    does not break the room's rule against guessing: where a piece really is a
+    rectangle its angle is a **measurement** (fault 98), and straight is what
+    everybody wants. So `cut_sheet()` turns a crooked piece level as it cuts
+    it, and marks the entry `levelled` so the room knows it was its own doing.
+    ⚠️⚠️ **The trap was `rotate: 0`.** The manifest handler POPPED the key when
+    the turn was nought, which was tidy and became wrong the instant the room
+    started levelling by itself: *none* is how somebody asks to see the piece
+    exactly as it was printed, and with no key left to show for it the next
+    re-cut — or one press of *Level them* — would quietly level it again. **The
+    key existing is what says a person has decided; its value says what they
+    decided.** That is `each` versus `each_said` (fault 83) arriving on the
+    turn. A nought is written down now.
+    ⭐️ **And the backlog is one press.** A game already cut is full of pieces
+    that predate this, and going through them one at a time is the very work
+    the default exists to save: `POST /pieces/level` does the lot, the Pieces
+    page offers it only while there are any, and it says how many. ⚠️ It leaves
+    alone anything anybody has turned, and anything with no measurable angle.
+    ⚠️ Its check needed the piece **started again** rather than set to nought,
+    because nought is now a decision — and one check went red for a reason that
+    was not the code: a round outline cut where the crooked one had been
+    inherited the crooked one's entry, turn and all, because names follow
+    pieces across a re-cut by box overlap. That is `from_old` working
+    correctly.
+
+101. ⭐️⭐️ **A CROOKED CARD IS SMALLER THAN ITS OWN BOUNDING BOX, AND THE PAGE
+    WAS PRINTING THE BOX.** Making levelling the default turned a rare wrinkle
+    into a universal one. A 2.5 × 3.5in card lying three degrees off has a
+    bounding box of **2.69 × 3.63**, and that is what the Pieces page called
+    its printed size — while the export, which applies the turn and re-crops,
+    quite correctly wrote 2.5 × 3.5. **Two numbers for one piece of card, and
+    the bigger one was the lie.** The calipers already know the true edge
+    lengths, so they now come back with the angle (`true_in`) and the page
+    prints those.
+    ⚠️⚠️ **They had to be put the right way round.** The calipers report along
+    their OWN axes, and which of those is horizontal depends on whichever hull
+    edge happened to win — so the same card read 3.5 × 2.5 at one angle and
+    2.5 × 3.5 at another, for no reason anybody looking at it could see. It is
+    decided by where the axis actually points, and a check sweeps a card
+    through six angles asserting it comes back the same way round every time.
+    ⚠️ **For the WORDS only.** The picture on the plate is the untouched cut
+    file turned by CSS, so it is still laid out from `w_in`/`h_in`; feeding it
+    the true size would draw every crooked piece at the wrong scale.
+    ⚠️ `guess_kind()` still reads the bounding box. Changing what it is fed
+    would change what it says about a game already named, and that is a
+    separate decision from this one.
 
 ---
 
@@ -2673,7 +2723,7 @@ check/check.sh           everything that can be checked without a person
                          single diagonal pixel is still ONE piece, not two —
                          `_merge_corners()`'s own check. See fault 96.
   check/is_it_level.py   ⭐️ the angle a cut piece's own edges sit at, and —
-                         eight of its twenty-three checks — the shapes it must
+                         eight of its twenty-nine checks — the shapes it must
                          refuse to answer for at all. A round counter has no
                          edge to be level with. See faults 98 and 99.
 ```
@@ -2760,7 +2810,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 772 checks, about a minute
+check/check.sh          # 782 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -2987,7 +3037,7 @@ this becomes fault 85 all over again.
 
 `check/is_it_level.py` is `_skew_of()`'s own check, and the same shape again:
 pictures drawn on the spot, no browser and no project. ⭐️ **Eight of its
-twenty-three checks are the room saying nothing** — a circle, an oval, a
+twenty-nine checks are the room saying nothing** — a circle, an oval, a
 hexagon, a triangle, an L-shaped board and a torn island have no edge to be
 level with, and before the guard went in the calipers answered every one of
 them (a circle at −45°). Teeth tried on both halves: drop the fill test and

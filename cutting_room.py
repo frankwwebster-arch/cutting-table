@@ -110,6 +110,15 @@ MIN_PIECE_IN = 0.25
 SUGGEST_VERSION = 3     # bump when the automatic pass changes; see /suggest
 SUGGEST_TOL = sheetlib.SUGGEST_TOL
 SUGGEST_INSET = sheetlib.SUGGEST_INSET
+
+# ⭐️ HOW STRAIGHT COUNTS AS STRAIGHT — a sixth of a degree, which is under the
+# thickness of a printed line across a card. It decides two things and they
+# have to be the same number, or a piece could be turned by the room and then
+# not read as level by the page: below it a freshly cut piece is left alone
+# (turning it would resample the picture for nothing), and at or below it the
+# grid lights up. ⚠️ The page is sent this rather than keeping its own copy —
+# fault 24, on a number that would drift silently.
+LEVEL_TOL = 0.15
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".bmp", ".gif")
 
 # tools/cutting_table.tpl.html: INKS, in order. A piece's ink is an index
@@ -1106,7 +1115,25 @@ class Project:
             if float(ink) / area < sheetlib.RECT_FILL:
                 return None                      # not a rectangle: say nothing
             ang = math.degrees(math.atan2(u[1], u[0]))
-            return round(((ang + 45.0) % 90.0) - 45.0, 1)
+            # ⭐️ THE PIECE'S OWN EDGE LENGTHS COME BACK WITH THE ANGLE, because
+            # for a piece cut crooked they are not the same as its bounding
+            # box and the box is the wrong number to print. A 2.5 x 3.5in card
+            # lying three degrees off has a bounding box of 2.68 x 3.63 —
+            # which is what the Pieces page used to call its printed size,
+            # while the export (which turns the picture and re-crops it) quite
+            # correctly wrote 2.5 x 3.5. Two numbers for one piece of card.
+            # ⚠️⚠️ AND THEY COME BACK THE RIGHT WAY ROUND. The calipers report
+            # along their OWN axes, and which of those is the horizontal one
+            # depends on whichever hull edge happened to win — so a 2.5 x 3.5in
+            # card read back as 3.5 x 2.5 for no reason a person could see,
+            # while the identical card sitting straight read correctly. Decide
+            # it by where the axis actually points, folded to (-90, 90].
+            along, across = sbox[4] - sbox[3], sbox[6] - sbox[5]
+            lie = ((ang + 90.0) % 180.0) - 90.0
+            wide, tall = ((along, across) if abs(lie) <= 45.0
+                          else (across, along))
+            return (round(((ang + 45.0) % 90.0) - 45.0, 1),
+                    round(wide, 1), round(tall, 1))
         except Exception:
             return None                          # a measurement, never a stop
 
@@ -1138,7 +1165,7 @@ class Project:
         # clock that only counts seconds to tell you a file has changed.
         mt = [int(os.path.getmtime(path)), os.path.getsize(path)]
         got = book.get(stem)
-        if got and got.get("mt") == mt and got.get("v") == 4:
+        if got and got.get("mt") == mt and got.get("v") == 5:
             return got
         im = Image.open(path).convert("RGBA")
         alpha = im.getchannel("A")
@@ -1169,12 +1196,19 @@ class Project:
         rgb = [round(sum(c[i] for c in cols) / float(len(cols))) for i in range(3)]
         hist = solid.histogram()
         cover = hist[255] / float(max(1, solid.width * solid.height))
-        skew = self._skew_of(solid)
-        rec = {"v": 4, "mt": mt,
+        # ⭐️ the angle, and with it the piece's own edge lengths — see
+        # `_skew_of`. A piece cut crooked is smaller than its bounding box,
+        # and the smaller figure is the true printed size of the cardboard.
+        lv = self._skew_of(solid)
+        skew, true_in = (None, None)
+        if lv:
+            skew = lv[0]
+            true_in = [round(lv[1] / d, 3), round(lv[2] / d, 3)]
+        rec = {"v": 5, "mt": mt,
                "w_in": round(im.width / d, 3), "h_in": round(im.height / d, 3),
                "w": im.width, "h": im.height,
                "hash": "%036x" % bits, "bits": grid * grid, "rgb": rgb,
-               "cover": round(cover, 3), "skew": skew}
+               "cover": round(cover, 3), "skew": skew, "true_in": true_in}
         if sheet_size and box:
             near = 6
             rec["edge"] = bool(box[0] <= near or box[1] <= near
@@ -2477,6 +2511,32 @@ def cut_sheet(project, sid, only=None):
         if retired:
             man.setdefault("retired", {}).update(retired)
         man["pieces"] = kept
+        # ⭐️⭐️ A CROOKED PIECE ARRIVES LEVEL. The designer, 4 September 2026:
+        # "levelling a piece with a flat bottom edge (once it has been rotated)
+        # should be the default position, not an option a user has to fit and
+        # click." Quite right, and it is not the room guessing: where a piece
+        # really is a rectangle the angle its edges sit at is a MEASUREMENT
+        # (see `_skew_of`), and straight is what everybody wants. Where the
+        # shape settles nothing — a round counter, a hexagon — no angle is
+        # measured and nothing is written.
+        #
+        # ⚠️ ONLY A PIECE NOBODY HAS EVER TURNED. The test is whether the entry
+        # has a `rotate` KEY at all, not whether it is nought: pressing *none*
+        # writes a nought on purpose, and a re-cut must not overrule that by
+        # levelling the piece all over again. Same distinction as `each` and
+        # `each_said` (fault 83) — a stamp the room made is not an answer
+        # somebody gave.
+        # ⚠️ And the room writes down that this one was ITS doing, so the page
+        # can say so and never mistake it for a turn the person set.
+        for m in made:
+            row = kept.setdefault(m["name"], {})
+            if "rotate" in row:
+                continue
+            sk = (project.piece_stats(m["name"], dpi) or {}).get("skew")
+            if sk is None or abs(sk) < LEVEL_TOL:
+                continue                 # already straight, or nothing to read
+            row["rotate"] = round((-sk) % 360.0, 1)
+            row["levelled"] = True
         project.save_manifest(man)
         pieces_man = kept
         renames = {o: n for n, o in from_old.items() if o != n}
@@ -4685,6 +4745,10 @@ class Room(BaseHTTPRequestHandler):
                             # an angle for has NO angle, and a nought would be
                             # read by the page as "already perfectly level"
                             "skew": mm.get("skew"),
+                            # ⭐️ the piece's OWN edge lengths, where it is a
+                            # rectangle — the true size of the cardboard, and
+                            # what the export writes once the turn is applied
+                            "true_in": mm.get("true_in"),
                             "ink_rgb": meta.get("ink_rgb"),
                             "outline": self._outline_no(pr, st, meta),
                             "data": man.get(st, {})})
@@ -4695,6 +4759,11 @@ class Room(BaseHTTPRequestHandler):
             wb = pr.wanted()
             return self.send_json({"pieces": out, "types": pr.meta.get("types") or {},
                                    "kinds": KINDS, "wanted": wb.get("items", []),
+                                   # ⚠️ sent, not kept in the page as well —
+                                   # the same number decides whether the room
+                                   # levels a piece and whether the page calls
+                                   # it level, and two copies would drift
+                                   "level_tol": LEVEL_TOL,
                                    "groups": wb.get("groups", [])})
 
         # ⚠️⚠️ THE ONE PLACE, BESIDES REMOVING A SHEET, THAT REALLY DELETES A
@@ -4747,6 +4816,35 @@ class Room(BaseHTTPRequestHandler):
             with pr.lock:
                 moved = pr.set_aside(stems, aside)
             return self.send_json({"ok": True, "moved": moved, "aside": aside})
+
+        # ⭐️⭐️ LEVEL EVERY PIECE THAT WAS CUT BEFORE THE ROOM DID IT ITSELF.
+        # A crooked piece now arrives level (see cut_sheet), but a game already
+        # cut is full of ones that do not, and the designer's whole point was
+        # that levelling should not be a thing you go and press per piece.
+        # ⚠️ IT LEAVES ALONE ANYTHING SOMEBODY HAS TURNED — the test is whether
+        # the entry has a `rotate` key at all, not whether it is nought, so a
+        # deliberate *none* is a decision and survives this. Round and
+        # irregular pieces have no measurable angle and are not touched.
+        # ⚠️ No picture is rewritten: a turn is a number in the manifest.
+        if head == "pieces" and len(rest) == 2 and rest[1] == "level" and method == "POST":
+            with pr.lock:
+                man = pr.manifest()
+                book = man.setdefault("pieces", {})
+                done = []
+                for st in pr.piece_files():
+                    row = book.get(st) or {}
+                    if "rotate" in row:
+                        continue
+                    sk = (pr.piece_stats(st) or {}).get("skew")
+                    if sk is None or abs(sk) < LEVEL_TOL:
+                        continue
+                    row["rotate"] = round((-sk) % 360.0, 1)
+                    row["levelled"] = True
+                    book[st] = row
+                    done.append(st)
+                if done:
+                    pr.save_manifest(man)
+            return self.send_json({"ok": True, "levelled": done, "n": len(done)})
 
         # ⭐️ THIRTY-TWO CARDS, ONE COMPONENT, ONE PRESS. The designer, 24 August
         # 2026: "I'd like a bulk apply function - if I can select all 32 cards
@@ -5019,12 +5117,19 @@ class Room(BaseHTTPRequestHandler):
                             r = round(float(d["rotate"]) % 360.0, 1)
                         except (TypeError, ValueError):
                             r = 0.0
-                        if r:
-                            # a whole number stays a whole number, so a
-                            # quarter turn does not become "90.0" in the file
-                            cur["rotate"] = int(r) if r == int(r) else r
-                        else:
-                            cur.pop("rotate", None)
+                        # ⚠️⚠️ A NOUGHT IS WRITTEN DOWN, NOT DROPPED. This used
+                        # to pop the key, which was tidy and became wrong the
+                        # moment the room started levelling a crooked piece by
+                        # itself: *none* is how somebody asks to see the piece
+                        # exactly as it was printed, and with no key left to
+                        # show for it the next re-cut — or one press of *level
+                        # them* — would quietly level it all over again. The
+                        # KEY EXISTING is what says a person has decided the
+                        # turn; its value says what they decided. Same
+                        # distinction as `each` and `each_said` (fault 83).
+                        cur["rotate"] = (int(r) if r == int(r) else r) if r else 0
+                        # and it is no longer the room's doing
+                        cur.pop("levelled", None)
                     if cur:
                         man["pieces"][rest[1]] = cur
                     else:

@@ -627,14 +627,31 @@ pointer; **↺ 90** and **↻ 90** do the quarter turns; **−1 / +1** and
 **−0.1 / +0.1** nudge it; the box takes a typed angle in tenths of a degree;
 **none** puts it back as it came off the sheet.
 
-⭐️ **The room knows whether it is level.** It measures the angle the piece's
-own edges sit at, off the picture itself, so the grid under the piece **lights
-up brass** when the piece is within a sixth of a degree of straight, and the
-corner of the plate says how far off it is and which way to turn. **level it**
-sets that angle in one press. Dragging **snaps to level** within a degree as
-well as to the quarter turns (untick *snap to level* to turn freely, or hold
-shift while dragging). And the **grid itself can be dragged** under the
-piece, so a line can be laid along an edge to judge it by eye against.
+⭐️⭐️ **A crooked piece arrives level. You do not have to ask.** The room
+measures the angle the piece's own edges sit at, off the picture itself, and
+turns it straight as it is cut. Nothing is guessed: where the piece really is
+a rectangle that angle is a measurement, and straight is what everybody wants.
+
+For the pieces cut before this existed, the Pieces page offers **Level them** —
+one press for the whole game. It says how many, leaves alone every piece you
+have turned by hand, and touches nothing that has no straight edge.
+
+⭐️ **And the grid says so.** It **lights up brass** when the piece is within a
+sixth of a degree of straight, and the corner of the plate says how far off it
+is and which way to turn. **level** puts it back after you have turned it by
+hand; dragging **snaps** to level within a degree as well as to the quarter
+turns (untick *snap* to turn freely, or hold shift while dragging). And the
+**grid itself can be dragged** under the piece, so a line can be laid along an
+edge to judge it by eye against — and it stays where you put it while you
+nudge.
+
+⭐️ **The size shown is the piece's own, not its bounding box.** A 2.5 × 3.5in
+card lying three degrees crooked sits in a box of 2.69 × 3.63; the room prints
+2.5 × 3.5, which is the card. That is also what the export writes.
+
+**none** puts a piece back exactly as it came off the sheet, and *that is a
+decision the room remembers* — it will not level that piece again, on a re-cut
+or on *Level them*.
 
 ⚠️ **On a piece with no straight edge, the room says nothing about level** —
 and neither the highlight, the readout nor the **level it** button appears.

@@ -211,8 +211,26 @@ section[hidden] { display: none; }
 .measure b { color: var(--brass); font-weight: 600; }
 #pform { overflow-y: auto; max-height: 78vh; border-left: 1px solid var(--line); padding: 16px 18px 40px; }
 #pform input, #pform select, #pform textarea { width: 100%; }
-.turn { display: flex; gap: 5px; align-items: center; }
-.turn button { padding: 5px 8px; flex: none; } .turn input { text-align: center; }
+/* the offer to level the pieces cut before the room did it itself — a notice
+   rather than a fixture, so it goes when there is nothing left to level */
+.levelall { margin-bottom: 10px; padding: 8px 10px; border: 1px solid var(--line);
+  border-left: 3px solid var(--brass); border-radius: 4px; background: rgba(201,162,74,.06);
+  align-items: center; gap: 10px; }
+/* ⚠️ IT WRAPS, AND IT WRAPS BETWEEN GROUPS. This was one nowrap flex of nine
+   controls in a fixed-width panel, so the last of them ran off the side and
+   could not be pressed. `flex-wrap` alone would break the row anywhere — the
+   nudges split across two lines, which reads as two different controls — so
+   the parts that belong together are `.tgrp` and only the gaps between groups
+   are breakable. ⚠️ And `min-width: 0` on the row, or the widest group would
+   set a floor under the whole column the way fault 11's sheet rail did. */
+.turn { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.turn .tgrp { display: flex; gap: 3px; align-items: center; flex: none; }
+.turn button { padding: 5px 7px; flex: none; font-size: 13px; }
+.turn input { text-align: center; width: 52px; padding: 5px 4px; }
+.turn .tick { display: flex; align-items: center; gap: 3px; font-size: 12px;
+  color: var(--dim); white-space: nowrap; }
+/* the sentence goes on its own line rather than stretching the row */
+.turn .turnsay { flex-basis: 100%; margin-top: 1px; }
 .tiny { font-size: 12px; color: var(--dim); }
 
 /* ---- wanted */

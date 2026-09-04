@@ -1655,6 +1655,70 @@ chit = [q for q in pcs if q["stem"].startswith("oldbox_p01_")]
 check("a round counter is handed out with no angle at all, not an angle of nought",
       len(chit) == 1 and chit[0].get("skew") is None,
       [(q["stem"], q.get("skew")) for q in chit])
+# ⭐️⭐️ AND A CROOKED PIECE ARRIVES LEVEL, WITHOUT ANYBODY PRESSING ANYTHING.
+# The designer, 4 September 2026: "levelling a piece with a flat bottom edge
+# (once it has been rotated) should be the default position, not an option a
+# user has to fit and click." A rectangle drawn three degrees off true.
+tilt = math.radians(3.0)
+
+
+def turn_pt(x, y, cx=1000, cy=1000):
+    dx, dy = x - cx, y - cy
+    return [int(round(cx + dx * math.cos(tilt) - dy * math.sin(tilt))),
+            int(round(cy + dx * math.sin(tilt) + dy * math.cos(tilt)))]
+
+
+crooked = [turn_pt(*p) for p in ((700, 850), (1300, 850), (1300, 1150), (700, 1150))]
+call("/outlines/oldbox-01", {"pieces": [{"pts": crooked}]}, "PUT")
+call("/cut/oldbox-01", {})
+pcs = json.load(urllib.request.urlopen(API + "/pieces"))["pieces"]
+sk = [q for q in pcs if q["stem"].startswith("oldbox_p01_")]
+turn = ((sk[0].get("data") or {}).get("rotate") if sk else None)
+check("a piece cut crooked is turned level by the room, with nobody pressing anything",
+      len(sk) == 1 and turn is not None and abs(((turn + 180) % 360) - 180 + 3.0) <= 0.4,
+      [turn, sk[0].get("skew") if sk else None])
+check("and the room writes down that the levelling was ITS doing, not a person's",
+      bool(sk and (sk[0].get("data") or {}).get("levelled")),
+      sk[0].get("data") if sk else None)
+# ⚠️⚠️ AND A TURN SOMEBODY SET IS NEVER OVERRULED — including a deliberate
+# NOUGHT, which is how you ask to see the piece exactly as it was printed. The
+# test is whether a `rotate` key exists at all, not whether it is truthy; the
+# obvious spelling would re-level this piece on every re-cut.
+call("/manifest/oldbox_p01_00", {"rotate": 0}, "PUT")
+call("/cut/oldbox-01", {})
+man = json.load(urllib.request.urlopen(API + "/manifest"))["pieces"]
+check("pressing 'none' on a crooked piece sticks, and a re-cut does not level it again",
+      (man.get("oldbox_p01_00") or {}).get("rotate") == 0,
+      man.get("oldbox_p01_00"))
+# ⭐️ and the one press for everything cut before this existed. ⚠️ The turn is
+# cleared with "start this piece again", which is the only thing that really
+# takes the decision off it — setting it to nought IS a decision now.
+call("/manifest/oldbox_p01_00", {}, "DELETE")
+code, d = call("/pieces/level", {})
+man = json.load(urllib.request.urlopen(API + "/manifest"))["pieces"]
+check("and one press levels every piece cut before the room did it itself",
+      code == 200 and d.get("n", 0) >= 1 and
+      (man.get("oldbox_p01_00") or {}).get("levelled") is True,
+      [code, d.get("n"), man.get("oldbox_p01_00")])
+# ⚠️ asked again with nothing left to do it must not keep finding work
+code, d = call("/pieces/level", {})
+check("...and asked again with nothing crooked left, it levels nothing",
+      code == 200 and d.get("n") == 0, [code, d.get("n")])
+# ⚠️⚠️ AND THE SHAPE WITH NO ANGLE IS LEFT ALONE BY THAT PRESS TOO — which is
+# the guard against the cheap way to pass everything above, namely turning
+# every piece in the game by whatever number falls out of the calipers.
+call("/outlines/oldbox-01", {"pieces": [{"pts": round_pts}]}, "PUT")
+call("/cut/oldbox-01", {})
+# ⚠️ the round piece sits where the crooked one did, so the crooked one's
+# entry — turn and all — followed it across the re-cut, exactly as a NAME
+# does (that is `from_old`, and it is right). Start the piece again, or this
+# checks the carried-over turn rather than what the levelling press does.
+call("/manifest/oldbox_p01_00", {}, "DELETE")
+code, d = call("/pieces/level", {})
+man = json.load(urllib.request.urlopen(API + "/manifest"))["pieces"]
+check("but a round counter is left alone by that press, having no angle to level",
+      code == 200 and "rotate" not in (man.get("oldbox_p01_00") or {}),
+      [d.get("n"), man.get("oldbox_p01_00")])
 
 # ⚠️⚠️ A PIECE THAT FILLS THE SHEET IS STILL A PIECE, IF SOMEBODY DREW IT.
 # The designer, 26 August 2026: "I have outlined the single large component on

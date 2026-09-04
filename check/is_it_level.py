@@ -58,7 +58,10 @@ def skew(im):
     bb = solid.getbbox()
     if bb is None:
         return None
-    return R.Project._skew_of(None, solid.crop(bb))
+    # ⚠️ it hands back the angle AND the piece's own edge lengths; these
+    # checks are about the angle, so take the first of them
+    lv = R.Project._skew_of(None, solid.crop(bb))
+    return lv[0] if lv else None
 
 
 def paper(w=900, h=900):
@@ -167,6 +170,39 @@ check("but a plain rectangle IS measured, or the guard has eaten the feature",
       skew(im) == 0.0, skew(im))
 check("...and so is a plain rectangle sitting crooked",
       off(skew(turned(im, 3.0)), 3.0) <= 0.15, skew(turned(im, 3.0)))
+
+# ---- ⭐️ THE PIECE'S TRUE SIZE, which comes back with the angle -------------
+# A card cut crooked is SMALLER than its own bounding box, and the box is the
+# wrong number to print: a 2.5 x 3.5in card lying three degrees off has a box
+# of 2.69 x 3.63. The export has always written the right figure (it turns the
+# picture and re-crops); the screen was the one saying something else.
+def edges(im):
+    solid = im.getchannel("A").point(lambda v: 255 if v >= 24 else 0)
+    lv = R.Project._skew_of(None, solid.crop(solid.getbbox()))
+    return None if not lv else (lv[1], lv[2])
+
+
+def a_card(deg):
+    im = Image.new("RGBA", (1800, 1800), (0, 0, 0, 0))
+    ImageDraw.Draw(im).rectangle([400, 350, 1150, 1400],   # 750 x 1050 px
+                                 fill=(220, 210, 190, 255))
+    return turned(im, deg)
+
+
+for deg in (0, 3, -7, 15, 44):
+    e = edges(a_card(deg))
+    check("a 750 by 1050 card laid at %s degrees measures its own edges, "
+          "not its bounding box" % deg,
+          e is not None and abs(e[0] - 750) <= 15 and abs(e[1] - 1050) <= 15, e)
+
+# ⚠️⚠️ AND THE RIGHT WAY ROUND. The calipers report along their own axes and
+# which of those is horizontal depends on whichever hull edge won — so the
+# same card read 3.5 x 2.5 at one angle and 2.5 x 3.5 at another, for no
+# reason anybody looking at it could see.
+wide_ways = [edges(a_card(d)) for d in (0, 2, 5, 30, -30, -44)]
+check("and always the same way round, whatever angle it was cut at",
+      all(e and e[0] < e[1] for e in wide_ways),
+      [(round(e[0]), round(e[1])) if e else None for e in wide_ways])
 
 print("")
 if bad:
