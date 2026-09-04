@@ -1038,6 +1038,78 @@ class Project:
             im.save(out, "PNG", optimize=True)
         return out
 
+    def _skew_of(self, solid):
+        """⭐️⭐️ THE ANGLE THIS PIECE'S OWN EDGES SIT AT — or None, where the
+        shape does not settle it. The designer, 3 September 2026: "crucial to
+        the rotate tool being helpful will be the grid... some kind of obvious
+        highlight of a gridline when a piece is horizontally and/or vertically
+        aligned." A highlight needs a FACT to light on, and this is it: the
+        smallest box round the piece's own alpha, and the angle that box is at.
+        Level is when this plus the piece's turn is a multiple of a quarter.
+
+        ⚠️ Folded into (-45, 45] — a card two degrees off is two degrees off,
+        not eighty-eight — and measured with the same trimmed rotating calipers
+        the automatic pass uses (fault 71), so a handful of speckles at one
+        corner cannot tilt the answer.
+
+        ⚠️⚠️ IT ONLY SPEAKS WHERE THE PIECE REALLY IS A RECTANGLE, which is
+        fault 25's rule arriving on geometry for the second time (fault 71 was
+        the first). Measured: a rectangle fills its own smallest box 1.00, and
+        a real card with corners as round as a playing card's still 1.00 — but
+        a CIRCLE reads an angle of -45 degrees and a hexagon 29, both of them
+        perfectly meaningless, because a round counter has no edge to be level
+        with. Offering "level it" on a chit and turning it 45 degrees is a
+        confident wrong answer drawn over somebody's artwork, and the room does
+        not give those. So the same RECT_FILL the automatic pass uses decides
+        it, and where the shape is not a rectangle the answer is silence: the
+        page then shows no grid highlight, no readout and no button.
+        """
+        try:
+            a = np.asarray(solid) >= 128
+            ink = int(a.sum())
+            if ink < 64:
+                return None
+            # ⭐️ THE SILHOUETTE, not a sample of the fill. A hull only ever
+            # touches the outermost pixels, so the first and last set pixel of
+            # every row and of every column is the whole of what it needs —
+            # a few thousand points for any piece, worked out in numpy rather
+            # than sorted in Python. ⚠️ The first attempt took every Nth pixel
+            # in reading order instead, which is a STRIDED sample: it lands on
+            # the same few columns over and over and pulls the hull off true.
+            # Measured on a card sitting at 2.5 degrees it answered 2.1 — an
+            # error four times the tolerance the highlight works to.
+            rows = np.nonzero(a.any(1))[0]
+            cols = np.nonzero(a.any(0))[0]
+            byrow = a[rows]
+            left = byrow.argmax(1)
+            right = a.shape[1] - 1 - byrow[:, ::-1].argmax(1)
+            bycol = a[:, cols]
+            top = bycol.argmax(0)
+            foot = a.shape[0] - 1 - bycol[::-1, :].argmax(0)
+            xs = np.concatenate([left, right, cols, cols]).astype(np.float64)
+            ys = np.concatenate([rows, rows, top, foot]).astype(np.float64)
+            hull = sheetlib.hull_of(zip(xs.tolist(), ys.tolist()))
+            if len(hull) < 3:
+                return None
+            # ⚠️ NOT `box` — that is piece_stats's own parameter, the piece's
+            # bounding box on its sheet, and the edge test there needs it. The
+            # first attempt at this measured into a local called `box` in that
+            # same function, so every request for the piece list died on a
+            # tuple where four numbers were expected. See fault 97.
+            sbox = sheetlib.smallest_box(hull, xs, ys)
+            if not sbox or sbox[0] <= 0:
+                return None
+            # ⚠️ the count of INKED PIXELS over the box — the silhouette's own
+            # point count would be a measure of the piece's perimeter, which
+            # says nothing at all about whether it fills its box
+            area, u = sbox[0], sbox[1]
+            if float(ink) / area < sheetlib.RECT_FILL:
+                return None                      # not a rectangle: say nothing
+            ang = math.degrees(math.atan2(u[1], u[0]))
+            return round(((ang + 45.0) % 90.0) - 45.0, 1)
+        except Exception:
+            return None                          # a measurement, never a stop
+
     def piece_stats(self, stem, dpi=None, sheet_size=None, box=None):
         """Everything the review needs to know about a cut piece, worked out
         once and kept: its printed size, a 64-bit look-alike hash, how much of
@@ -1054,9 +1126,19 @@ class Project:
             return None
         cache = os.path.join(self.p("cache"), "stats.json")
         book = read_json(cache, {})
-        mt = int(os.path.getmtime(path))
+        # ⚠️⚠️ THE SIZE IN BYTES IS PART OF THE KEY, NOT ONLY THE CLOCK. The
+        # modification time is kept in WHOLE SECONDS, so a piece re-cut within
+        # a second of its last cut is a new picture under an old key — and the
+        # room hands back the PREVIOUS piece's record: its size, its look-alike
+        # hash and the angle it sat at, all belonging to a picture that is no
+        # longer there. It was found by cutting a round counter over a
+        # rectangle and being told, quite confidently, that it was level.
+        # ⭐️ That is fault 26 arriving in the room instead of in Python's own
+        # cache of compiled modules, and it is the same answer: do not trust a
+        # clock that only counts seconds to tell you a file has changed.
+        mt = [int(os.path.getmtime(path)), os.path.getsize(path)]
         got = book.get(stem)
-        if got and got.get("mt") == mt and got.get("v") == 3:
+        if got and got.get("mt") == mt and got.get("v") == 4:
             return got
         im = Image.open(path).convert("RGBA")
         alpha = im.getchannel("A")
@@ -1087,11 +1169,12 @@ class Project:
         rgb = [round(sum(c[i] for c in cols) / float(len(cols))) for i in range(3)]
         hist = solid.histogram()
         cover = hist[255] / float(max(1, solid.width * solid.height))
-        rec = {"v": 3, "mt": mt,
+        skew = self._skew_of(solid)
+        rec = {"v": 4, "mt": mt,
                "w_in": round(im.width / d, 3), "h_in": round(im.height / d, 3),
                "w": im.width, "h": im.height,
                "hash": "%036x" % bits, "bits": grid * grid, "rgb": rgb,
-               "cover": round(cover, 3)}
+               "cover": round(cover, 3), "skew": skew}
         if sheet_size and box:
             near = 6
             rec["edge"] = bool(box[0] <= near or box[1] <= near
@@ -4598,6 +4681,10 @@ class Room(BaseHTTPRequestHandler):
                             "hash": mm.get("hash"), "cover": mm.get("cover"),
                             "rgb": mm.get("rgb"), "bits": mm.get("bits"),
                             "edge": mm.get("edge", False),
+                            # ⚠️ None, not 0 — a piece the room cannot measure
+                            # an angle for has NO angle, and a nought would be
+                            # read by the page as "already perfectly level"
+                            "skew": mm.get("skew"),
                             "ink_rgb": meta.get("ink_rgb"),
                             "outline": self._outline_no(pr, st, meta),
                             "data": man.get(st, {})})

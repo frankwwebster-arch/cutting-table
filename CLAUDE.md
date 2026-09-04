@@ -114,7 +114,24 @@ fix is to write it down here, not to put it in the next prompt.
 
 ---
 
-## Status (2 September 2026)
+## Status (3 September 2026)
+
+**3 September**: the designer, of cards cut from photographs: *"crucial to the
+rotate tool being helpful will be the grid in the pieces tab... either the
+piece needs to be able to be moved to snap to the grid, or the grid itself
+needs to move. I leave that to you."* The grid moves — where a piece sits in
+its frame means nothing and would be one more thing to store — and the room
+**measures whether the piece is level** rather than leaving it to the eye.
+⚠️⚠️ **The interesting half is fault 98: the calipers answer a round counter
+perfectly cheerfully, at −45°.** A measurement that is meaningless for most of
+the shapes a box holds had to learn to say nothing, and *absent* had to be kept
+distinct from *nought* all the way out to the page — a nought reads as
+"perfectly level" and lights the grid on every chit in the game.
+⭐️ See also fault 97, which is the shortest lesson in this file: an hour went
+into reasoning about the geometry, which was right the whole time, when the
+traceback named the fault in one line. **Get the exception before theorising.**
+And fault 99, a cache keyed on a clock counting whole seconds, found by the
+check for fault 98 rather than by anybody looking for it.
 
 **2 September**: the designer, mid-way through cutting a real game's sheets:
 *"Three keep coming up as blank... The numbering is also haywire - more cut
@@ -148,7 +165,7 @@ the middle of their afternoon. See fault 92, which is worth more than the
 feature: the guard was written on the copy of the launcher that was *expected
 to fail*, and not on the copy expected to succeed.
 
-⭐️ **Where it stands.** The room is built, checked by 729 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 772 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered.
@@ -2508,6 +2525,79 @@ rather than by reading the code.
     single-piece mend deliberately does not (fault 88), which is why mending
     them looked as though it had done nothing.
 
+97. ⚠️⚠️ **A LOCAL THAT TAKES ITS OWN FUNCTION'S PARAMETER NAME. The whole
+    piece list answered 500, and the traceback said so in one line.** The
+    levelling tool needs the angle a piece's edges sit at, so `piece_stats()`
+    measured the smallest box round the alpha — into a local called `box`.
+    `box` is that function's OWN PARAMETER: the piece's bounding box on its
+    sheet, four numbers, used ten lines below to say whether the piece runs off
+    the edge. The smallest box is a seven-tuple whose second member is a unit
+    VECTOR, so the edge test compared a tuple with an integer and every request
+    for `/pieces` died. Three sections of `check.sh` and a browser section went
+    red behind it.
+    ⭐️⭐️ **The lesson is not the shadowing, it is that an hour was spent
+    reasoning about the geometry and none on reading the traceback.** The
+    measurement was right the whole time and could be shown right in one run
+    at a prompt; the fault was four lines further down, in code nobody had
+    touched. **Get the exception before theorising** — habit 2's rule, arriving
+    on a stack trace rather than on a project's data. The room already prints
+    tracebacks; nothing had to be built to find this.
+    ⚠️ The measuring lives in `_skew_of()` now, so it has no parameter of that
+    name to walk into, and the local is `sbox`.
+
+98. ⭐️⭐️ **A ROUND COUNTER HAS NO EDGE TO BE LEVEL WITH, AND THE CALIPERS
+    ANSWER ANYWAY.** The designer, 3 September 2026: *"there should be a snap
+    to grid option, as well as perhaps some kind of obvious highlight of a
+    gridline when a piece is horizontally and/or vertically aligned."* A
+    highlight needs a fact to light on, and the fact is the angle of the
+    smallest box round the piece's own alpha — which is exactly right for a
+    card and **meaningless for anything else**. Measured before the guard went
+    in: a circle reads **−45°**, a hexagon **29°**, a torn island 8.6°. Pressing
+    *level it* on a chit would have turned it forty-five degrees, confidently,
+    for no reason — fault 25's confident wrong answer, drawn over somebody's
+    artwork, on a page where three hundred pieces get named in an afternoon.
+    ⭐️ So it speaks only where the piece really FILLS its own smallest box,
+    by the same `RECT_FILL` the automatic pass uses (fault 71) rather than a
+    second number that would drift. Rectangles read 1.00 — including a card
+    with corners as round as a playing card's — and everything else 0.83 or
+    less, which is a margin nothing is near.
+    ⚠️⚠️ **Absent is not nought.** The payload carries `null`, not 0, and the
+    page reads `typeof p.skew === "number"`: a nought would be read as *already
+    perfectly level* and light the grid on every chit in the game. Where there
+    is no angle the whole apparatus stands down — no highlight, no readout, no
+    button, and the plate's own tip says why instead of promising a light that
+    will never come.
+    ⭐️ **The measure is taken off the SILHOUETTE**, the first and last set
+    pixel of every row and column, not off every Nth pixel in reading order. A
+    stride lands on the same few columns over and over and pulls the hull off
+    true: a card sitting at 2.5° answered **2.1**, an error four times the
+    tolerance the highlight works to. The silhouette is exact and faster.
+    ⭐️ `check/is_it_level.py` is the geometry on its own — no browser, no
+    project — and **eight of its twenty-three checks are the room keeping
+    quiet**. Teeth tried on both halves: drop the fill test and six go red,
+    put the stride back and five go red. ⚠️ And the noise test is the one that
+    matters, because the cheap way to pass every silence is to refuse
+    everything: a plain rectangle, crooked or straight, must still be measured.
+
+99. ⚠️⚠️ **A CACHE KEYED ON A CLOCK THAT COUNTS WHOLE SECONDS HANDS BACK THE
+    PREVIOUS PICTURE.** `piece_stats()` keeps its record against the file's
+    modification time — `int(os.path.getmtime(path))` — so a piece re-cut
+    within a second of its last cut is a **new picture under an old key**, and
+    what comes back is the record of a picture that is no longer there: its
+    size, its look-alike hash, and the angle it sat at.
+    ⭐️ It was found by a check cutting a round counter over a rectangle and
+    being told, quite confidently, that the counter was level. The stale record
+    also gave its size as 501 × 221 for a piece that is 501 × 501 — so this was
+    never only about the levelling.
+    ⚠️ **That is fault 26 arriving in the room** rather than in Python's own
+    cache of compiled modules, and it has the same answer: do not trust a clock
+    counting seconds to tell you a file has changed. The key is the mtime **and
+    the size in bytes**. Teeth tried: take the size back out and the round
+    counter is reported as a level rectangle again.
+    ⭐️ A real cut of a big sheet takes seconds, which is why this had never
+    been seen — but the single-piece mend (fault 88) is fast, and it writes to
+    exactly the same file name.
+
 ---
 
 ## Architecture
@@ -2582,6 +2672,10 @@ check/check.sh           everything that can be checked without a person
   check/one_outline_one_piece.py  ⭐️ a hand-drawn outline that pinches to a
                          single diagonal pixel is still ONE piece, not two —
                          `_merge_corners()`'s own check. See fault 96.
+  check/is_it_level.py   ⭐️ the angle a cut piece's own edges sit at, and —
+                         eight of its twenty-three checks — the shapes it must
+                         refuse to answer for at all. A round counter has no
+                         edge to be level with. See faults 98 and 99.
 ```
 
 **The server is one file on purpose.** Standard library plus numpy and Pillow;
@@ -2666,7 +2760,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 729 checks, about a minute
+check/check.sh          # 772 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
@@ -2718,6 +2812,18 @@ piece down and hands it to Adjust ready to be dragged, `X` takes it off again
 and says in the same breath how to put it back, `O` works on it alone and says
 the others are **hidden, not deleted** before the same key brings them back —
 and, the half that was asked for, **none of them fires while you are typing**.
+
+It works **turning a piece by a few degrees and levelling it**: a turn of 1.4
+survives the round trip as 1.4 while a quarter stays a whole number; a
+square-cut piece carries the angle its own edges sit at and reads level; and
+⚠️ **a round counter is handed out with no angle AT ALL rather than an angle
+of nought** — which is the check that found the stats cache handing back the
+previous picture (fault 99). Then in the browser: the box shows tenths, a
+nudge is a tenth, *level it* lights the grid and reaches the disk, dragging
+the grid moves the grid and **not** the piece, ⚠️ nudging the angle does not
+throw away the grid line you have just lined up, and the readout is
+**measured** to be inside the plate rather than believed (fault 32's lesson;
+faults 4 and 87 are the same family).
 
 It follows **the report's way in to a piece**: the served report links every
 stem it prints and says what an orphan measures, the copy that leaves the room
@@ -2878,6 +2984,18 @@ a speck of one pixel is cut as a piece again. ⚠️ **The half that matters is
 the noise test**: a genuinely small piece somebody drew is still cut, and the
 floor is held to a fraction of the smallest piece a real game has held, or
 this becomes fault 85 all over again.
+
+`check/is_it_level.py` is `_skew_of()`'s own check, and the same shape again:
+pictures drawn on the spot, no browser and no project. ⭐️ **Eight of its
+twenty-three checks are the room saying nothing** — a circle, an oval, a
+hexagon, a triangle, an L-shaped board and a torn island have no edge to be
+level with, and before the guard went in the calipers answered every one of
+them (a circle at −45°). Teeth tried on both halves: drop the fill test and
+six go red, put the strided sample back in place of the silhouette and five go
+red, naming a card that reads 2.1° when it is sitting at 2.5°. ⚠️ **The noise
+test is the one that matters** — a plain rectangle, crooked or straight, must
+still be measured, or the cheap way to pass every silence above is to refuse
+everything.
 
 `check/names_across_a_recut.py` is the other half, and needs no browser — it is
 the cut itself. **Names, and variant marks, following their pieces across a

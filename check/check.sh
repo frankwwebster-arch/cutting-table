@@ -95,6 +95,7 @@ $PY -c "import ast; ast.parse(open('sheets.py').read())"
 $PY -c "import ast; ast.parse(open('check/names_across_a_recut.py').read())"
 $PY -c "import ast; ast.parse(open('check/the_automatic_pass.py').read())"
 $PY -c "import ast; ast.parse(open('check/one_outline_one_piece.py').read())"
+$PY -c "import ast; ast.parse(open('check/is_it_level.py').read())"
 # ⚠️ A patch whose anchor has drifted raises here rather than serving an
 # editor that quietly saves nothing.
 $PY -c "import sys; sys.path.insert(0,'.'); import cutting_room; cutting_room.table_template()"
@@ -571,6 +572,15 @@ $PY check/the_automatic_pass.py
 # and the sliver had no floor to stop it being kept as a real extra piece.
 say "is a hand-drawn outline still one piece where its fill only touches itself at a corner?"
 $PY check/one_outline_one_piece.py
+
+# ⭐️⭐️ WHAT ANGLE IS THIS PIECE SITTING AT — AND WHEN IS THERE NO SUCH ANGLE?
+# The designer, 3 September 2026: "there should be a snap to grid option, as
+# well as perhaps some kind of obvious highlight of a gridline when a piece is
+# horizontally and/or vertically aligned." The highlight needs a fact to light
+# on. ⚠️ Most of that file is about the room SAYING NOTHING: a round counter
+# has no edge to be level with, and the calipers answer -45 degrees anyway.
+say "does the room know the angle a piece sits at — and know when it does not?"
+$PY check/is_it_level.py
 
 # ⭐️⭐️ EVERY CONTROL SAYS WHAT IT DOES. The designer, 23 August 2026: "I don't, for
 # example, have any idea what 'straight to the table' means on the project
@@ -1396,7 +1406,7 @@ PYCUTALL
 # match should include an item for the relevant back of each deck."
 say "a deck stays on the Match list until it has enough pieces, and knows its back"
 $PY - "$TMP" "$PORT" <<'PYDECK' || code=1
-import json, os, sys, urllib.error, urllib.request
+import json, math, os, sys, urllib.error, urllib.request
 tmp, port = sys.argv[1], sys.argv[2]
 API = "http://127.0.0.1:%s/api/p/the-cutting-queue" % port
 bad = []
@@ -1603,6 +1613,48 @@ code, d = call("/cut-all", {})
 check("but moving an outline does put the sheet back in the queue",
       "oldbox-01" in json.dumps(d), d)
 call("/cut/oldbox-01", {})           # leave it as it was found: cut and clean
+
+# ⭐️⭐️ TURN BY ANY ANGLE, AND KNOW WHETHER IT IS LEVEL. The designer, 3
+# September 2026, of cards cut from photographs: "just flipping through 90
+# degrees is too crude when I may need to rotate a piece by just a few degrees
+# to level it" — and "crucial to the rotate tool being helpful will be the
+# grid... an obvious highlight of a gridline when a piece is horizontally
+# and/or vertically aligned." So two facts, both the room's: a tenth of a
+# degree survives the round trip, and every piece carries the angle its own
+# edges sit at.
+code, d = call("/manifest/oldbox_p01_00", {"rotate": 1.4}, "PUT")
+check("a turn of 1.4 degrees is kept as 1.4, not rounded to a whole turn",
+      (d.get("piece") or {}).get("rotate") == 1.4, d.get("piece"))
+code, d = call("/manifest/oldbox_p01_00", {"rotate": 90}, "PUT")
+check("and a quarter turn is still written as a whole number",
+      (d.get("piece") or {}).get("rotate") == 90, d.get("piece"))
+code, d = call("/manifest/oldbox_p01_00", {"rotate": 0}, "PUT")
+pcs = json.load(urllib.request.urlopen(API + "/pieces"))["pieces"]
+mine = [q for q in pcs if q["stem"].startswith("oldbox_p01_")]
+check("a piece cut square carries the angle its own edges sit at",
+      mine and all(isinstance(q.get("skew"), (int, float)) for q in mine),
+      [(q["stem"], q.get("skew")) for q in mine])
+# ⚠️ the bench's outlines are drawn square to the sheet, so their skew is
+# nothing — which is the reading a levelled piece must give, or the highlight
+# would never light on a piece that is actually straight
+check("and reads as level, or the grid would never light on a straight piece",
+      mine and all(abs(q.get("skew") or 0) <= 0.3 for q in mine),
+      [(q["stem"], q.get("skew")) for q in mine])
+# ⚠️⚠️ AND THE PIECE WITH NO ANGLE AT ALL, which is the half that carries the
+# weight: a round counter has no edge to be level with, so the room measures
+# NOTHING and the payload must say so. ⭐️ Nought would be read by the page as
+# "already perfectly level" and light the grid on every chit in the game —
+# the geometry is checked on its own in check/is_it_level.py; this is the
+# wiring, that a missing measurement survives the trip out as a missing one.
+round_pts = [[int(1000 + 300 * math.cos(math.radians(a))),
+              int(1000 + 300 * math.sin(math.radians(a)))] for a in range(0, 360, 10)]
+call("/outlines/oldbox-01", {"pieces": [{"pts": round_pts}]}, "PUT")
+call("/cut/oldbox-01", {})
+pcs = json.load(urllib.request.urlopen(API + "/pieces"))["pieces"]
+chit = [q for q in pcs if q["stem"].startswith("oldbox_p01_")]
+check("a round counter is handed out with no angle at all, not an angle of nought",
+      len(chit) == 1 and chit[0].get("skew") is None,
+      [(q["stem"], q.get("skew")) for q in chit])
 
 # ⚠️⚠️ A PIECE THAT FILLS THE SHEET IS STILL A PIECE, IF SOMEBODY DREW IT.
 # The designer, 26 August 2026: "I have outlined the single large component on

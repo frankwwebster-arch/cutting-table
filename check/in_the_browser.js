@@ -1047,6 +1047,100 @@ const SHAPE = `(function () {
         return { row: t(".prow .pic img") }; })()`);
       check("the piece's row in the naming list is turned with it",
             /rotate\(90deg\)|matrix\(0,\s*1,\s*-1,\s*0/.test(turns.row || ""), turns);
+
+      /* ⭐️⭐️ TURN BY ANY ANGLE, AND SEE WHEN IT IS LEVEL. The designer, 3
+         September 2026: "the ability to drag to rotate a cut piece - just
+         flipping through 90 degrees is too crude when I may need to rotate a
+         piece by just a few degrees to level it" — and the grid must say when
+         it is. The API half is in check.sh; this is the half only a browser
+         can see: the box shows tenths, the nudge moves by a tenth, "level it"
+         lights the grid, and dragging the grid moves the grid and not the
+         piece. */
+      console.log("\nturning a piece by a few degrees, and seeing it level");
+      await fetch(`${ROOM}/api/p/${PROJECT}/manifest/${first.stem}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rotate: 1.4 }),
+      });
+      await page.go(`${ROOM}/p/${PROJECT}/?tab=pieces&piece=${encodeURIComponent(first.stem)}`);
+      await sleep(600);
+      const fine = await page.val(`(function () {
+        var box = document.getElementById("fRot");
+        var plate = document.getElementById("plate");
+        return { box: box ? box.value : null, level: plate ? plate.classList.contains("level") : null,
+                 say: (document.getElementById("levelSay") || {}).textContent || "",
+                 hasLevel: !!document.getElementById("rotLevel"),
+                 hasSnap: !!document.getElementById("rotSnap") }; })()`);
+      check("the turn box shows the angle to a tenth of a degree",
+            fine.box === "1.4", fine);
+      check("a piece cut square and turned 1.4 degrees is NOT shown as level",
+            fine.level === false && /1\.4/.test(fine.say), fine);
+      check("the level-it button and the snap box are on the row",
+            fine.hasLevel && fine.hasSnap, fine);
+      const nudged = await page.val(`(function () {
+        document.getElementById("rotP").click();
+        return document.getElementById("fRot").value; })()`);
+      check("a nudge moves it by a tenth of a degree", nudged === "1.5", nudged);
+      await sleep(400);
+      const levelled = await page.val(`(function () {
+        document.getElementById("rotLevel").click();
+        var plate = document.getElementById("plate");
+        return { box: document.getElementById("fRot").value,
+                 level: plate.classList.contains("level"),
+                 say: (document.getElementById("levelSay") || {}).textContent || "" }; })()`);
+      check("pressing level it puts a square-cut piece back to straight, and the grid lights",
+            levelled.level === true && /level/.test(levelled.say) && Math.abs(parseFloat(levelled.box)) < 0.2,
+            levelled);
+      await sleep(500);
+      const written = await (await fetch(`${ROOM}/api/p/${PROJECT}/manifest`)).json();
+      check("and the levelled angle reached the disk",
+            !((written.pieces || {})[first.stem] || {}).rotate, (written.pieces || {})[first.stem]);
+      const grid = await page.val(`(function () {
+        var plate = document.getElementById("plate");
+        var r = plate.getBoundingClientRect();
+        var img = plate.querySelector("img");
+        var before = img.style.transform;
+        function ev(type, x, y) {
+          var e = new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true, buttons: 1 });
+          plate.dispatchEvent(e);
+        }
+        ev("pointerdown", r.left + 4, r.top + 4);
+        ev("pointermove", r.left + 34, r.top + 16);
+        ev("pointerup", r.left + 34, r.top + 16);
+        return { gx: plate.style.getPropertyValue("--gx"), gy: plate.style.getPropertyValue("--gy"),
+                 pieceMoved: img.style.transform !== before }; })()`);
+      check("dragging the grid moves the grid", grid.gx === "30px" && grid.gy === "12px", grid);
+      check("...and not the piece", grid.pieceMoved === false, grid);
+      /* ⚠️ MEASURED, NOT BELIEVED. The readout is positioned into the plate's
+         own corner, so the plate has to be what it is positioned against —
+         without `position: relative` it escapes to whatever ancestor happens
+         to be positioned and lands somewhere else on the page entirely, while
+         every flag saying it is showing stays perfectly true. That is fault
+         32's lesson, and faults 4 and 87 are the same family. */
+      const saidWhere = await page.val(`(function () {
+        var plate = document.getElementById("plate"), say = document.getElementById("levelSay");
+        if (!plate || !say) return { missing: true };
+        var p = plate.getBoundingClientRect(), s = say.getBoundingClientRect();
+        return { inside: s.left >= p.left - 1 && s.top >= p.top - 1 &&
+                         s.right <= p.right + 1 && s.bottom <= p.bottom + 1,
+                 w: Math.round(s.width), plate: Math.round(p.width) }; })()`);
+      check("the level readout sits inside the plate, not adrift on the page",
+            saidWhere.inside === true && saidWhere.w > 0, saidWhere);
+      /* ⚠️⚠️ AND THE GRID STAYS WHERE IT WAS PUT ACROSS A NUDGE. Every nudge
+         saves and redraws the whole panel, so without keeping the offset the
+         line you have just laid along an edge jumps back to the corner on the
+         first press — and lining a line up and then nudging against it is the
+         whole workflow the dragging exists for. */
+      const kept = await page.val(`(function () {
+        document.getElementById("rotP").click();
+        return { gx: document.getElementById("plate").style.getPropertyValue("--gx"),
+                 rot: document.getElementById("fRot").value }; })()`);
+      check("nudging the angle does not throw away the grid you lined up",
+            kept.gx === "30px" && kept.rot === "0.1", kept);
+      await sleep(400);
+      await fetch(`${ROOM}/api/p/${PROJECT}/manifest/${first.stem}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rotate: 90 }),
+      });
       /* ⭐️ THE ROOM OFFERS A KIND RATHER THAN ASKING FOR ONE. The designer, 22
          August 2026: "naming is always going to be the fiddly bit here as it
          will tend to rely on 3rd party lists etc, or rules manuals which may

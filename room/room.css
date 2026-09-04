@@ -180,10 +180,33 @@ section[hidden] { display: none; }
     linear-gradient(to right, rgba(255,255,255,.055) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255,255,255,.055) 1px, transparent 1px);
   background-size: var(--six) var(--six), var(--six) var(--six), var(--inch) var(--inch), var(--inch) var(--inch);
+  /* ⭐️ the grid can be DRAGGED under the piece, so a line can be laid along
+     its edge to level it against — see the Turn it control on the Pieces
+     page. --gx/--gy are the offset; the picture does not move. */
+  background-position: var(--gx, 0px) var(--gy, 0px);
   border: 1px solid var(--line); border-radius: 4px; padding: var(--inch); display: inline-block; line-height: 0;
+  /* ⚠️ the readout sits in the plate's own corner, so the plate has to be
+     what it is positioned against — without this it escapes to whatever
+     ancestor happens to be positioned and lands somewhere else on the page */
+  position: relative;
+  cursor: move; user-select: none; touch-action: none;
+}
+/* ⭐️ LEVEL. Lit when the piece's own edges, after its turn, sit within a
+   sixth of a degree of the grid — the room measures the angle off the piece's
+   alpha, so this is a fact and not an impression. Brass, and the lines get
+   heavier, because "is it straight yet" has to be answerable at a glance. */
+.plate.level {
+  background-image:
+    linear-gradient(to right, rgba(201,162,74,.85) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201,162,74,.85) 1px, transparent 1px),
+    linear-gradient(to right, rgba(201,162,74,.30) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201,162,74,.30) 1px, transparent 1px);
+  box-shadow: 0 0 0 2px rgba(201,162,74,.55) inset;
 }
 .plate .frame { position: relative; }
 .plate img { display: block; position: absolute; left: 50%; top: 50%; transform-origin: 50% 50%; }
+.plate .levelsay { position: absolute; left: 8px; top: 6px; font-size: 12px; line-height: 1.2;
+  color: var(--brass); background: rgba(16,24,33,.85); padding: 3px 7px; border-radius: 3px; pointer-events: none; }
 .measure { font-size: 13px; color: var(--dim); margin: 10px 0 0; line-height: 1.5; }
 .measure b { color: var(--brass); font-weight: 600; }
 #pform { overflow-y: auto; max-height: 78vh; border-left: 1px solid var(--line); padding: 16px 18px 40px; }

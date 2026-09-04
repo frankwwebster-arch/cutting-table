@@ -228,6 +228,45 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️ Turn a piece by any angle, and see when it is level — **built**, 3 September 2026
+
+The designer, of cards cut from photographs: *"the ability to drag to rotate a
+cut piece — just flipping through 90 degrees is too crude when I may need to
+rotate a piece by just a few degrees to level it."* And then: *"crucial to the
+rotate tool being helpful will be the grid... a snap to grid option, as well
+as perhaps some kind of obvious highlight of a gridline when a piece is
+horizontally and/or vertically aligned."*
+
+- `[x]` **Drag the picture** to turn it; ±1 and ±0.1 nudges; a typed angle to
+  a tenth of a degree; *none* to put it back. `turned()` had always rotated by
+  any angle — only the doors insisted on whole quarters, and `int()` on the way
+  in threw away every angle the tool exists to set.
+- `[x]` ⭐️ **The room measures the angle the piece's own edges sit at**
+  (`skew`, off its alpha, with the automatic pass's trimmed calipers), so
+  *level* is a fact: the grid **lights brass** within a sixth of a degree, the
+  plate says how far off and which way, **level it** sets it in one press, and
+  the drag **snaps to level** within a degree (shift, or untick, to refuse).
+- `[x]` **The grid drags under the piece**, not the piece under the grid —
+  where a piece sits in its frame means nothing and would be one more thing to
+  store.
+- `[x]` A turn is **re-cropped** to what is really there, so levelling makes a
+  crooked piece's box smaller, never larger.
+- `[x]` ⚠️⚠️ **And on a piece with no straight edge it says nothing at all** —
+  no highlight, no readout, no button. The calipers answer a round counter
+  perfectly cheerfully (45°) and the answer is meaningless; offering *level it*
+  on a chit and turning it 45° is a confident wrong answer drawn over
+  somebody's artwork. Fault 25's rule arriving on geometry for the second time.
+- `[x]` Checks: the API round trip keeps 1.4 as 1.4 and 90 as 90; a square-cut
+  piece carries `skew` and reads level, **and a round one is handed out with no
+  angle at all rather than an angle of nought**; in the browser the box shows
+  tenths, a nudge is a tenth, *level it* lights the grid and reaches the disk,
+  dragging the grid moves the grid and not the piece, and the readout is
+  **measured** to be inside the plate rather than believed.
+  `check/is_it_level.py` is the geometry on its own — 23 checks, of which
+  **eight are the room keeping quiet** — and both halves had their teeth
+  tried: drop the fill test and six go red, put the strided sample back in
+  place of the silhouette and five go red.
+
 ### `[x]` ⚠️⚠️⚠️ A speck of one pixel is no longer cut as a piece — **built**, 2 September 2026
 
 The designer, cutting a real game: *"Three keep coming up as blank... The

@@ -2995,7 +2995,16 @@
     });
     heads.forEach(function (h) { Fold.apply("pieces", h[0], list, h[1]); });
   }
+  /* ⚠️⚠️ WHERE THE GRID HAS BEEN DRAGGED TO, KEPT ACROSS THE REDRAW. Every
+     nudge of the angle saves and redraws the whole piece panel, so without
+     this the grid line you have just laid along an edge jumps back to the
+     corner on the FIRST nudge — and lining a line up and then nudging against
+     it is the entire workflow the dragging exists for. Kept per piece and
+     forgotten when another is opened: it is a reading aid, not something the
+     room stores (a piece's place in its frame means nothing). */
+  var gridOff = { stem: null, x: 0, y: 0 };
   function showPiece(stem, focusName) {
+    if (gridOff.stem !== stem) gridOff = { stem: stem, x: 0, y: 0 };
     curPiece = stem;
     document.querySelectorAll(".prow").forEach(function (r) { r.classList.toggle("on", r.dataset.stem === stem); });
     var p = piecesData.pieces.filter(function (x) { return x.stem === stem; })[0];
@@ -3108,8 +3117,12 @@
       '<div class="pnav"><button id="pPrev"' + (at <= 0 ? " disabled" : "") + '>← previous</button>' +
       '<button id="pNext"' + (at < 0 || at >= mine.length - 1 ? " disabled" : "") + '>next →</button>' +
       '<span class="tiny muted">' + (at + 1) + " of " + mine.length + " · ← → to move, ⏎ in the name box to save and go on</span></div>" +
-      '<div class="plate" style="--inch:' + inch + "px;--six:" + (inch * 6) + 'px"><div class="frame" style="width:' + fw + "px;height:" + fh + 'px">' +
-      '<img src="' + BASE + "/piece/" + encodeURIComponent(stem) + ".png?" + Date.now() + '" style="width:' + wpx + "px;height:" + hpx + "px;transform:translate(-50%,-50%) rotate(" + rot + 'deg)"></div></div>' +
+      '<div class="plate" id="plate" style="--inch:' + inch + "px;--six:" + (inch * 6) +
+      "px;--gx:" + gridOff.x + "px;--gy:" + gridOff.y + 'px" data-tip="The grid is one inch a square. DRAG THE GRID to lay a line along the edge you are levelling against; drag the PICTURE to turn it.' +
+      (knowsLevel() ? " The grid lights up brass when the piece sits square to it." :
+        " This piece has no straight edge to be level with, so the room does not say whether it is.") +
+      '"><div class="frame" style="width:' + fw + "px;height:" + fh + 'px">' +
+      '<img src="' + BASE + "/piece/" + encodeURIComponent(stem) + ".png?" + Date.now() + '" style="width:' + wpx + "px;height:" + hpx + "px;transform:translate(-50%,-50%) rotate(" + rot + 'deg)"></div><span class="levelsay" id="levelSay"></span></div>' +
       '<p class="measure">' + esc(stem) + " · <b>" + (p.w_in || "?") + '"</b> \u00d7 <b>' + (p.h_in || "?") + '"</b> as printed' +
       (pct < 100 ? ' <span class="tiny">(shown at ' + pct + "% — one grid square is still one inch)</span>" : "") +
       (p.outline ? ' · outline <b>' + p.outline + '</b> on ' + esc(sheetLabel(p.sheet)) + ' <a href="' + BASE + "/table#" + encodeURIComponent(p.sheet) + "/" + p.outline + '">mend it at the table</a>' : "") + "</p>";
@@ -3149,7 +3162,14 @@
       '<button type="button" id="rotMM" data-tip="A degree anticlockwise.">−1</button><button type="button" id="rotM" data-tip="A tenth of a degree anticlockwise — for levelling by eye.">−0.1</button>' +
       '<button type="button" id="rotP" data-tip="A tenth of a degree clockwise — for levelling by eye.">+0.1</button><button type="button" id="rotPP" data-tip="A degree clockwise.">+1</button>' +
       '<button type="button" id="rotZero" data-tip="Put the piece back to the way it came off the sheet, with no turn at all.">none</button>' +
-      '<span class="tiny">degrees clockwise &mdash; or <b>drag the picture</b> to turn it</span></div>' +
+      /* ⚠️ only where the room has actually measured an angle. A round
+         counter has no edge to be level with, so there is nothing for these
+         two to act on and offering them would be a promise the room cannot
+         keep — see `knowsLevel` below and `_skew_of` in the room. */
+      (knowsLevel() ?
+        '<button type="button" id="rotLevel" data-tip="Turn the piece so its own edges sit exactly level with the grid. The room measures that angle off the piece itself, so this is a measurement rather than a guess; drag afterwards if your eye disagrees.">level it</button>' +
+        '<label class="tiny" data-tip="When ticked, dragging the picture snaps to level within a degree, as well as to the quarter turns. Untick it to turn freely."><input type="checkbox" id="rotSnap" class="nosave" checked> snap to level</label>' : "") +
+      '<span class="tiny">degrees clockwise &mdash; or <b>drag the picture</b> to turn it, and <b>drag the grid</b> to line it up</span></div>' +
       '<label class="f" data-tip="A note to yourself that this piece is not ready — the artwork needs redoing, the rules are unclear. It stays in the folder; this only records why you are not using it yet.">Hold back (why it is not in play yet)</label><input id="fHold" value="' + esc(d.hold || "") + '" placeholder="e.g. artwork, template, counter — or blank">' +
       '<label class="f" data-tip="The piece that is the BACK of this one. Cut the back once, then point every card in the deck at it — a set with three different backs is just three pieces. It travels in the inventory as the file it is.">Its back</label><select id="fBack">' + pieceOptions(d.back || "", backsOnly) + "</select>" +
       '<p class="tiny muted"><label><input type="checkbox" id="fBackOnly" class="nosave" title="Show only the pieces you have marked as a card back, instead of every piece in the game. Nothing is changed either way — it only shortens the list."' +
@@ -3277,9 +3297,52 @@
       p.data = p.data || {}; p.data.rotate = r;
       var img = document.querySelector("#pstage .frame img");
       if (img) img.style.transform = "translate(-50%,-50%) rotate(" + r + "deg)";
+      sayLevel(r);
       if (quiet) return;
       save();
       showPiece(stem);
+    }
+    /* ⭐️⭐️ IS IT LEVEL? Not an impression: the room measures the angle the
+       piece's own edges sit at (`skew`, off its alpha) and level is when that
+       plus the turn is a multiple of a quarter. The designer, 3 September
+       2026: "some kind of obvious highlight of a gridline when a piece is
+       horizontally and/or vertically aligned." A sixth of a degree is the
+       tolerance — under the thickness of a printed line across a card.
+
+       ⚠️⚠️ `skew` IS OFTEN ABSENT, AND ABSENT IS NOT NOUGHT. A round counter,
+       a hexagon or a torn island has no edge to be level with, so the room
+       says nothing rather than inventing an angle (see `_skew_of`). Reading
+       that as 0 would light the grid on every chit in the game and claim each
+       was perfectly straight — worse than not answering at all — so the whole
+       apparatus stands down: no highlight, no readout, and no button.
+
+       ⚠️ ONE rule, asked in three places — the plate's tip, whether the two
+       controls are drawn at all, and every reading below. Three copies of
+       `typeof p.skew === "number"` is fault 24, and the one that drifted
+       would be the one offering a button that cannot work. It is a function
+       declaration, so it is hoisted above the markup that calls it. */
+    function knowsLevel() { return typeof p.skew === "number"; }
+    function offLevel(r) {
+      if (!knowsLevel()) return null;
+      var a = (((p.skew + r) % 90) + 90) % 90;
+      if (a > 45) a -= 90;
+      return Math.round(a * 10) / 10;
+    }
+    function levelAngle() {
+      // the turn that makes this piece exactly level, nearest to where it is
+      var r = parseFloat(form.querySelector("#fRot").value) || 0;
+      var off = offLevel(r);
+      return off === null ? r : Math.round((r - off) * 10) / 10;
+    }
+    function sayLevel(r) {
+      var plate = document.getElementById("plate"), say = document.getElementById("levelSay");
+      if (!plate || !say) return;
+      var off = offLevel(r);
+      if (off === null) { plate.classList.remove("level"); say.textContent = ""; return; }
+      var level = Math.abs(off) <= 0.15;
+      plate.classList.toggle("level", level);
+      say.textContent = level ? "level" :
+        (Math.abs(off) + "\u00b0 off \u2014 " + (off > 0 ? "turn it \u21ba" : "turn it \u21bb"));
     }
     var nameBox = form.querySelector("#fName");
     nameBox.addEventListener("keydown", function (e) {
@@ -3296,6 +3359,46 @@
     form.querySelector("#rotP").addEventListener("click", function () { turn(0.1); });
     form.querySelector("#rotPP").addEventListener("click", function () { turn(1); });
     form.querySelector("#rotZero").addEventListener("click", function () { setTurn(0); });
+    var levelBtn = form.querySelector("#rotLevel");
+    if (levelBtn) levelBtn.addEventListener("click", function () { setTurn(levelAngle()); });
+    sayLevel(rot);
+
+    /* ⭐️ DRAG THE GRID, NOT THE PIECE. The designer, 3 September 2026:
+       "either the piece needs to be able to be moved to snap to the grid, or
+       the grid itself needs to move. I leave that to you." The grid moves.
+       Where a piece sits in its frame means nothing and would be one more
+       thing to store; where the grid sits is a reading aid, kept for the
+       page and forgotten with it. Drag on the plate's background; the
+       picture has its own drag and takes precedence. */
+    (function () {
+      var plate = document.getElementById("plate");
+      if (!plate) return;
+      var live = false, sx = 0, sy = 0, gx = 0, gy = 0;
+      plate.addEventListener("pointerdown", function (ev) {
+        if (ev.target && ev.target.tagName === "IMG") return;
+        ev.preventDefault();
+        live = true; sx = ev.clientX; sy = ev.clientY;
+        gx = parseFloat(plate.style.getPropertyValue("--gx")) || 0;
+        gy = parseFloat(plate.style.getPropertyValue("--gy")) || 0;
+        // ⚠️ a synthetic pointer has nothing to capture, and the throw would
+        // come out of this handler having already armed the drag
+        try { plate.setPointerCapture(ev.pointerId); } catch (e) { /* no pointer */ }
+      });
+      plate.addEventListener("pointermove", function (ev) {
+        if (!live) return;
+        gridOff.x = gx + ev.clientX - sx;
+        gridOff.y = gy + ev.clientY - sy;
+        plate.style.setProperty("--gx", gridOff.x + "px");
+        plate.style.setProperty("--gy", gridOff.y + "px");
+      });
+      function done(ev) {
+        if (!live) return;
+        live = false;
+        try { plate.releasePointerCapture(ev.pointerId); } catch (e) { /* gone */ }
+      }
+      plate.addEventListener("pointerup", done);
+      plate.addEventListener("pointercancel", done);
+    })();
     form.querySelector("#fRot").addEventListener("change", function () {
       setTurn(parseFloat(this.value) || 0);
     });
@@ -3344,6 +3447,13 @@
         if (!ev.shiftKey) {
           var q = Math.round(r / 90) * 90;
           if (Math.abs(r - q) < 1) r = q;
+          // ⭐️ ...and to LEVEL, which for a piece that came off the sheet
+          // crooked is not the same angle as the quarter turn. ⚠️ Only where
+          // the room measured one: on a round counter there is no such angle
+          // and the tick box is not offered at all.
+          var snapBox = form.querySelector("#rotSnap");
+          var off = snapBox && snapBox.checked ? offLevel(r) : null;
+          if (off !== null && Math.abs(off) < 1) r = r - off;
         }
         setTurn(r, true);
       });

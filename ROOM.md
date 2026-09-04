@@ -615,11 +615,37 @@ list puts the components of that same kind at the top, under a heading of their
 own, so there is less of the checklist to read past.
 
 **Turn it** is a *fixed, one-time correction*: this piece was printed sideways
-on the sheet, hand it over the right way up. The hand-over bakes the turn into
-the finished picture. It is **not** for turning a piece during play — a turning
-template that gets spun around the table is the game's business at run time;
-the room's job is only to give it to the game upright and at its true printed
-size.
+on the sheet, or cut a little crooked, hand it over straight. The export bakes
+the turn into the finished picture. It is **not** for turning a piece during
+play — a turning template that gets spun around the table is the game's
+business at run time; the room's job is only to give it to the game upright
+and at its true printed size.
+
+It turns by **any angle**, not only quarters — a piece cut from a photograph
+is very often a degree or two off. **Drag the picture** and it turns with the
+pointer; **↺ 90** and **↻ 90** do the quarter turns; **−1 / +1** and
+**−0.1 / +0.1** nudge it; the box takes a typed angle in tenths of a degree;
+**none** puts it back as it came off the sheet.
+
+⭐️ **The room knows whether it is level.** It measures the angle the piece's
+own edges sit at, off the picture itself, so the grid under the piece **lights
+up brass** when the piece is within a sixth of a degree of straight, and the
+corner of the plate says how far off it is and which way to turn. **level it**
+sets that angle in one press. Dragging **snaps to level** within a degree as
+well as to the quarter turns (untick *snap to level* to turn freely, or hold
+shift while dragging). And the **grid itself can be dragged** under the
+piece, so a line can be laid along an edge to judge it by eye against.
+
+⚠️ **On a piece with no straight edge, the room says nothing about level** —
+and neither the highlight, the readout nor the **level it** button appears.
+A round counter, a hexagon, a triangle or a torn island has no edge to be
+square with the grid, and a measurement taken anyway would be meaningless: a
+circle measures as sitting at 45°, which is as true as any other answer. The
+grid can still be dragged about, and the turn still works by hand — the room
+simply does not pretend to know which way up is right.
+
+A turn re-crops the picture to what is really there, so levelling a crooked
+piece makes its measured size *smaller*, never larger.
 
 ### After the cut — what the room noticed
 
