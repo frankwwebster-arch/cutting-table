@@ -126,6 +126,24 @@ rename it later in one field.
 ⚠️ **Nothing else is required to begin.** The checklist (step 5) is a way of
 keeping score and can be left until you want it — or never made at all.
 
+#### ⭐️ Where each game stands
+
+Every card carries one control saying whether the game is **Being cut**,
+**Finished**, or **Put by**, and the picker sorts itself into those three
+bands. *Being cut* is the absence of a mark, so a new game needs nothing said
+about it.
+
+The point of the other two is that a studio collects games you are not
+cutting: one that is done, one you have set aside for now, one that was an
+early attempt and is not worth finishing. Marked, each of those folds into a
+**single line with a count on it**, so what you are actually working on is at
+the top of the page instead of somewhere down a list.
+
+⚠️ **Nothing is deleted and nothing moves on the disk.** A folded band opens
+with one press, the mark comes off whenever you like, and the game inside is
+exactly as you left it. The same two words mean the same two things one level
+down, where a *box of sheets* inside a game can be put by or filed away.
+
 A game that already has a folder somewhere else (inside its own code
 repository, say) is registered rather than created — the *Where do the files
 come from?* panel has the box, or:

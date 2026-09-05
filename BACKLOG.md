@@ -228,6 +228,39 @@ Nothing here should know what a rulebook is.
 each of these, with the faults it turned up, is in *Done* at the foot of
 this file and in `CLAUDE.md`.
 
+### `[x]` ⭐️ Where each game stands, on the picker — **built**, 4 September 2026
+
+The designer: *"add some categorisation to the project picker — completed, in
+progress, deprecated (or whatever the word is)"*, and then, on what the third
+one means: *"a project I might have set aside (temporarily or even
+permanently), historic unfinished or otherwise useless projects which I might
+not want to delete, but shouldn't have to sort through to see what's actually
+currently in the studio for cutting."*
+
+- `[x]` **Being cut / Finished / Put by**, one control on each card, and the
+  picker sorts itself into those three bands. ⭐️ **The words are the room's
+  own, one level up**: a *box of sheets* inside a game can already be put by
+  for later (fault 68) or filed away as finished (fault 91). A second
+  vocabulary for the same two ideas would have been fault 24.
+- `[x]` ⚠️ *Being cut* is the **absence** of a mark, so every game that
+  already exists is one and no migration is needed — and a default nobody has
+  to write down cannot drift.
+- `[x]` ⚠️ **Nothing is deleted or moved.** A marked game folds into one line
+  with a count on it and opens again in a press. `POST /api/p/<id>/state`,
+  which refuses anything but the three.
+- `[x]` ⚠️ The *Being cut* band carries **no heading at all** until there is
+  something to tell it apart from, so a person with three live games and
+  nothing else sees the page exactly as it was.
+- `[x]` Checks: six through the room's own door (the default is the absence of
+  a mark, both marks stick, nonsense is refused, the mark comes off, and
+  **nothing is deleted**), and four in a real browser — because a check through
+  the API is a green light over a page that does not fold (fault 61).
+  ⚠️ Those four were written addressing the grid as the band's
+  `nextElementSibling` and went red **over working code, twice**: `tips.js`
+  inserts a line of explanation after every control carrying a `data-tip`, so
+  the sibling is that line. Fault 70 in a new place — the band and its grid
+  are tied by name now.
+
 ### `[x]` ⭐️ Turn a piece by any angle, and see when it is level — **built**, 3 September 2026
 
 The designer, of cards cut from photographs: *"the ability to drag to rotate a

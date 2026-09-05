@@ -119,6 +119,30 @@ SUGGEST_INSET = sheetlib.SUGGEST_INSET
 # grid lights up. ⚠️ The page is sent this rather than keeping its own copy —
 # fault 24, on a number that would drift silently.
 LEVEL_TOL = 0.15
+
+# ⭐️⭐️ WHERE A WHOLE GAME STANDS. The designer, 4 September 2026: "a project I
+# might have set aside (temporarily or even permanently), historic unfinished
+# or otherwise useless projects which I might not want to delete, but shouldn't
+# have to sort through to see what's actually currently in the studio for
+# cutting."
+#
+# ⚠️⚠️ THE WORDS ARE THE ROOM'S OWN, ONE LEVEL UP. A BOX of sheets inside a
+# game can already be **put by for later** (fault 68) or **filed away** as
+# finished (fault 91), and those two are deliberately not the same mark — put
+# by means NOT CUT and leaves the counts, filed means DONE and stays in them.
+# A whole game wants exactly the same two, so it gets the same two words. A
+# second vocabulary for one idea is fault 24, and this file's most-repeated
+# warning.
+# ⚠️ Being cut is the ABSENCE of a mark, not a third value to keep in step:
+# every project that exists today is being cut, and a default nobody has to
+# write down cannot drift out of date.
+PROJECT_STATES = ("finished", "by")
+
+
+def project_state(pr):
+    """"finished", "by", or "" for a game that is being cut."""
+    s = str((pr.meta or {}).get("state") or "").strip().lower()
+    return s if s in PROJECT_STATES else ""
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".bmp", ".gif")
 
 # tools/cutting_table.tpl.html: INKS, in order. A piece's ink is an index
@@ -1307,6 +1331,16 @@ class Project:
             "id": self.id, "name": self.meta.get("name", self.id),
             "game": self.meta.get("game", ""), "notes": self.meta.get("notes", ""),
             "path": self.path, "dpi": self.dpi,
+            # ⭐️⭐️ WHERE THIS GAME STANDS, for the picker. The designer, 4
+            # September 2026: "a project I might have set aside (temporarily
+            # or even permanently), historic unfinished or otherwise useless
+            # projects which I might not want to delete, but shouldn't have to
+            # sort through to see what's actually currently in the studio for
+            # cutting." ⚠️ The words are the room's OWN, one level up: a BOX
+            # of sheets can already be put by for later or filed away as
+            # finished (faults 68 and 91), and a second vocabulary for the
+            # same two ideas is fault 24 waiting. Absent means being cut.
+            "state": project_state(self),
             "sheets": sheets,
             "pieces": len(idx) if idx else len(self.piece_files()),
             "named": sum(1 for st in man
@@ -4399,6 +4433,26 @@ class Room(BaseHTTPRequestHandler):
         # ⚠️ A SHEET TOLD ITS OWN SCALE STILL WINS. `scales[sheet.id]` is
         # measured on that sheet and is better evidence than a project-wide
         # default, so this only moves the sheets that never said.
+        # ⭐️⭐️ WHERE THIS GAME STANDS: being cut, finished, or put by. See
+        # `project_state` for why the words are the ones a BOX of sheets
+        # already uses. ⚠️ NOTHING IS DELETED, NOTHING MOVES ON THE DISK, and
+        # the mark can always be taken off again — it decides where the game
+        # sits on the picker and nothing else whatever.
+        if head == "state" and method == "POST":
+            want = str((self.body_json() or {}).get("state") or "").strip().lower()
+            if want not in PROJECT_STATES and want != "":
+                return self.send_json(
+                    {"error": "A game is being cut, finished, or put by — "
+                              "not %r." % want}, 400)
+            with pr.lock:
+                pr.meta = read_json(pr.file, pr.meta)
+                if want:
+                    pr.meta["state"] = want
+                else:
+                    pr.meta.pop("state", None)
+                write_json(pr.file, pr.meta, indent=1)
+            return self.send_json({"ok": True, "state": project_state(pr)})
+
         if head == "dpi" and method == "POST":
             try:
                 want = int(float((self.body_json() or {}).get("dpi") or 0))

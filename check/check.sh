@@ -1720,6 +1720,37 @@ check("but a round counter is left alone by that press, having no angle to level
       code == 200 and "rotate" not in (man.get("oldbox_p01_00") or {}),
       [d.get("n"), man.get("oldbox_p01_00")])
 
+# ⭐️⭐️ WHERE A WHOLE GAME STANDS, for the picker. The designer, 4 September
+# 2026: "a project I might have set aside (temporarily or even permanently),
+# historic unfinished or otherwise useless projects which I might not want to
+# delete, but shouldn't have to sort through to see what's actually currently
+# in the studio for cutting."
+here = json.load(urllib.request.urlopen(
+    "http://127.0.0.1:%s/api/projects" % port))["projects"]
+mine_p = [q for q in here if q["id"] == "the-cutting-queue"]
+check("a game nobody has marked is being cut, which is the absence of a mark",
+      len(mine_p) == 1 and mine_p[0].get("state") == "", mine_p and mine_p[0].get("state"))
+code, d = call("/state", {"state": "finished"})
+check("a game can be marked finished", code == 200 and d.get("state") == "finished", d)
+code, d = call("/state", {"state": "by"})
+check("...and put by, which is the one the designer asked for",
+      code == 200 and d.get("state") == "by", d)
+# ⚠️ IT IS A MARK AND NOTHING ELSE. Nothing is deleted, nothing moves, and
+# every sheet and piece is exactly where it was — the whole feature is which
+# band the game sits in on the picker.
+after = [q for q in json.load(urllib.request.urlopen(
+    "http://127.0.0.1:%s/api/projects" % port))["projects"]
+    if q["id"] == "the-cutting-queue"][0]
+check("and putting a game by deletes nothing — its sheets and pieces are all there",
+      len(after.get("sheets") or []) > 0 and after.get("pieces", 0) > 0,
+      [len(after.get("sheets") or []), after.get("pieces")])
+code, d = call("/state", {"state": "nonsense"})
+check("a state that is not one of the three is refused, with the three named",
+      code == 400 and "finished" in str(d.get("error", "")), [code, d])
+code, d = call("/state", {"state": ""})
+check("and the mark comes off again, putting it back in the studio",
+      code == 200 and d.get("state") == "", d)
+
 # ⚠️⚠️ A PIECE THAT FILLS THE SHEET IS STILL A PIECE, IF SOMEBODY DREW IT.
 # The designer, 26 August 2026: "I have outlined the single large component on
 # the sheet. But it won't cut. Is that a size constraint?" It was: 90% of the

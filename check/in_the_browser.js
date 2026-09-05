@@ -3286,6 +3286,64 @@ const SHAPE = `(function () {
       { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dpi: 300 }) });
 
+    /* ⭐️⭐️ WHAT IS ACTUALLY IN THE STUDIO. The designer, 4 September 2026:
+       "historic unfinished or otherwise useless projects which I might not
+       want to delete, but shouldn't have to sort through to see what's
+       actually currently in the studio for cutting." The API half is in
+       check.sh; this is the half only a browser can see — that the picker
+       really folds, and that the fold can be opened again. A check through
+       the API alone would be a green light over a page that does nothing
+       (fault 61). */
+    console.log("\nthe project picker, sorted into where each game stands");
+    await page.go(`${ROOM}/`);
+    await sleep(500);
+    const live = await page.val(`(function () {
+      var bands = [].map.call(document.querySelectorAll("#cards .band"),
+        function (b) { return b.textContent.replace(/\\s+/g, " ").trim(); });
+      return { bands: bands, cards: document.querySelectorAll("#cards .card").length,
+               picker: !!document.querySelector("#cards [data-state]") }; })()`);
+    check("a game being cut sits on the picker with no band over it",
+          live.cards >= 1 && live.bands.length === 0, live);
+    check("and every card carries a way to say where the game stands",
+          live.picker === true, live);
+    await fetch(`${ROOM}/api/p/${PROJECT}/state`,
+      { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: "by" }) });
+    await page.go(`${ROOM}/`);
+    await sleep(500);
+    /* ⚠️⚠️ ADDRESSED BY NAME, NOT BY POSITION. Written first with
+       `nextElementSibling`, these measured the line of explanation `tips.js`
+       inserts after every control carrying a data-tip — and reported a fold
+       that was working perfectly as broken, twice. Fault 70, in a new place.
+       ⚠️ And by the project's own id rather than "no cards are showing": the
+       check room has seven other games being cut, quite correctly. */
+    const put = await page.val(`(function () {
+      var b = document.querySelector('#cards [data-band="by"]');
+      var body = document.querySelector('#cards [data-bandbody="by"]');
+      return { found: !!b, folded: body ? body.hidden : null,
+               says: b ? b.textContent.replace(/\\s+/g, " ").trim() : null,
+               inThere: body ? body.querySelectorAll(".card").length : null,
+               stillShown: !!document.querySelector(
+                 '#cards .cards:not([hidden]) [data-state="${PROJECT}"]') }; })()`);
+    check("a game put by moves under a band of its own, folded away",
+          put.found === true && put.folded === true && /1/.test(put.says || ""), put);
+    check("...and is out of the way of the games actually being cut",
+          put.stillShown === false && put.inThere === 1, put);
+    const opened = await page.val(`(function () {
+      var b = document.querySelector('#cards [data-band="by"]');
+      if (!b) return { none: true };
+      b.click();
+      var body = document.querySelector('#cards [data-bandbody="by"]');
+      return { folded: body.hidden,
+               reachable: !!body.querySelector('[data-state="${PROJECT}"]'),
+               caret: b.querySelector(".caret").textContent }; })()`);
+    check("⚠️ and one press opens it again — nothing was hidden, only folded",
+          opened.folded === false && opened.reachable === true &&
+          opened.caret === "▾", opened);
+    await fetch(`${ROOM}/api/p/${PROJECT}/state`,
+      { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: "" }) });
+
     check("nothing was thrown along the way", thrown.length === 0, thrown.slice(0, 3));
   } finally {
     try { await page.send("Browser.close"); } catch (e) { /* going anyway */ }

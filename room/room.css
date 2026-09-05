@@ -69,6 +69,21 @@ label.f { display: block; margin: 12px 0 4px; font-size: 12px; letter-spacing: .
 
 /* ---- home: the projects */
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+/* ⭐️ WHERE A GAME STANDS, on the picker: being cut, finished, or put by. A
+   band heading folds its own grid away, so the games that are not in the
+   studio stop being in the way without being hidden or deleted. */
+.band { display: flex; align-items: center; gap: 8px; width: 100%; margin: 18px 0 8px;
+  padding: 7px 10px; background: transparent; border: 0; border-bottom: 1px solid var(--line);
+  color: var(--dim); font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
+  cursor: pointer; text-align: left; }
+.band:hover { color: var(--ink); }
+.band.live { color: var(--brass); border-bottom-color: var(--brass); }
+.band .caret { font-size: 11px; opacity: .8; }
+.band .n { margin-left: 4px; padding: 1px 7px; border-radius: 9px;
+  background: var(--line); color: var(--ink); font-size: 12px; letter-spacing: 0; }
+.band + .cards { margin-bottom: 4px; }
+/* the state picker on a card sits with the buttons, quiet until wanted */
+.card .where select { font-size: 12px; padding: 3px 6px; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
 .card h3 { margin: 0 0 2px; font-size: 17px; font-weight: 600; }
 .card .game { color: var(--dim); font-size: 13px; }

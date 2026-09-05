@@ -35,7 +35,7 @@
   </section>
 
   <h2 id="projectsHead">Projects — one per game</h2>
-  <div class="cards" id="cards"></div>
+  <div id="cards"></div>
 
   <div class="newp" id="newp">
     <h2 style="margin-top:0">Start a game</h2>
@@ -93,7 +93,72 @@
       cards.innerHTML = "";
       return;
     }
-    d.projects.forEach(function (p) {
+    /* ⭐️⭐️ WHAT IS ACTUALLY IN THE STUDIO, FIRST. The designer, 4 September
+       2026: "a project I might have set aside (temporarily or even
+       permanently), historic unfinished or otherwise useless projects which I
+       might not want to delete, but shouldn't have to sort through to see
+       what's actually currently in the studio for cutting."
+       ⚠️ NOTHING IS HIDDEN — that is fault 91's rule, that a mark puts things
+       LAST rather than out of reach. A finished or put-by game is one line
+       with a count on it, and one press opens the band. Nothing is deleted
+       and nothing moves on the disk.
+       ⚠️ And a band that is empty is not drawn at all, rather than sitting
+       there as a heading over nothing. */
+    var BANDS = [
+      { key: "", name: "Being cut",
+        none: "", open: true },
+      { key: "finished", name: "Finished",
+        none: "Nothing is marked finished yet.", open: false },
+      { key: "by", name: "Put by",
+        none: "Nothing is put by.", open: false }
+    ];
+    BANDS.forEach(function (band) {
+      var mine = d.projects.filter(function (p) { return (p.state || "") === band.key; });
+      if (!mine.length) return;
+      /* ⚠️ The band being cut carries no heading when it is the only one
+         there is: a lone "Being cut" over every game a person owns is a
+         label that says nothing, and this page used to have no headings at
+         all. It appears the moment there is something to tell it apart from. */
+      var others = d.projects.length - mine.length;
+      /* ⚠️ Every band gets its own grid. `#cards` is a plain block now — it
+         used to BE the grid, and a heading dropped into it would have become
+         a cell sitting in the middle of the cards. */
+      var wrap = document.createElement("div");
+      wrap.className = "cards";
+      wrap.hidden = !band.open;
+      /* ⚠️⚠️ A BAND AND ITS GRID ARE TIED BY NAME, NOT BY BEING NEXT TO EACH
+         OTHER. `tips.js` puts a line of explanation after every control that
+         carries a data-tip — so the element after a band heading is that
+         line, not the cards. The page itself closes over `wrap` and never
+         cared, but the first check written for this used
+         `nextElementSibling`, measured the explanation line, and reported a
+         perfectly working fold as broken twice over. That is fault 70: a
+         handle that is a POSITION drifts the moment anything is inserted. */
+      wrap.setAttribute("data-bandbody", band.key || "cutting");
+      if (band.key || others) {
+        var head = document.createElement("button");
+        head.className = "band" + (band.key ? "" : " live");
+        head.type = "button";
+        head.setAttribute("data-band", band.key || "cutting");
+        head.setAttribute("data-tip", band.key
+          ? "Show or hide the games marked " + band.name.toLowerCase() +
+            ". Nothing is deleted — this only decides what is in your way."
+          : "The games you are cutting now.");
+        head.innerHTML = '<span class="caret">' + (band.open ? "▾" : "▸") + "</span>" +
+          "<b>" + band.name + "</b><span class=\"n\">" + mine.length + "</span>";
+        head.addEventListener("click", function () {
+          wrap.hidden = !wrap.hidden;
+          head.querySelector(".caret").textContent = wrap.hidden ? "▸" : "▾";
+        });
+        cards.appendChild(head);
+      }
+      cards.appendChild(wrap);
+      drawInto(wrap, mine);
+    });
+  }
+
+  function drawInto(into, list) {
+    list.forEach(function (p) {
       var outlined = p.sheets.filter(function (s) { return s.outlines > 0; }).length;
       var done = p.sheets.filter(function (s) { return s.done; }).length;
       var w = p.wanted || { total: 0, done: 0, pct: 0 };
@@ -116,10 +181,51 @@
         (p.sheets.length ? '<a class="btn" data-tip="Skip the project page and go straight to drawing outlines '
         + 'on this game\'s sheets. The same place as Open, then Outline — this just saves the step." '
         + 'href="/p/' + encodeURIComponent(p.id) + '/table">Straight to the table</a>' : "") +
+        /* ⚠️ It says what it will do, like every other control in the room —
+           and it says plainly that nothing is deleted, because "put by"
+           beside a game somebody has spent a week cutting reads as a threat
+           unless it says otherwise. */
+        '<label class="tiny muted where" data-tip="Where this game stands. It decides ' +
+        'only where it sits on this page: a finished or put-by game folds out of ' +
+        'the way instead of being in your way every time you open the room. ' +
+        'Nothing is deleted, nothing moves on the disk, and you can change it back ' +
+        'whenever you like.">' +
+        '<select data-state="' + encodeURIComponent(p.id) + '">' +
+        ['<option value="">Being cut</option>',
+         '<option value="finished">Finished</option>',
+         '<option value="by">Put by</option>'].join("").replace(
+          'value="' + (p.state || "") + '"',
+          'value="' + (p.state || "") + '" selected') +
+        "</select></label>" +
         '<span class="tiny muted" style="margin-left:auto">' + esc(p.path) + "</span></div>";
-      cards.appendChild(c);
+      into.appendChild(c);
     });
   }
+
+  /* ⭐️ One handler on the list rather than one per card, because the cards
+     are rebuilt from scratch on every load and a listener per card would be
+     re-attached each time. ⚠️ It reloads afterwards, so the game moves into
+     its new band there and then — a mark that appeared to do nothing until
+     the next visit would read as a broken control (fault 58). */
+  document.getElementById("cards").addEventListener("change", function (ev) {
+    var sel = ev.target;
+    if (!sel || !sel.dataset || !sel.dataset.state) return;
+    var pid = decodeURIComponent(sel.dataset.state);
+    var want = sel.value;
+    sel.disabled = true;
+    fetch("/api/p/" + encodeURIComponent(pid) + "/state", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: want })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      if (r && r.error) { flash(r.error); return; }
+      flash(want === "finished" ? "Marked finished. Nothing was deleted."
+            : want === "by" ? "Put by. Nothing was deleted — it folds out of the way."
+            : "Back in the studio.");
+      load();
+    }).catch(function () {
+      flash("The room did not answer. Nothing was changed.");
+    }).then(function () { sel.disabled = false; });
+  });
 
   function load() {
     fetch(api).then(function (r) { return r.json(); }).then(render)

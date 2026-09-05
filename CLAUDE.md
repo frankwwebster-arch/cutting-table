@@ -116,6 +116,17 @@ fix is to write it down here, not to put it in the next prompt.
 
 ## Status (4 September 2026)
 
+**4 September, last**: *"add some categorisation to the project picker"* — and
+the third category is the one that matters: *"historic unfinished or otherwise
+useless projects which I might not want to delete, but shouldn't have to sort
+through to see what's actually currently in the studio for cutting."* ⭐️⭐️ The
+words were **already in the room one level down** (a box of sheets can be put
+by or filed away), so no new vocabulary was invented — see fault 102, whose
+better half is that **its checks went red over working code twice** because
+they addressed each band's grid by position, and `tips.js` puts a line of
+explanation in between. Two rounds of reasoning got nowhere; printing the
+container's actual children answered it in one run.
+
 **4 September**: the designer, having used the levelling tool for an afternoon:
 *"levelling a piece with a flat bottom edge (once it has been rotated) should
 be the default position, not an option a user has to fit and click."* So it is
@@ -186,7 +197,7 @@ the middle of their afternoon. See fault 92, which is worth more than the
 feature: the guard was written on the copy of the launcher that was *expected
 to fail*, and not on the copy expected to succeed.
 
-⭐️ **Where it stands.** The room is built, checked by 782 checks, documented
+⭐️ **Where it stands.** The room is built, checked by 793 checks, documented
 end to end, and in daily use on two games. There is **nothing outstanding that
 anybody has reported**: every item in BACKLOG's *NOW* is work chosen for its
 worth rather than a complaint waiting to be answered.
@@ -2669,6 +2680,44 @@ rather than by reading the code.
     would change what it says about a game already named, and that is a
     separate decision from this one.
 
+102. ⭐️⭐️ **A STUDIO COLLECTS GAMES YOU ARE NOT CUTTING.** The designer, 4
+    September 2026: *"add some categorisation to the project picker"*, and on
+    what the third category means: *"a project I might have set aside
+    (temporarily or even permanently), historic unfinished or otherwise
+    useless projects which I might not want to delete, but shouldn't have to
+    sort through to see what's actually currently in the studio for cutting."*
+    ⭐️⭐️ **The words were already in the room, one level down.** A BOX of
+    sheets inside a game can be *put by for later* (fault 68) or *filed away*
+    as finished (fault 91), and those are deliberately two marks rather than
+    one because put by means NOT CUT and leaves the counts while filed means
+    DONE and stays in them. A whole game wants exactly the same two ideas, so
+    it gets exactly the same two words. **Inventing "archived" or "deprecated"
+    here would have been fault 24 in the vocabulary** — two names for one idea,
+    one of which the person would eventually have to translate.
+    ⚠️ *Being cut* is the **absence** of a mark, not a third stored value:
+    every project that exists is one, nothing has to be migrated, and a
+    default nobody writes down cannot drift out of step.
+    ⚠️ It is a mark and nothing else — nothing is deleted, nothing moves on the
+    disk, a band opens in one press, and the mark comes off whenever. That is
+    fault 91's rule (*it puts things LAST, it does not hide them*) arriving on
+    a whole game.
+    ⚠️ And the *Being cut* band draws **no heading at all** until there is
+    another band to tell it apart from: a lone "BEING CUT" over every game
+    somebody owns is a label that says nothing, and this page had no headings
+    at all before.
+    ⭐️⭐️ **ITS CHECKS WENT RED OVER WORKING CODE, TWICE, AND THE REASON IS
+    WORTH MORE THAN THE FEATURE.** They found each band's grid as the heading's
+    `nextElementSibling` — and `tips.js` inserts a `<small class="tipline">`
+    after **every** control carrying a `data-tip` (fault 31), so the sibling is
+    that line: `hidden` false, no cards in it, and a perfectly working fold
+    reported as broken. That is **fault 70** — *a handle that is a position
+    drifts* — arriving on the room's own explaining feature rather than on a
+    button's place in a row. The band and its grid carry `data-band` /
+    `data-bandbody` now and are addressed by name.
+    ⚠️ Note how it was found: two rounds of reasoning about the DOM got
+    nowhere, and **printing the actual children of the container answered it
+    in one run**. Habit 2, on a page instead of on a project's data.
+
 ---
 
 ## Architecture
@@ -2831,7 +2880,7 @@ shape of the record changes** or stale records come back.
 ## Verifying
 
 ```sh
-check/check.sh          # 782 checks, about a minute
+check/check.sh          # 793 checks, about a minute
 ```
 
 That is the whole of it now. It parses every script, makes a **throwaway
